@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Parkinsans:wght@300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: 1em 2em;
+    background-color: #fff;
+    border-bottom: 0.125em solid #e5e7eb;
+    box-shadow: 0 0.125em 0.25em rgba(0, 0, 0, 0.1);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    cursor: pointer;
+    ;
+}
+
+.logo {
+    width: 40px;
+    height: auto;
+}
+
+.website-name {
+    font-size: 1.3rem;
+    font-family: "Roboto Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+}
+
+.nav-links {
+    display: flex;
+    gap: 2em;
+    list-style-type: none;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #374151;
+    font-size: 1.1rem;
+    padding: 0.5em;
+    border-bottom: 0.125em solid transparent;
+    transition: all 0.3s ease-in-out;
+    font-family: "Parkinsans", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    border-bottom: 0.125em solid #4f46e5;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.login-button,
+.signup-button {
+    padding: 0.5em 1em;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.login-button {
+    background-color: #4f46e5;
+    color: white;
+}
+
+.signup-button {
+    background-color: transparent;
+    color: #4f46e5;
+    border: 0.0625em solid #4f46e5;
+}
+
+.login-button:hover {
+    background-color: #3730a3;
+}
+
+.signup-button:hover {
+    background-color: #4f46e5;
+    color: white;
+}
