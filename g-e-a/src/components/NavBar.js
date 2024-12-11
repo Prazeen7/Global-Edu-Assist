@@ -1,27 +1,40 @@
-import React from "react";
+import React, { useState } from "react";
 import "./NavBar.css";
 import Logo from "./images/Logo.png"; // Import your logo
+import hamBurger from "./images/ham.png"
 
 const Navbar = () => {
-    return (
-        <nav class="navbar">
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-            <div class="logo-container">
-                <img src={Logo} alt="Logo" class="logo" />
-                <span class="website-name">GEA</span>
+    const toggleMenu = () => {
+        setIsMenuOpen(!isMenuOpen);
+    }
+
+    return (
+        <nav className="navbar">
+
+            <div className="logo-container active">
+                <img src={Logo} alt="Logo" className="logo" />
+                <span className="website-name">GEA</span>
             </div>
 
-            <ul class="nav-links">
-                <li><a href="/" class="active">About</a></li>
+            <button className="hamburger" onClick={toggleMenu}>
+                <span className="hamburger-icon"> <img className="hamburger-icon" src={hamBurger}/></span>
+            </button>
+
+            <ul className={`nav-links ${isMenuOpen ? "active" : ""}`}>
+                <li><a href="/">About</a></li>
                 <li><a href="/">Institutions</a></li>
                 <li><a href="/">Destinations</a></li>
                 <li><a href="/">Documents</a></li>
                 <li><a href="/">Agents</a></li>
+                <li className="auth-link"><a href="/">Login</a></li>
+                <li className="auth-link"><a href="/">Signup</a></li>
             </ul>
 
-            <div class="auth-buttons">
-                <button class="login-button">Login</button>
-                <button class="signup-button">Signup</button>
+            <div className="auth-buttons">
+                <button className="login-button">Login</button>
+                <button className="signup-button">Signup</button>
             </div>
 
         </nav>
