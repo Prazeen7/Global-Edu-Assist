@@ -16,31 +16,12 @@
     padding: 0.5em;
 }
 
-.hamburger-icon{
+.hamburger-icon {
     width: 1.5em;
     position: relative;
     display: inline-block;
     transition: all 0.3s ease-in-out;
 }
-
-.hamburger-icon::before,
-.hamburger-icon::after {
-    content: "";
-    width: 1.5em;
-    background-color: #374151;
-    position: absolute;
-    left: 0;
-    transition: all 0.3s ease-in-out;
-}
-
-.hamburger-icon::before{
-    top: -0.4em;
-}
-
-.hamburger-icon::after {
-    top: 0.4em;
-}
-
 
 .navbar {
     display: flex;
@@ -58,7 +39,6 @@
     align-items: center;
     gap: 0.5em;
     cursor: pointer;
-    ;
 }
 
 .logo {
@@ -74,13 +54,18 @@
     font-style: normal;
 }
 
+.logo-container a {
+    text-decoration: none;
+    color: black;
+}
+
 .nav-links {
     display: flex;
     gap: 2em;
     list-style-type: none;
 }
 
-.nav-links.active{
+.nav-links.active {
     display: flex;
     flex-direction: column;
     position: absolute;
@@ -106,12 +91,15 @@
     font-style: normal;
 }
 
-.nav-links a:hover,
-.nav-links a.active {
+.nav-links a:hover {
     border-bottom: 0.125em solid #4f46e5;
 }
 
-.auth-link{
+.nav-links a.activeColor {
+    border-bottom: 0.125em solid #4f46e5;
+}
+
+.auth-link {
     display: none;
 }
 
