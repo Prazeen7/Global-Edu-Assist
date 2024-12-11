@@ -8,6 +8,40 @@
 
 }
 
+.hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5em;
+}
+
+.hamburger-icon{
+    width: 1.5em;
+    position: relative;
+    display: inline-block;
+    transition: all 0.3s ease-in-out;
+}
+
+.hamburger-icon::before,
+.hamburger-icon::after {
+    content: "";
+    width: 1.5em;
+    background-color: #374151;
+    position: absolute;
+    left: 0;
+    transition: all 0.3s ease-in-out;
+}
+
+.hamburger-icon::before{
+    top: -0.4em;
+}
+
+.hamburger-icon::after {
+    top: 0.4em;
+}
+
+
 .navbar {
     display: flex;
     align-items: center;
@@ -46,6 +80,19 @@
     list-style-type: none;
 }
 
+.nav-links.active{
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 10%;
+    left: 0;
+    background-color: #fff;
+    width: 100%;
+    box-shadow: 0 0.125em 0.25em rgba(0, 0, 0, 0.1);
+    padding: 1em 0;
+    gap: 1em;
+}
+
 .nav-links a {
     text-decoration: none;
     color: #374151;
@@ -62,6 +109,10 @@
 .nav-links a:hover,
 .nav-links a.active {
     border-bottom: 0.125em solid #4f46e5;
+}
+
+.auth-link{
+    display: none;
 }
 
 .auth-buttons {
@@ -97,4 +148,28 @@
 .signup-button:hover {
     background-color: #4f46e5;
     color: white;
+}
+
+/* Mobile view */
+@media (max-width: 960px) {
+    .hamburger {
+        display: block;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
+
+    .auth-buttons {
+        display: none;
+    }
+
+    .auth-link {
+        display: block;
+    }
+
 }
