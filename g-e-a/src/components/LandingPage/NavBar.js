@@ -36,10 +36,10 @@ const Navbar = () => {
 
     return (
         <nav className="navbar">
-            <div className="logo-container">
+            <NavLink to="/" onClick={handleLinkClick}><div className="logo-container">
                 <img src={Logo} alt="Logo" className="logo" />
-                <NavLink to="/" onClick={handleLinkClick}><span className="website-name">GEA</span></NavLink>
-            </div>
+                <span className="website-name">GEA</span>
+            </div></NavLink>
 
             {/* Hamburger Menu */}
             <button className="hamburger" onClick={toggleMenu}>

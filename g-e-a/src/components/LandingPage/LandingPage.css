@@ -1,0 +1,124 @@
+    /* General Reset */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    /* Body and HTML styling */
+    body,
+    html {
+        font-family: 'Parkinsans', sans-serif;
+        color: #374151;
+        height: 100%;
+        overflow-x: hidden;
+        background-color: #ffffff;
+    }
+
+    /* Global CSS Variables */
+    :root {
+        --primary-color: #4f46e5;
+        --secondary-color: #3730a3;
+        --background-color: #ffffff;
+        --font-color: #374151;
+        --font-family-main: 'Parkinsans', sans-serif;
+        --font-family-heading: "Roboto Mono", monospace;
+        --font-family-buttons: 'Nunito', sans-serif;
+    }
+
+    /* Landing Page Section */
+    .landing-page {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 100vh;
+        padding: 2rem;
+        color: #ffffff;
+    }
+
+    /* Left side (Text Section) */
+    .text-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+    }
+
+    /* Main Content Heading */
+    .text-section h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        font-family: var(--font-family-heading);
+        font-weight: 700;
+        color: var(--primary-color);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Main Content Paragraph */
+    .text-section p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        font-family: var(--font-family-main);
+        font-weight: 400;
+        color: var(--font-color);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Right side (Image Section) */
+    .image-section {
+        flex: 1;
+        background-image: url('../images/LandingPageBG.png');
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
+
+    /* Lighter Gradient Overlay */
+    .image-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(238, 242, 255, 0.3), rgba(79, 70, 229, 0.3), rgba(255, 255, 255, 0));
+        z-index: 1;
+    }
+
+    .card-container {
+        display: flex;
+        gap: 5em;
+        flex-wrap: wrap;
+        justify-content: space-evenly;
+        padding: 10em 3em 3em 3em;
+
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 960px) {
+        .landing-page {
+            flex-direction: column;
+            padding: 1em;
+        }
+
+        .text-section {
+            margin-bottom: 1.5em;
+        }
+
+        .text-section h1 {
+            font-size: 2rem;
+        }
+
+        .text-section p {
+            font-size: 1rem;
+        }
+
+
+    }
