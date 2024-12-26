@@ -1,14 +1,14 @@
 import "./App.css";
-import Navbar from "./components/LandingPage/NavBar";
+import Navbar from "./components/NavBar";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import LandingPage from "./components/LandingPage/LandingPage";
-import Destinations from "./components/LandingPage/Destinations";
-import Institutions from "./components/LandingPage/Institutions";
-import About from "./components/LandingPage/About";
-import Agents from "./components/LandingPage/Agents";
-import Login from "./components/LandingPage/Login";
-import Signup from "./components/LandingPage/Signup";
-import Documents from "./components/LandingPage/Documents";
+import LandingPage from "./Pages/LandingPage/LandingPage";
+import Destinations from "./Pages/Destinations/Destinations";
+import Institutions from "./Pages/Institutions/Institutions";
+import About from "./Pages/About/About";
+import Agents from "./Pages/Agents/Agents";
+import Login from "./Pages/Login/Login";
+import Signup from "./Pages/Signup/Signup";
+import Documents from "./Pages/Documents/Documents";
 
 function App() {
   // Creating react router for dynamic navigation from Navbar
