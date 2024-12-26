@@ -68,7 +68,7 @@
     /* Right side (Image Section) */
     .image-section {
         flex: 1;
-        background-image: url('../images/LandingPageBG.png');
+        background-image: url('../../images/LandingPageBG.png');
         background-size: contain;
         background-position: center;
         background-repeat: no-repeat;

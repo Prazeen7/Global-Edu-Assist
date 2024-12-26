@@ -6,9 +6,9 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 import CardActionArea from '@mui/material/CardActionArea';
-import Cost from '../images/financial.jpg';
-import financial from '../images/Financial.png';
-import Bestfit from '../images/BestFit.png';
+import Cost from '../../images/financial.jpg';
+import financial from '../../images/Financial.png';
+import Bestfit from '../../images/BestFit.png';
 
 function LandingPage() {
     const location = useLocation();
