@@ -30,7 +30,7 @@ const Card = styled(MuiCard)(({ theme }) => ({
   boxShadow:
     '0px 5px 15px rgba(0, 0, 0, 0.1), 0px 15px 35px rgba(0, 0, 0, 0.05)',
   [theme.breakpoints.up('sm')]: {
-    padding: theme.spacing(6),
+    padding: theme.spacing(4),
   },
 }));
 
@@ -123,12 +123,11 @@ export default function Login() {
           >
             {/* Align Form Controls to the Left */}
             <FormControl sx={{ textAlign: 'left' }}>
-              <FormLabel htmlFor="email">Email</FormLabel>
               <TextField
                 id="email"
                 name="email"
                 type="email"
-                placeholder="your@email.com"
+                placeholder="Email"
                 autoComplete="email"
                 error={emailError}
                 helperText={emailErrorMessage}
@@ -137,12 +136,11 @@ export default function Login() {
               />
             </FormControl>
             <FormControl sx={{ textAlign: 'left' }}>
-              <FormLabel htmlFor="password">Password</FormLabel>
               <TextField
                 id="password"
                 name="password"
                 type="password"
-                placeholder="••••••"
+                placeholder="Password"
                 autoComplete="current-password"
                 error={passwordError}
                 helperText={passwordErrorMessage}
