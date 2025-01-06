@@ -64,7 +64,7 @@ export default function Signup() {
   const [lastNameErrorMessage, setLastNameErrorMessage] = React.useState('');
   const [showSuccessAlert, setShowSuccessAlert] = React.useState(false);
 
-  const navigate = useNavigate(); // Using the hook for navigation
+  const navigate = useNavigate(); 
 
   const validateInputs = () => {
     const email = document.getElementById('email');
