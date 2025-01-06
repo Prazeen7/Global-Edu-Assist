@@ -6,16 +6,17 @@ import {
   CssBaseline,
   FormControl,
   FormControlLabel,
-  FormLabel,
-  Link,
   TextField,
   Typography,
   Stack,
+  Alert,
   Card as MuiCard,
+  Link,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ForgotPassword from './ForgotPassword';
 import { NavLink } from 'react-router-dom';
+import axios from 'axios';
 
 // Styled Components
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -60,7 +61,9 @@ export default function Login() {
   const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
   const [passwordError, setPasswordError] = React.useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = React.useState(false); 
+  const [alertMessage, setAlertMessage] = React.useState('');
+  const [alertSeverity, setAlertSeverity] = React.useState(null);
 
   const handleForgotPasswordOpen = () => setOpen(true);
   const handleForgotPasswordClose = () => setOpen(false);
@@ -90,14 +93,34 @@ export default function Login() {
   };
 
   const handleSubmit = (event) => {
-    event.preventDefault();
+    event.preventDefault(); 
     const data = new FormData(event.currentTarget);
     const email = data.get('email');
     const password = data.get('password');
 
-    if (validateInputs(email, password)) {
-      console.log({ email, password });
-    }
+    if (!validateInputs(email, password)) return;
+
+    axios
+      .post('http://localhost:3001/login', { email, password })
+      .then((result) => {
+        if (result.data === 'Success') {
+          setAlertMessage('Logged in successfully.');
+          setAlertSeverity('success');
+        } else {
+          setAlertMessage(result.data || 'Login failed.');
+          setAlertSeverity('error');
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setAlertMessage('An error occurred. Please try again later.');
+        setAlertSeverity('error');
+      });
+  };
+
+  const handleForgotPasswordClick = (event) => {
+    event.preventDefault(); 
+    handleForgotPasswordOpen();
   };
 
   return (
@@ -105,7 +128,6 @@ export default function Login() {
       <CssBaseline enableColorScheme />
       <SignInContainer alignItems="center" justifyContent="center">
         <Card variant="outlined">
-          {/* Align Login Title to the Left */}
           <Typography
             component="h1"
             variant="h4"
@@ -115,13 +137,19 @@ export default function Login() {
             Login
           </Typography>
 
+          {/* Alert Message */}
+          {alertMessage && (
+            <Stack sx={{ width: '100%' }} spacing={2}>
+              <Alert severity={alertSeverity}>{alertMessage}</Alert>
+            </Stack>
+          )}
+
           <Box
             component="form"
             onSubmit={handleSubmit}
             noValidate
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
-            {/* Align Form Controls to the Left */}
             <FormControl sx={{ textAlign: 'left' }}>
               <TextField
                 id="email"
@@ -158,7 +186,7 @@ export default function Login() {
             </PrimaryButton>
             <Link
               component="button"
-              onClick={handleForgotPasswordOpen}
+              onClick={handleForgotPasswordClick} 
               variant="body2"
               sx={{ alignSelf: 'left' }}
             >
@@ -167,22 +195,23 @@ export default function Login() {
           </Box>
           <Typography textAlign="center">
             Don&apos;t have an account?{' '}
-            <NavLink to="/signup"
+            <NavLink
+              to="/signup"
               variant="body2"
-              sx={{
+              style={{
                 color: '#0078D7',
                 fontWeight: 'bold',
-                '&:hover': {
-                  textDecoration: 'underline',
-                },
+                textDecoration: 'none',
               }}
             >
               Sign up
             </NavLink>
           </Typography>
         </Card>
-        <ForgotPassword open={open} handleClose={handleForgotPasswordClose} />
       </SignInContainer>
+
+      {/* Forgot Password Modal */}
+      <ForgotPassword open={open} handleClose={handleForgotPasswordClose} />
     </>
   );
 }
