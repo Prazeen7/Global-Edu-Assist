@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useContext } from "react";
 import {
   Box,
   Button,
@@ -15,8 +16,9 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ForgotPassword from './ForgotPassword';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from "../../Context/context";
 
 // Styled Components
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -68,6 +70,11 @@ export default function Login() {
   const handleForgotPasswordOpen = () => setOpen(true);
   const handleForgotPasswordClose = () => setOpen(false);
 
+  const navigate = useNavigate(); 
+
+  const { setLoggedIn } = useContext(AuthContext);
+  const { setUserAvatar } = useContext(AuthContext);
+
   const validateInputs = (email, password) => {
     let isValid = true;
 
@@ -103,11 +110,14 @@ export default function Login() {
     axios
       .post('http://localhost:3001/login', { email, password })
       .then((result) => {
-        if (result.data === 'Success') {
+        if (result.data.message === 'Success') {
           setAlertMessage('Logged in successfully.');
           setAlertSeverity('success');
+          setLoggedIn(true);
+          setUserAvatar(result.data.firstName);  
+          navigate('/'); 
         } else {
-          setAlertMessage(result.data || 'Login failed.');
+          setAlertMessage(result.data.message || 'Login failed.');
           setAlertSeverity('error');
         }
       })
@@ -116,7 +126,8 @@ export default function Login() {
         setAlertMessage('An error occurred. Please try again later.');
         setAlertSeverity('error');
       });
-  };
+};
+
 
   const handleForgotPasswordClick = (event) => {
     event.preventDefault(); 
