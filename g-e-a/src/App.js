@@ -9,57 +9,96 @@ import Agents from "./Pages/Agents/Agents";
 import Login from "./Pages/Login/Login";
 import Signup from "./Pages/Signup/Signup";
 import Documents from "./Pages/Documents/Documents";
+import { AuthContext } from "./Context/context";
+import { useState } from "react";
 
 function App() {
-  // Creating react router for dynamic navigation from Navbar
+  // Create routes using React Router
   const router = createBrowserRouter([
     {
       path: "/",
-      element: <> <Navbar /> <LandingPage /></>
+      element: (
+        <>
+          <Navbar />
+          <LandingPage />
+        </>
+      ),
     },
-
     {
       path: "/about",
-      element: <><Navbar /><About /></>
+      element: (
+        <>
+          <Navbar />
+          <About />
+        </>
+      ),
     },
-
     {
       path: "/institutions",
-      element: <><Navbar /><Institutions /></>
+      element: (
+        <>
+          <Navbar />
+          <Institutions />
+        </>
+      ),
     },
-
     {
       path: "/destination",
-      element: <><Navbar /><Destinations /></>
+      element: (
+        <>
+          <Navbar />
+          <Destinations />
+        </>
+      ),
     },
-
     {
       path: "/documents",
-      element: <><Navbar /><Documents /></>
+      element: (
+        <>
+          <Navbar />
+          <Documents />
+        </>
+      ),
     },
-
     {
       path: "/agents",
-      element: <><Navbar /><Agents /></>
+      element: (
+        <>
+          <Navbar />
+          <Agents />
+        </>
+      ),
     },
-
     {
       path: "/login",
-      element: <><Navbar /><Login /></>
+      element: (
+        <>
+          <Navbar />
+          <Login />
+        </>
+      ),
     },
-
     {
       path: "/signup",
-      element: <><Navbar /><Signup /></>
-    }
+      element: (
+        <>
+          <Navbar />
+          <Signup />
+        </>
+      ),
+    },
+  ]);
 
-  ])
+  // State for authentication context
+  const [LoggedIn, setLoggedIn] = useState(false);
+  const [UserAvatar, setUserAvatar] = useState('');
 
   return (
-    <div className="App">
-      {/* Router Configure */}
-      <RouterProvider router={router} />
-    </div>
+    <AuthContext.Provider value={{ LoggedIn, setLoggedIn, UserAvatar, setUserAvatar}}>
+      <div className="App">
+        <RouterProvider router={router} />
+      </div>
+    </AuthContext.Provider>
   );
 }
 
