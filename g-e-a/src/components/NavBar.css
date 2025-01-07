@@ -112,6 +112,11 @@
     gap: 1rem;
 }
 
+.nav-buttons{
+    display: flex;
+    gap: 0.5rem;
+}
+
 .login-button,
 .signup-button {
     padding: 0.5em 1em;
