@@ -12,7 +12,7 @@ mongoose.connect("mongodb://127.0.0.1:27017/gea");
 
 // Nodemailer transporter configuration
 const transporter = nodemailer.createTransport({
-    service: 'gmail', 
+    service: 'gmail',
     auth: {
         user: 'np03cs4a220278@heraldcollege.edu.np',
         pass: 'mkak rsmp stzl fyme',
@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
 
 // Function to generate a random password
 const generatePassword = () => {
-    const length = 8; 
+    const length = 8;
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+';
     let password = '';
     for (let i = 0; i < length; i++) {
@@ -63,12 +63,12 @@ app.post('/login', (req, res) => {
         .then(existingUser => {
             if (existingUser) {
                 if (existingUser.password === password) {
-                    res.json("Success");
+                    res.json({ message: "Success", firstName: existingUser.firstName });
                 } else {
-                    res.json("Password is incorrect");
+                    res.json({ message: "Password is incorrect" });
                 }
             } else {
-                res.json("Please signup first");
+                res.json({ message: "Please signup first" });
             }
         })
         .catch(err => {
@@ -76,6 +76,7 @@ app.post('/login', (req, res) => {
             res.status(400).json(err);
         });
 });
+
 
 // Forgot password endpoint
 app.post('/forgot-password', (req, res) => {
