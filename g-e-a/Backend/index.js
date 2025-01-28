@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
 const cors = require("cors");
 const UserModel = require('./Models/user');
+const docsModel = require('./Models/documents')
 
 const app = express();
 app.use(express.json());
@@ -126,6 +127,21 @@ app.post('/forgot-password', (req, res) => {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
     }
+});
+
+app.get('/documents', (req, res) => {
+    docsModel.find()  
+        .then(documents => {
+            if (documents) {
+                res.json(documents);
+            } else {
+                res.status(404).json({ message: "No document found" });
+            }
+        })
+        .catch(err => {
+            console.error("Error fetching document:", err);
+            res.status(500).json({ error: "An error occurred while fetching the document" });
+        });
 });
 
 app.listen(3001, () => {
