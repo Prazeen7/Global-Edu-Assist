@@ -1,8 +1,22 @@
-import React from 'react'
+import React, { useContext } from 'react'
+import { AuthContext } from "../../Context/context";
+
 
 function Institutions() {
+
+  const { UserType } = useContext(AuthContext);
+
   return (
-    <div>Institutions</div>
+    <>
+      { UserType === "u" && (
+        <div>Institutions for users</div>
+      )}
+
+      {UserType === "a" && (
+        <div>Institutions for Admins</div>
+      )}
+
+    </>
   )
 }
 

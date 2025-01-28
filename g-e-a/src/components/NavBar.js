@@ -6,7 +6,7 @@ import { NavLink } from "react-router-dom";
 import { AuthContext } from "../Context/context";
 import SearchBar from "./SearchBar";
 import AccountMenu from "./AccountMenu";
-import ChatBox from "./ChatBox";
+import Chats from "./Chats";
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -106,7 +106,7 @@ const Navbar = () => {
             {LoggedIn && (
                 <div className="nav-buttons">
                     <SearchBar />
-                    <ChatBox />
+                    <Chats />
                     <AccountMenu />
                 </div>
             )}
