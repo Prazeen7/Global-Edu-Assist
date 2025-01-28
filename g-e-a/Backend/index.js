@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
 const cors = require("cors");
 const UserModel = require('./Models/user');
+const docsModel = require('./Models/documents');
 
 const app = express();
 app.use(express.json());
@@ -33,7 +34,7 @@ const generatePassword = () => {
 
 // Registration endpoint
 app.post('/registerUser', (req, res) => {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, user = 'u' } = req.body;
 
     // Check if the email already exists in the database
     UserModel.findOne({ email })
@@ -43,7 +44,7 @@ app.post('/registerUser', (req, res) => {
             }
 
             // Create a new user if email is unique
-            UserModel.create({ firstName, lastName, email, password })
+            UserModel.create({ firstName, lastName, email, password, user })
                 .then(user => res.json(user))
                 .catch(err => {
                     console.log('Error during user creation: ', err);
@@ -63,7 +64,7 @@ app.post('/login', (req, res) => {
         .then(existingUser => {
             if (existingUser) {
                 if (existingUser.password === password) {
-                    res.json({ message: "Success", firstName: existingUser.firstName });
+                    res.json({ message: "Success", firstName: existingUser.firstName, user: existingUser.user });
                 } else {
                     res.json({ message: "Password is incorrect" });
                 }
@@ -128,6 +129,26 @@ app.post('/forgot-password', (req, res) => {
     }
 });
 
+app.get('/documents', (req, res) => {
+    docsModel.find()  
+        .then(documents => {
+            if (documents) {
+                res.json(documents);
+            } else {
+                res.status(404).json({ message: "No document found" });
+            }
+        })
+        .catch(err => {
+            console.error("Error fetching document:", err);
+            res.status(500).json({ error: "An error occurred while fetching the document" });
+        });
+});
+
+
+
+
 app.listen(3001, () => {
     console.log("Server is running on port 3001");
 });
+
+
