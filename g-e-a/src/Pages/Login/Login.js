@@ -118,6 +118,7 @@ export default function Login() {
           setUserAvatar(result.data.firstName);
           setUserType(result.data.user);
           navigate('/');
+
         } else {
           setAlertMessage(result.data.message || 'Login failed.');
           setAlertSeverity('error');
@@ -128,7 +129,8 @@ export default function Login() {
         setAlertMessage('An error occurred. Please try again later.');
         setAlertSeverity('error');
       });
-  };
+};
+
 
 
   const handleForgotPasswordClick = (event) => {
