@@ -11,6 +11,7 @@ import Signup from "./Pages/Signup/Signup";
 import Documents from "./Pages/Documents/Documents";
 import { AuthContext } from "./Context/context";
 import { useState } from "react";
+import Footer from './components/Footer';
 
 function App() {
   // Create routes using React Router
@@ -21,6 +22,7 @@ function App() {
         <>
           <Navbar />
           <LandingPage />
+          <Footer />
         </>
       ),
     },
@@ -30,6 +32,7 @@ function App() {
         <>
           <Navbar />
           <About />
+          <Footer />
         </>
       ),
     },
@@ -39,6 +42,7 @@ function App() {
         <>
           <Navbar />
           <Institutions />
+          <Footer />
         </>
       ),
     },
@@ -48,6 +52,7 @@ function App() {
         <>
           <Navbar />
           <Destinations />
+          <Footer />
         </>
       ),
     },
@@ -57,6 +62,7 @@ function App() {
         <>
           <Navbar />
           <Documents />
+          <Footer />
         </>
       ),
     },
@@ -66,6 +72,7 @@ function App() {
         <>
           <Navbar />
           <Agents />
+          <Footer />
         </>
       ),
     },
@@ -92,9 +99,10 @@ function App() {
   // State for authentication context
   const [LoggedIn, setLoggedIn] = useState(false);
   const [UserAvatar, setUserAvatar] = useState('');
+  const [UserType, setUserType] = useState('u');
 
   return (
-    <AuthContext.Provider value={{ LoggedIn, setLoggedIn, UserAvatar, setUserAvatar}}>
+    <AuthContext.Provider value={{ LoggedIn, setLoggedIn, UserAvatar, setUserAvatar, UserType, setUserType}}>
       <div className="App">
         <RouterProvider router={router} />
       </div>

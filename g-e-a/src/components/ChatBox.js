@@ -1,134 +1,138 @@
-import * as React from 'react';
-import Box from '@mui/material/Box';
-import Avatar from '@mui/material/Avatar';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Divider from '@mui/material/Divider';
-import ChatOutlinedIcon from '@mui/icons-material/ChatOutlined';
-import Tooltip from '@mui/material/Tooltip';
+// import React from "react";
+// import { createStyles, makeStyles, Theme, ThemeProvider, createTheme } from "@material-ui/core/styles";
+// import { Paper, Avatar, Typography } from "@material-ui/core";
+// import { TextInput } from "./TextInput.js";
+// import { MessageLeft, MessageRight } from "./Message";
 
-export default function AccountMenu() {
-    const [anchorEl, setAnchorEl] = React.useState(null);
-    const open = Boolean(anchorEl);
-    const handleClick = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
+// // Define the Material-UI theme
+// const theme = createTheme({
+//     palette: {
+//         primary: {
+//             main: "#3f51b5", // Customize the primary color here
+//         },
+//         secondary: {
+//             main: "#f50057", // Customize the secondary color here
+//         },
+//     },
+//     typography: {
+//         fontFamily: "'Roboto', sans-serif", // Customize the font here
+//     },
+// });
 
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
+// const useStyles = makeStyles((theme: Theme) =>
+//     createStyles({
+//         paper: {
+//             width: "80vw",
+//             height: "80vh",
+//             maxWidth: "500px",
+//             maxHeight: "700px",
+//             display: "flex",
+//             alignItems: "center",
+//             flexDirection: "column",
+//             position: "relative",
+//         },
+//         paper2: {
+//             width: "80vw",
+//             maxWidth: "500px",
+//             display: "flex",
+//             alignItems: "center",
+//             flexDirection: "column",
+//             position: "relative",
+//         },
+//         container: {
+//             width: "100vw",
+//             height: "100vh",
+//             display: "flex",
+//             alignItems: "center",
+//             justifyContent: "center",
+//         },
+//         messagesBody: {
+//             width: "calc( 100% - 20px )",
+//             margin: 10,
+//             overflowY: "scroll",
+//             height: "calc( 100% - 80px )",
+//         },
+//         messageContainer: {
+//             display: "flex",
+//             alignItems: "center",
+//             marginBottom: "10px",
+//         },
+//         avatar: {
+//             marginRight: "10px",
+//         },
+//         messageContent: {
+//             backgroundColor: "#f1f1f1",
+//             padding: "10px",
+//             borderRadius: "8px",
+//             maxWidth: "80%",
+//             wordWrap: "break-word",
+//         },
+//         name: {
+//             fontWeight: "bold",
+//         },
+//         profileSection: {
+//             display: "flex",
+//             alignItems: "center",
+//         },
+//     })
+// );
 
-    return (
-        <React.Fragment>
-            <Box sx={{ display: 'flex', alignItems: 'center', textAlign: 'center' }}>
-                <Tooltip title="Messenger">
-                    <ChatOutlinedIcon
-                        onClick={handleClick}
-                        size="small"
-                        sx={{ ml: 2, cursor: 'pointer', fontSize: 28 }}
-                        aria-controls={open ? 'account-menu' : undefined}
-                        aria-haspopup="true"
-                        aria-expanded={open ? 'true' : undefined}
-                    />
+// export default function ChatBox() {
+//     const classes = useStyles();
+//     return (
+//         <ThemeProvider theme={theme}>
+//             <div className={classes.container}>
+//                 <Paper className={classes.paper} elevation={2}>
+//                     <Paper id="style-1" className={classes.messagesBody}>
+//                         {/* Left Message */}
+//                         <div className={classes.messageContainer}>
+//                             <div className={classes.profileSection}>
+//                                 <Avatar
+//                                     className={classes.avatar}
+//                                     alt="User Avatar"
+//                                     src="https://lh3.googleusercontent.com/a-/AOh14Gi4vkKYlfrbJ0QLJTg_DLjcYyyK7fYoWRpz2r4s=s96-c"
+//                                 />
+//                                 <Typography variant="body2" className={classes.name}>
+//                                     User 1
+//                                 </Typography>
+//                             </div>
+//                             <div className={classes.messageContent}>
+//                                 <MessageLeft
+//                                     message="あめんぼあかいなあいうえお"
+//                                     timestamp="MM/DD 00:00"
+//                                     photoURL="https://lh3.googleusercontent.com/a-/AOh14Gi4vkKYlfrbJ0QLJTg_DLjcYyyK7fYoWRpz2r4s=s96-c"
+//                                     displayName="User 1"
+//                                     avatarDisp={true}
+//                                 />
+//                             </div>
+//                         </div>
 
-                </Tooltip>
-            </Box>
-            <Menu
-                anchorEl={anchorEl}
-                id="account-menu"
-                open={open}
-                onClose={handleClose}
-                onClick={handleClose}
-                slotProps={{
-                    paper: {
-                        elevation: 0,
-                        sx: {
-                            overflow: 'visible',
-                            filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
-                            mt: 1.5,
-                            width: 300, // Adjust width to match chatbox-like feel
-                            borderRadius: 2, // Round the edges for a modern chat look
-                            backgroundColor: '#f4f4f4', // Lighter background for a clean look
-                            '& .MuiAvatar-root': {
-                                width: 32,
-                                height: 32,
-                                ml: -0.5,
-                                mr: 1,
-                            },
-                            '&::before': {
-                                content: '""',
-                                display: 'block',
-                                position: 'absolute',
-                                top: 0,
-                                right: 14,
-                                width: 10,
-                                height: 10,
-                                bgcolor: 'background.paper',
-                                transform: 'translateY(-50%) rotate(45deg)',
-                                zIndex: 0,
-                            },
-                        },
-                    },
-                }}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            >
-                {/* Example Messenger Item */}
-                <MenuItem onClick={handleClose}>
-                    <Avatar sx={{ bgcolor: '#0078d4' }}>G</Avatar> Group Chat
-                </MenuItem>
-
-                <Divider />
-
-                {/* Example Another Messenger Item */}
-                <MenuItem onClick={handleClose}>
-                    <Avatar sx={{ bgcolor: '#25D366' }}>C</Avatar> Chat with Charlie
-                </MenuItem>
-
-                <Divider />
-
-                {/* Example Messenger Item */}
-                <MenuItem onClick={handleClose}>
-                    <Avatar sx={{ bgcolor: '#0078d4' }}>G</Avatar> Group Chat
-                </MenuItem>
-
-                <Divider />
-
-                {/* Example Another Messenger Item */}
-                <MenuItem onClick={handleClose}>
-                    <Avatar sx={{ bgcolor: '#25D366' }}>C</Avatar> Chat with Charlie
-                </MenuItem>
-
-                <Divider />
-
-                {/* Example Messenger Item */}
-                <MenuItem onClick={handleClose}>
-                    <Avatar sx={{ bgcolor: '#0078d4' }}>G</Avatar> Group Chat
-                </MenuItem>
-
-                <Divider />
-
-                {/* Example Another Messenger Item */}
-                <MenuItem onClick={handleClose}>
-                    <Avatar sx={{ bgcolor: '#25D366' }}>C</Avatar> Chat with Charlie
-                </MenuItem>
-
-                <Divider />
-
-                {/* Example Messenger Item */}
-                <MenuItem onClick={handleClose}>
-                    <Avatar sx={{ bgcolor: '#0078d4' }}>G</Avatar> Group Chat
-                </MenuItem>
-
-                <Divider />
-
-                {/* Example Another Messenger Item */}
-                <MenuItem onClick={handleClose}>
-                    <Avatar sx={{ bgcolor: '#25D366' }}>C</Avatar> Chat with Charlie
-                </MenuItem>
-
-
-            </Menu>
-        </React.Fragment>
-    );
-}
+//                         {/* Right Message */}
+//                         <div className={classes.messageContainer}>
+//                             <div className={classes.profileSection}>
+//                                 <Avatar
+//                                     className={classes.avatar}
+//                                     alt="User Avatar"
+//                                     src="https://lh3.googleusercontent.com/a-/AOh14Gi4vkKYlfrbJ0QLJTg_DLjcYyyK7fYoWRpz2r4s=s96-c"
+//                                 />
+//                                 <Typography variant="body2" className={classes.name}>
+//                                     User 2
+//                                 </Typography>
+//                             </div>
+//                             <div className={classes.messageContent}>
+//                                 <MessageRight
+//                                     message="messageRあめんぼあかいなあいうえおあめんぼあかいなあいうえお"
+//                                     timestamp="MM/DD 00:00"
+//                                     photoURL="https://lh3.googleusercontent.com/a-/AOh14Gi4vkKYlfrbJ0QLJTg_DLjcYyyK7fYoWRpz2r4s=s96-c"
+//                                     displayName="User 2"
+//                                     avatarDisp={true}
+//                                 />
+//                             </div>
+//                         </div>
+//                     </Paper>
+//                     <TextInput />
+//                 </Paper>
+//             </div>
+//         </ThemeProvider>
+//     );
+// }
