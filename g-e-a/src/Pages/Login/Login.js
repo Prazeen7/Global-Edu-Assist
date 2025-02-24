@@ -63,17 +63,18 @@ export default function Login() {
   const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
   const [passwordError, setPasswordError] = React.useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
-  const [open, setOpen] = React.useState(false); 
+  const [open, setOpen] = React.useState(false);
   const [alertMessage, setAlertMessage] = React.useState('');
   const [alertSeverity, setAlertSeverity] = React.useState(null);
 
   const handleForgotPasswordOpen = () => setOpen(true);
   const handleForgotPasswordClose = () => setOpen(false);
 
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const { setLoggedIn } = useContext(AuthContext);
   const { setUserAvatar } = useContext(AuthContext);
+  const { setUserType } = useContext(AuthContext);
 
   const validateInputs = (email, password) => {
     let isValid = true;
@@ -100,7 +101,7 @@ export default function Login() {
   };
 
   const handleSubmit = (event) => {
-    event.preventDefault(); 
+    event.preventDefault();
     const data = new FormData(event.currentTarget);
     const email = data.get('email');
     const password = data.get('password');
@@ -114,8 +115,10 @@ export default function Login() {
           setAlertMessage('Logged in successfully.');
           setAlertSeverity('success');
           setLoggedIn(true);
-          setUserAvatar(result.data.firstName);  
-          navigate('/'); 
+          setUserAvatar(result.data.firstName);
+          setUserType(result.data.user);
+          navigate('/');
+
         } else {
           setAlertMessage(result.data.message || 'Login failed.');
           setAlertSeverity('error');
@@ -129,8 +132,9 @@ export default function Login() {
 };
 
 
+
   const handleForgotPasswordClick = (event) => {
-    event.preventDefault(); 
+    event.preventDefault();
     handleForgotPasswordOpen();
   };
 
@@ -197,7 +201,7 @@ export default function Login() {
             </PrimaryButton>
             <Link
               component="button"
-              onClick={handleForgotPasswordClick} 
+              onClick={handleForgotPasswordClick}
               variant="body2"
               sx={{ alignSelf: 'left' }}
             >
