@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require("cors");
 const UserModel = require('./Models/user');
 const docsModel = require('./Models/documents');
+const InstitutionModel = require('./Models/institutions');
 
 const app = express();
 app.use(express.json());
@@ -20,17 +21,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// Function to generate a random password
-const generatePassword = () => {
-    const length = 8;
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+';
-    let password = '';
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * charset.length);
-        password += charset[randomIndex];
-    }
-    return password;
-};
+
 
 // Registration endpoint
 app.post('/registerUser', (req, res) => {
@@ -78,6 +69,17 @@ app.post('/login', (req, res) => {
         });
 });
 
+// Function to generate a random password
+const generatePassword = () => {
+    const length = 8;
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * charset.length);
+        password += charset[randomIndex];
+    }
+    return password;
+};
 
 // Forgot password endpoint
 app.post('/forgot-password', (req, res) => {
@@ -129,6 +131,7 @@ app.post('/forgot-password', (req, res) => {
     }
 });
 
+//documents end point
 app.get('/documents', (req, res) => {
     docsModel.find()  
         .then(documents => {
@@ -144,10 +147,23 @@ app.get('/documents', (req, res) => {
         });
 });
 
+//institutions end point 
+app.get('/institutions', (req, res) => {
+    InstitutionModel.find()
+    .then(institutions => {
+        if(institutions){
+            res.json(institutions);
+        } else {
+            res.status(404).json({ message: "No institutions found"});
+        }
+    })
+    .catch(err => {
+        console.error("Error fetching institutions:", err);
+        res.status(500).json({ error: "An error occurred while fetching the institutions" });
+    });
+})
 
-
-
-app.listen(3001, () => {
+app.listen(3001, '0.0.0.0', () => {
     console.log("Server is running on port 3001");
 });
 
