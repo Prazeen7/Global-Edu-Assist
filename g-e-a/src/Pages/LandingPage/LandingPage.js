@@ -1,121 +1,170 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
+import { Card, CardContent, CardMedia, Typography, CardActionArea, Button, styled } from '@mui/material';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import './LandingPage.css';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import Typography from '@mui/material/Typography';
-import CardActionArea from '@mui/material/CardActionArea';
-import Cost from '../../images/financial.jpg';
-import financial from '../../images/Financial.png';
+
+// Update these image imports according to your project structure
+import LandingImage from '../../images/LandingPageBG.png';
+import FinancialImg from '../../images/Financial.png';
 import Bestfit from '../../images/BestFit.png';
+import CostAnalysisImg from '../../images/financial.jpg';
+import ThingsToConsider from '../../images/thingsToConsider.png';
 
-function LandingPage() {
+const cardsData = [
+    {
+        image: FinancialImg,
+        title: 'Check Financial Eligibility',
+        content: 'Assess your financial readiness with our comprehensive evaluation tool. Get personalized insights into funding options and budget planning.'
+    },
+    {
+        image: Bestfit,
+        title: 'Find Your Best Fit',
+        content: 'Discover universities and programs that match your academic profile and career aspirations through our intelligent matching system.'
+    },
+    {
+        image: CostAnalysisImg,
+        title: 'Cost Analysis',
+        content: 'Detailed breakdown of tuition fees, living expenses, and hidden costs. Interactive calculators for accurate financial planning.'
+    }
+];
+
+const keyPoints = [
+    'Program Selection',
+    'University Accreditation',
+    'Cost Breakdown',
+    'Visa Process',
+    'Language Requirements',
+    'Cultural Preparation',
+    'Health Insurance',
+    'Housing Options',
+    'Part-time Work',
+    'Safety Measures',
+    'Career Prospects',
+    'Student Support'
+];
+
+const LandingPage = () => {
     const location = useLocation();
-
-    // Check if the current path is the landing page
     const isLandingPage = location.pathname === '/';
 
     return (
-        <>
-            <div className={`landing-page ${isLandingPage ? 'gradient-background' : ''}`}>
-                {/* Left Section */}
-                <div className="text-section">
-                    <h1>From Documents to Dreams: We’ve Got You Covered</h1>
-                    <p>At Global EDU Assist, we simplify your study abroad journey. From document preparation to application support, we turn aspirations into achievements. Your global success starts here.</p>
+        <div className="landing-container">
+            {/* Hero Section */}
+            <section className={`landing-hero ${isLandingPage ? 'active' : ''}`}>
+                <div className="hero-grid">
+                    <div className="hero-text">
+                        <h1>Global Education Made Accessible</h1>
+                        <p className="hero-subtitle">
+                            Your complete partner in navigating international education. From applications to arrival,
+                            we simplify every step of your journey.
+                        </p>
+                        <Button
+                            variant="contained"
+                            size="large"
+                            className="cta-main"
+                            sx={{
+                                bgcolor: 'var(--primary)',
+                                '&:hover': { bgcolor: 'var(--primary-dark)' }
+                            }}
+                        >
+                            Start Free Assessment
+                        </Button>
+                    </div>
+                    <div className="hero-image-container">
+                        <img
+                            src={LandingImage}
+                            alt="Students studying abroad"
+                            className="responsive-hero-image"
+                        />
+                        <div className="image-overlay" />
+                    </div>
                 </div>
+            </section>
 
-                {/* Right Section (Image) */}
-                <div className="image-section"></div>
-            </div>
-
-            <div className='card-container'>
-                <Card sx={{ maxWidth: 345 }}>
-                    <CardActionArea>
-                        <CardMedia
-                            component="img"
-                            width="100%"
-                            image={financial}
-                            alt="green iguana"
-                        />
-                        <CardContent>
-                            <Typography gutterBottom variant="h5" component="div">
-                                Check Your Financial Eligibility
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                Checking your financial eligibility is an essential step in your journey to study abroad. By assessing your financial situation, you can determine if you meet the necessary requirements for tuition fees, living expenses, and other related costs.
-                            </Typography>
-                        </CardContent>
-                    </CardActionArea>
-                </Card>
-
-                <Card sx={{ maxWidth: 345 }}>
-                    <CardActionArea>
-                        <CardMedia
-                            component="img"
-                            width="100%"
-                            image={Bestfit}
-                            alt="green iguana"
-                        />
-                        <CardContent>
-                            <Typography gutterBottom variant="h5" component="div">
-                                Find The Best Fit for You
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                Finding the best fit for your academic and career goals is key to unlocking your potential. Whether you’re looking for universities that align with your interests, programs that match your skills, or a destination that feels like home, we’re here to guide you every step of the way.
-                            </Typography>
-                        </CardContent>
-                    </CardActionArea>
-                </Card>
-
-                <Card sx={{ maxWidth: 345 }}>
-                    <CardActionArea>
-                        <CardMedia
-                            component="img"
-                            width="100%"
-                            image={Cost}
-                            alt="green iguana"
-                        />
-                        <CardContent>
-                            <Typography gutterBottom variant="h5" component="div">
-                                Evaluate Your Cost
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                Understanding the cost of your education is crucial for planning your journey abroad. We help you evaluate tuition fees, living expenses, and other financial factors to give you a clear picture of what to expect. With our guidance, you can make informed decisions and explore options that fit your budget, ensuring a stress-free and well-prepared study experience.
-                            </Typography>
-                        </CardContent>
-                    </CardActionArea>
-                </Card>
-            </div>
-
-            <div className='ttc'>
-                <div className='image-section-2'></div>
-                <div className='ttc-texts'>
-                    <h2>Studying Abroad: Key Points</h2>
-                    <ul className='flex-list'>
-                        <div className='list-column'>
-                            <li>Program and Course Selection</li>
-                            <li>Accreditation</li>
-                            <li>Cost</li>
-                            <li>Visa Requirements</li>
-                            <li>Language Proficiency</li>
-                            <li>Cultural Adjustment</li>
-                        </div>
-                        <div className='list-column'>
-                            <li>Health Insurance</li>
-                            <li>Accommodation</li>
-                            <li>Employment Opportunities</li>
-                            <li>Safety and Security</li>
-                            <li>Post-Graduation Opportunities</li>
-                            <li>Support Services</li>
-                        </div>
-                    </ul>
+            {/* Features Section */}
+            <section className="features">
+                <div className="cards-container">
+                    {cardsData.map((card, index) => (
+                        <FeatureCard key={index}>
+                            <CardActionArea>
+                                <CardMedia
+                                    component="img"
+                                    image={card.image}
+                                    alt={card.title}
+                                    sx={{
+                                        height: { xs: 180, md: 220 },
+                                        objectFit: 'contain',
+                                        width: '100%'
+                                    }}
+                                />
+                                <CardContent className="card-body">
+                                    <Typography variant="h5" className="card-title">
+                                        {card.title}
+                                    </Typography>
+                                    <Typography variant="body2" className="card-description">
+                                        {card.content}
+                                    </Typography>
+                                </CardContent>
+                            </CardActionArea>
+                        </FeatureCard>
+                    ))}
                 </div>
-            </div>
+            </section>
 
-
-        </>
+            {/* Key Considerations Section */}
+            <section className="considerations">
+                <div className="considerations-grid">
+                    <div className="considerations-image">
+                        <img
+                            src={ThingsToConsider}
+                            alt="Study abroad considerations"
+                            className="responsive-considerations-image"
+                        />
+                    </div>
+                    <div className="considerations-list">
+                        <h2>Key Study Abroad Factors</h2>
+                        <div className="points-container">
+                            {keyPoints.map((point, index) => (
+                                <div key={index} className="point-item">
+                                    <CheckCircleOutlineIcon className="point-icon" />
+                                    <span>{point}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     );
-}
+};
+
+const FeatureCard = styled(Card)(({ theme }) => ({
+    maxWidth: 400,
+    borderRadius: '12px',
+    transition: 'all 0.3s ease',
+    boxShadow: theme.shadows[2],
+    '&:hover': {
+        transform: 'translateY(-5px)',
+        boxShadow: theme.shadows[6],
+    },
+    '.card-body': {
+        padding: '1.5rem',
+        minHeight: '200px',
+        [theme.breakpoints.down('md')]: {
+            minHeight: 'auto',
+            padding: '1rem'
+        }
+    },
+    '.card-title': {
+        fontWeight: 600,
+        color: theme.palette.primary.main,
+        marginBottom: '1rem'
+    },
+    '.card-description': {
+        color: theme.palette.text.secondary,
+        lineHeight: 1.6
+    }
+}));
 
 export default LandingPage;

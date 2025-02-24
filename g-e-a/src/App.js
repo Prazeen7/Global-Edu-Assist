@@ -9,9 +9,9 @@ import Agents from "./Pages/Agents/Agents";
 import Login from "./Pages/Login/Login";
 import Signup from "./Pages/Signup/Signup";
 import Documents from "./Pages/Documents/Documents";
+import InstitutionPage from './Pages/Institutions/InstitutionPage';
 import { AuthContext } from "./Context/context";
 import { useState } from "react";
-
 import Footer from './components/Footer';
 
 function App() {
@@ -101,12 +101,21 @@ function App() {
         </>
       ),
     },
+    {
+      path: "/institutionPage/:id",
+      element: (
+        <>
+        <Navbar />
+        <InstitutionPage />
+        <Footer />
+        </>
+      )
+    }
   ]);
 
   // State for authentication context
   const [LoggedIn, setLoggedIn] = useState(false);
   const [UserAvatar, setUserAvatar] = useState('');
-
   const [UserType, setUserType] = useState('u');
 
   return (
