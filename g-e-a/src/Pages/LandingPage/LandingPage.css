@@ -1,225 +1,233 @@
-    /* General Reset */
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Parkinsans:wght@300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+
+body {
+    font-family: "Parkinsans", sans-serif;
+}
+
+/* Custom Properties */
+:root {
+    --primary: #4f46e5;
+    --primary-dark: #3730a3;
+    --text-dark: #1e293b;
+    --text-medium: #475569;
+    --background-light: #f8fafc;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Base Styles */
+.landing-container {
+    overflow-x: hidden;
+    background-color: white;
+    line-height: 1.5;
+}
+
+/* Hero Section */
+.landing-hero {
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(255, 255, 255, 1) 100%);
+}
+
+.hero-grid {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    gap: 2rem;
+    align-items: center;
+}
+
+.hero-text {
+    order: 2;
+}
+
+.hero-text h1 {
+    font-size: 2.5rem;
+    color: var(--text-dark);
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+}
+
+.hero-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-medium);
+    margin-bottom: 2rem;
+    max-width: 600px;
+}
+
+.hero-image-container {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    order: 1;
+}
+
+.responsive-hero-image {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(79, 70, 229, 0.1) 0%, rgba(255, 255, 255, 0) 60%);
+}
+
+/* Features Section */
+.features {
+    padding: 4rem 1rem;
+    background-color: var(--background-light);
+}
+
+.cards-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    justify-content: center;
+}
+
+/* Considerations Section */
+.considerations {
+    padding: 4rem 1rem;
+}
+
+.considerations-grid {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    gap: 3rem;
+    align-items: center;
+}
+
+.considerations-image img {
+    width: 100%;
+    height: 500px;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.considerations-list h2 {
+    font-size: 2rem;
+    color: var(--text-dark);
+    margin-bottom: 2rem;
+}
+
+.points-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.point-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: var(--background-light);
+    border-radius: 8px;
+    gap: 0.75rem;
+    transition: transform 0.2s ease;
+}
+
+.point-item:hover {
+    transform: translateX(5px);
+}
+
+.point-icon {
+    color: var(--primary) !important;
+    font-size: 1.5rem !important;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+    .landing-hero {
+        padding: 4rem 2rem;
     }
 
-    /* Body and HTML styling */
-    body,
-    html {
-        font-family: 'Parkinsans', sans-serif;
-        color: #374151;
-        height: 100%;
-        overflow-x: hidden;
-        background-color: #ffffff;
+    .hero-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
     }
 
-    /* Global CSS Variables */
-    :root {
-        --primary-color: #4f46e5;
-        --secondary-color: #3730a3;
-        --background-color: #ffffff;
-        --font-color: #374151;
-        --font-family-main: 'Parkinsans', sans-serif;
-        --font-family-heading: "Roboto Mono", monospace;
-        --font-family-buttons: 'Nunito', sans-serif;
+    .hero-text {
+        order: 1;
     }
 
-    /* Landing Page Section */
-    .landing-page {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        height: 100vh;
-        padding: 2rem;
-        color: #ffffff;
+    .hero-image-container {
+        order: 2;
     }
 
-    /* Left side (Text Section) */
-    .text-section {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align: left;
+    .responsive-hero-image {
+        height: 500px;
     }
 
-    /* Main Content Heading */
-    .text-section h1 {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-        font-family: var(--font-family-heading);
-        font-weight: 700;
-        color: var(--primary-color);
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    .hero-text h1 {
+        font-size: 3rem;
     }
 
-    /* Main Content Paragraph */
-    .text-section p {
-        font-size: 1.2rem;
-        margin-bottom: 2rem;
-        font-family: var(--font-family-main);
-        font-weight: 400;
-        color: var(--font-color);
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    .considerations-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (min-width: 1024px) {
+    .hero-text h1 {
+        font-size: 3.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-text h1 {
+        font-size: 2rem;
     }
 
-    /* Right side (Image Section) */
-    .image-section {
-        flex: 1;
-        background-image: url('../../images/LandingPageBG.png');
-        background-size: contain;
-        background-position: center;
-        background-repeat: no-repeat;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
+    .responsive-hero-image {
+        height: 250px;
     }
 
-    /* Lighter Gradient Overlay */
-    .image-section::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(238, 242, 255, 0.3), rgba(79, 70, 229, 0.3), rgba(255, 255, 255, 0));
-        z-index: 1;
+    .points-container {
+        grid-template-columns: 1fr;
     }
 
-    .card-container {
-        display: flex;
-        gap: 5em;
-        flex-wrap: wrap;
-        justify-content: space-evenly;
-        padding: 10em 3em 10em 3em;
+    .considerations-image img {
+        height: 300px;
+    }
+}
 
+/* Animations */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
     }
 
-    .ttc {
-        display: flex;
-        align-items: center;
-        justify-content: space-evenly;
-        height: 100vh;
-        padding: 2rem;
-        color: #000000;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
+}
 
-    .ttc h2 {
-        font-size: 2.5rem;
-        margin-bottom: 4rem;
-        font-family: var(--font-family-heading);
-        font-weight: 700;
-        color: var(--primary-color);
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
+.hero-grid,
+.cards-container,
+.considerations-grid {
+    animation: slideIn 0.6s ease-out forwards;
+    opacity: 0;
+}
 
-    .image-section-2 {
-        flex: 1;
-        background-image: url('../../images/thingsToConsider.png');
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-    }
+.hero-grid {
+    animation-delay: 0.2s;
+}
 
-    .ttc-texts {
-        flex: 1;
-        padding-left: 2rem;
-        width: 50%;
-    }
+.cards-container {
+    animation-delay: 0.4s;
+}
 
-    .flex-list {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        padding-left: 0;
-    }
-
-    .list-column {
-        width: 45%;
-    }
-
-    .ttc-texts li {
-        font-size: 1.2rem;
-        line-height: 1.6;
-        margin-bottom: 1rem;
-        text-align: left;
-    }
-
-    .ttc-texts li::marker {
-        color: var(--primary-color);
-    }
-
-
-
-    /* Responsive Adjustments */
-    @media (max-width: 960px) {
-        .landing-page {
-            flex-direction: column;
-            padding: 1em;
-        }
-
-        .text-section {
-            margin-bottom: 1.5em;
-        }
-
-        .text-section h1 {
-            font-size: 2rem;
-        }
-
-        .text-section p {
-            font-size: 1rem;
-        }
-
-        .ttc {
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: auto;
-        }
-    
-        .ttc h2 {
-            font-size: 2rem;
-            margin-bottom: 2rem;
-        }
-    
-        .image-section-2 {
-            width: 100%;
-            height: 50vh; /* Ensures the image takes half of the viewport height */
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            display: block;
-        }
-    
-        .ttc-texts {
-            padding-left: 0;
-            text-align: center;
-        }
-    
-        .flex-list {
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-    
-        .list-column {
-            width: 100%;
-            margin-bottom: 1rem;
-        }
-    
-        .ttc-texts li {
-            font-size: 1rem;
-            text-align: left;
-        }
-    }
+.considerations-grid {
+    animation-delay: 0.6s;
+}

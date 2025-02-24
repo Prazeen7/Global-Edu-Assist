@@ -1,28 +1,46 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Paper from '@mui/material/Paper';
-import './Documents.css';
-import bg from '../../images/documentBG.jpg';
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+  Divider,
+} from '@mui/material';
+import { ExpandMore, Description, Info } from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+
+const StyledAccordion = styled(Accordion)(({ theme }) => ({
+  margin: '12px 0',
+  borderRadius: '12px',
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: 'none',
+  '&:before': { display: 'none' },
+  '&.Mui-expanded': { margin: '12px 0' },
+}));
+
+const StyledTableHeader = styled(TableRow)(({ theme }) => ({
+  '& th': {
+    backgroundColor: '#f8fafc',
+    color: '#4f46e5',
+    fontWeight: 600,
+    fontSize: '0.875rem',
+    borderBottom: `2px solid #e2e8f0`,
+  },
+}));
 
 export default function Documents() {
   const [documentCategories, setDocumentCategories] = useState([]);
-  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(null);
 
   useEffect(() => {
-    axios
-      .get('http://localhost:3001/documents')
+    axios.get('http://localhost:3001/documents')
       .then((response) => {
         const formattedData = response.data.map((category) => ({
           title: category.document,
@@ -34,70 +52,130 @@ export default function Documents() {
         }));
         setDocumentCategories(formattedData);
       })
-      .catch((error) => {
-        console.error('Error fetching documents:', error);
-      });
+      .catch(console.error);
   }, []);
 
   return (
-    <div
-      className="documents-container"
-      style={{
-        backgroundImage: `url(${bg})`,
-      }}
-    >
-      <div className="documents-card">
-        <h2 className="documents-header">
-          The information on this page is general. For institution-specific
-          details, please visit the respective institution's page.
-        </h2>
-        {documentCategories.map((category, index) => (
-          <React.Fragment key={index}>
-            <Accordion
-              className="accordion"
-              onChange={() =>
-                setSelectedCategoryIndex(
-                  selectedCategoryIndex === index ? null : index
-                )
-              }
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                aria-controls={`panel${index}-content`}
-                id={`panel${index}-header`}
-                className="accordion-summary"
-              >
-                <Typography className="accordion-title">
-                  {category.title}
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <TableContainer component={Paper} className="table-container">
-                  <Table aria-label="document details">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell align="center">S.No.</TableCell>
-                        <TableCell align="left">Document Name</TableCell>
-                        <TableCell align="center">Source</TableCell>
-                        <TableCell align="left">Additional Info</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {category.details.map((doc, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell align="center">{idx + 1}</TableCell>
-                          <TableCell align="left">{doc.name}</TableCell>
-                          <TableCell align="center">{doc.source}</TableCell>
-                          <TableCell align="left">{doc.additional}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </AccordionDetails>
-            </Accordion>
-          </React.Fragment>
-        ))}
+    <div style={{
+      backgroundColor: '#f8fafc',
+      minHeight: '100vh',
+      padding: '40px 24px',
+    }}>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+      }}>
+        <Typography variant="h4" sx={{
+          mb: 3,
+          color: '#1e293b',
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+        }}>
+          <Description sx={{ color: '#4f46e5', fontSize: '2rem' }} />
+          Required Documents
+        </Typography>
+
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          padding: '32px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid #e2e8f0'
+        }}>
+          <Typography variant="body1" sx={{
+            mb: 4,
+            padding: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#f1f5f9',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            color: '#64748b',
+          }}>
+            <Info sx={{ color: '#4f46e5' }} />
+            General document requirements. Visit individual institution pages for specific details.
+          </Typography>
+
+          {documentCategories.map((category, index) => (
+            <React.Fragment key={index}>
+              <StyledAccordion>
+                <AccordionSummary
+                  expandIcon={<ExpandMore sx={{ color: '#4f46e5' }} />}
+                  sx={{
+                    '&:hover': { backgroundColor: '#f8fafc' },
+                    padding: '0 16px',
+                  }}
+                >
+                  <Typography variant="subtitle1" sx={{
+                    fontWeight: 600,
+                    color: '#1e293b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}>
+                    <span style={{
+                      width: '24px',
+                      height: '24px',
+                      backgroundColor: '#e0e7ff',
+                      borderRadius: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#4f46e5',
+                      fontSize: '0.875rem'
+                    }}>
+                      {index + 1}
+                    </span>
+                    {category.title}
+                  </Typography>
+                </AccordionSummary>
+
+                <AccordionDetails sx={{ padding: 0 }}>
+                  <TableContainer sx={{
+                    borderTop: '1px solid #e2e8f0',
+                    borderRadius: '0 0 12px 12px',
+                    overflow: 'hidden'
+                  }}>
+                    <Table>
+                      <TableHead>
+                        <StyledTableHeader>
+                          <TableCell align="center" sx={{ width: '10%' }}>S.N.</TableCell>
+                          <TableCell align="left" sx={{ width: '40%' }}>Document</TableCell>
+                          <TableCell align="left" sx={{ width: '25%' }}>Source</TableCell>
+                          <TableCell align="left" sx={{ width: '25%' }}>Details</TableCell>
+                        </StyledTableHeader>
+                      </TableHead>
+                      <TableBody>
+                        {category.details.map((doc, idx) => (
+                          <TableRow
+                            key={idx}
+                            sx={{
+                              '&:last-child td': { borderBottom: 0 },
+                              '&:hover': { backgroundColor: '#f8fafc' }
+                            }}
+                          >
+                            <TableCell align="center" sx={{ color: '#64748b' }}>
+                              {idx + 1}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 500 }}>{doc.name}</TableCell>
+                            <TableCell sx={{ color: '#4f46e5' }}>{doc.source}</TableCell>
+                            <TableCell sx={{ color: '#64748b' }}>{doc.additional}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </AccordionDetails>
+              </StyledAccordion>
+
+              {index < documentCategories.length - 1 && (
+                <Divider sx={{ my: 1, borderColor: '#e2e8f0' }} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
       </div>
     </div>
   );
