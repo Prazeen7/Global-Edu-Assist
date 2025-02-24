@@ -24,10 +24,12 @@ export default function AccountMenu() {
 
   const logout = () => {
     setLoggedIn(false);
+    setUserType('u');
   }
 
   const { setLoggedIn } = useContext(AuthContext);
   const { UserAvatar } = useContext(AuthContext);  
+  const { setUserType } = useContext(AuthContext);
 
   return (
     <React.Fragment>

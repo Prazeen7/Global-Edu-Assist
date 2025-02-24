@@ -81,12 +81,39 @@ function LandingPage() {
                                 Evaluate Your Cost
                             </Typography>
                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                            Understanding the cost of your education is crucial for planning your journey abroad. We help you evaluate tuition fees, living expenses, and other financial factors to give you a clear picture of what to expect. With our guidance, you can make informed decisions and explore options that fit your budget, ensuring a stress-free and well-prepared study experience.
+                                Understanding the cost of your education is crucial for planning your journey abroad. We help you evaluate tuition fees, living expenses, and other financial factors to give you a clear picture of what to expect. With our guidance, you can make informed decisions and explore options that fit your budget, ensuring a stress-free and well-prepared study experience.
                             </Typography>
                         </CardContent>
                     </CardActionArea>
                 </Card>
             </div>
+
+            <div className='ttc'>
+                <div className='image-section-2'></div>
+                <div className='ttc-texts'>
+                    <h2>Studying Abroad: Key Points</h2>
+                    <ul className='flex-list'>
+                        <div className='list-column'>
+                            <li>Program and Course Selection</li>
+                            <li>Accreditation</li>
+                            <li>Cost</li>
+                            <li>Visa Requirements</li>
+                            <li>Language Proficiency</li>
+                            <li>Cultural Adjustment</li>
+                        </div>
+                        <div className='list-column'>
+                            <li>Health Insurance</li>
+                            <li>Accommodation</li>
+                            <li>Employment Opportunities</li>
+                            <li>Safety and Security</li>
+                            <li>Post-Graduation Opportunities</li>
+                            <li>Support Services</li>
+                        </div>
+                    </ul>
+                </div>
+            </div>
+
+
         </>
     );
 }
