@@ -53,8 +53,8 @@ const Navbar = () => {
                     </NavLink>
                 </li>
                 <li>
-                    <NavLink className={(e) => (e.isActive ? "activeColor" : "")} to="/destination" onClick={handleLinkClick}>
-                        Destinations
+                    <NavLink className={(e) => (e.isActive ? "activeColor" : "")} to="/programs" onClick={handleLinkClick}>
+                        Programs
                     </NavLink>
                 </li>
                 <li>
