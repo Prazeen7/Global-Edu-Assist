@@ -2,7 +2,7 @@ import "./App.css";
 import Navbar from "./components/NavBar";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LandingPage from "./Pages/LandingPage/LandingPage";
-import Destinations from "./Pages/Destinations/Destinations";
+import Destinations from "./Pages/Programs/Programs";
 import Institutions from "./Pages/Institutions/Institutions";
 import About from "./Pages/About/About";
 import Agents from "./Pages/Agents/Agents";
@@ -51,7 +51,7 @@ function App() {
       ),
     },
     {
-      path: "/destination",
+      path: "/programs",
       element: (
         <>
           <Navbar />
