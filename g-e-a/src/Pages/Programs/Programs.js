@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-    Avatar,
     Box,
     Button,
     Card,
@@ -29,15 +28,18 @@ import {
     ThemeProvider,
 } from "@mui/material";
 import {
-    Add as AddIcon,
     FilterList as FilterListIcon,
-    Remove as RemoveIcon,
+    Close as CloseIcon,
+    Clear as ClearIcon,
     Search as SearchIcon,
+    Add as AddIcon,
+    Remove as RemoveIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import ProgramCard from "../../components/ProgramCard";
 import TabPanel from "../../components/TabPanel";
 
+// SearchBar Component
 const SearchBar = ({ searchQuery, onSearchChange }) => {
     return (
         <TextField
@@ -51,17 +53,24 @@ const SearchBar = ({ searchQuery, onSearchChange }) => {
                         <SearchIcon sx={{ color: "#4f46e5" }} />
                     </InputAdornment>
                 ),
+                sx: {
+                    borderRadius: "lg",
+                    borderColor: "#e0e0e0",
+                    "&:hover": {
+                        borderColor: "#4f46e5",
+                    },
+                },
             }}
             sx={{
                 fontSize: "1rem",
                 fontFamily: "'Inter', sans-serif",
-                mb: 0, 
+                mb: 0,
             }}
         />
     );
 };
 
-
+// Theme Configuration
 const theme = createTheme({
     palette: {
         primary: {
@@ -69,8 +78,11 @@ const theme = createTheme({
             light: "#6366f1",
             dark: "#4338ca",
         },
+        secondary: {
+            main: "#6b7280", // Color for the Clear button
+        },
         background: {
-            default: "#f8fafc",
+            default: "#ffffff",
         },
     },
     shape: {
@@ -79,12 +91,12 @@ const theme = createTheme({
     typography: {
         fontFamily: "'Inter', sans-serif",
         h1: {
-            fontSize: "2.5rem",
+            fontSize: "2rem",
             fontWeight: 700,
             color: "#4f46e5",
         },
         body1: {
-            fontSize: "1rem",
+            fontSize: "0.875rem",
             color: "#6b7280",
         },
     },
@@ -94,10 +106,20 @@ const theme = createTheme({
                 root: {
                     textTransform: "none",
                     borderRadius: 12,
+                },
+                contained: {
                     backgroundColor: "#4f46e5",
                     color: "#ffffff",
                     "&:hover": {
                         backgroundColor: "#4338ca",
+                    },
+                },
+                outlined: {
+                    borderColor: "#6b7280",
+                    color: "#6b7280",
+                    "&:hover": {
+                        borderColor: "#4f46e5",
+                        color: "#4f46e5",
                     },
                 },
             },
@@ -105,13 +127,14 @@ const theme = createTheme({
         MuiCard: {
             styleOverrides: {
                 root: {
-                    borderRadius: 16,
+                    borderRadius: 12,
                     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                     transition: "transform 0.2s, box-shadow 0.2s",
                     "&:hover": {
                         transform: "translateY(-4px)",
                         boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)",
                     },
+                    padding: "16px",
                 },
             },
         },
@@ -130,6 +153,7 @@ const theme = createTheme({
     },
 });
 
+// Styled Components
 const SearchContainer = styled(Box)(({ theme }) => ({
     marginBottom: theme.spacing(4),
     padding: theme.spacing(2),
@@ -144,19 +168,20 @@ const SearchContainer = styled(Box)(({ theme }) => ({
     },
 }));
 
-
 const GradientTypography = styled(Typography)(({ theme }) => ({
     background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
     WebkitBackgroundClip: "text",
     WebkitTextFillColor: "transparent",
 }));
 
+// Main Component
 export default function Programs() {
     const [filterOpen, setFilterOpen] = useState(false);
-    const [tabValue, setTabValue] = useState(0);
+    const [tabValue, setTabValue] = useState(0); // For program level tabs
+    const [filterTabValue, setFilterTabValue] = useState(0); // For filter dialog tabs
     const [incomeSourceCount, setIncomeSourceCount] = useState(1);
     const [filters, setFilters] = useState({
-        gpa: 3.0,
+        gpa: 0, // Default GPA starts at 0
         englishTest: "",
         testScore: "",
         academicLevel: "",
@@ -168,7 +193,32 @@ export default function Programs() {
     });
     const [selectedDiscipline, setSelectedDiscipline] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
+    const [appliedFilters, setAppliedFilters] = useState({
+        gpa: 0,
+        englishTest: "",
+        testScore: "",
+        academicLevel: "",
+        fieldOfStudy: "",
+        preferredLocation: "",
+        studyGap: "",
+        workExperience: "",
+        visaRefusal: false,
+    }); // Initialize appliedFilters with defaults
 
+    // Default filter values
+    const defaultFilters = {
+        gpa: 0,
+        englishTest: "",
+        testScore: "",
+        academicLevel: "",
+        fieldOfStudy: "",
+        preferredLocation: "",
+        studyGap: "",
+        workExperience: "",
+        visaRefusal: false,
+    };
+
+    // Programs Data
     const programs = [
         {
             id: 1,
@@ -211,7 +261,7 @@ export default function Programs() {
         },
     ];
 
-    // Filter programs based on search query and selected discipline
+    // Filter programs based on search query, selected discipline, and program level
     const filteredPrograms = programs.filter((program) => {
         const matchesSearch =
             program.program.toLowerCase().includes(searchQuery) ||
@@ -221,11 +271,40 @@ export default function Programs() {
         const matchesDiscipline = selectedDiscipline
             ? program.discipline.toLowerCase() === selectedDiscipline.toLowerCase()
             : true;
-        return matchesSearch && matchesDiscipline && program.gpa >= filters.gpa;
+        const matchesLevel =
+            tabValue === 0 || // All Programs
+            (tabValue === 1 && program.level === "Undergraduate") || // Undergraduate
+            (tabValue === 2 && program.level === "Graduate"); // Postgraduate
+        const matchesGPA = program.gpa >= appliedFilters.gpa; // Apply GPA filter
+        const matchesEnglishTest =
+            !appliedFilters.englishTest || // No filter selected
+            (appliedFilters.englishTest === "ielts" && program.ielts >= Number(appliedFilters.testScore)); // IELTS filter
+        const matchesAcademicLevel =
+            !appliedFilters.academicLevel || // No filter selected
+            (appliedFilters.academicLevel === "high_school" && program.level === "Undergraduate") || // High School -> Undergraduate
+            (appliedFilters.academicLevel === "bachelors" && program.level === "Graduate"); // Bachelor -> Postgraduate
+        const matchesFieldOfStudy =
+            !appliedFilters.fieldOfStudy || // No filter selected
+            program.discipline.toLowerCase() === appliedFilters.fieldOfStudy.toLowerCase(); // Field of Study filter
+
+        return (
+            matchesSearch &&
+            matchesDiscipline &&
+            matchesLevel &&
+            matchesGPA &&
+            matchesEnglishTest &&
+            matchesAcademicLevel &&
+            matchesFieldOfStudy
+        );
     });
 
+    // Handlers
     const handleTabChange = (event, newValue) => {
-        setTabValue(newValue);
+        setTabValue(newValue); // For program level tabs
+    };
+
+    const handleFilterTabChange = (event, newValue) => {
+        setFilterTabValue(newValue); // For filter dialog tabs
     };
 
     const handleFilterChange = (event) => {
@@ -260,6 +339,16 @@ export default function Programs() {
         setSearchQuery(event.target.value.toLowerCase());
     };
 
+    const handleApplyFilters = () => {
+        setAppliedFilters(filters); // Apply filters
+        setFilterOpen(false); // Close the dialog
+    };
+
+    const handleClearFilters = () => {
+        setFilters(defaultFilters); // Reset filters to default values
+        setAppliedFilters(defaultFilters); // Clear applied filters
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <Box sx={{ bgcolor: "background.default", minHeight: "100vh", py: 4 }}>
@@ -267,10 +356,10 @@ export default function Programs() {
                     <Stack spacing={4}>
                         {/* Header */}
                         <Stack spacing={1} alignItems="center">
-                            <Typography variant="h1" textAlign="center" fontSize="2.25rem">
+                            <Typography variant="h1" textAlign="center" fontSize="2rem">
                                 Discover Your Perfect Program
                             </Typography>
-                            <Typography variant="body1" color="text.secondary" textAlign="center" fontSize="1.125rem">
+                            <Typography variant="body1" color="text.secondary" textAlign="center" fontSize="0.875rem">
                                 Browse through thousands of programs from top institutions worldwide
                             </Typography>
                         </Stack>
@@ -326,7 +415,7 @@ export default function Programs() {
                         {/* Program Cards */}
                         <Grid container spacing={3}>
                             {filteredPrograms.map((program) => (
-                                <Grid item xs={12} sm={6} md={4} lg={3} key={program.id}>
+                                <Grid item key={program.id}>
                                     <ProgramCard program={program} />
                                 </Grid>
                             ))}
@@ -337,19 +426,24 @@ export default function Programs() {
                 {/* Filter Dialog */}
                 <Dialog open={filterOpen} onClose={() => setFilterOpen(false)} maxWidth="md" fullWidth scroll="paper">
                     <DialogTitle>
-                        <Tabs value={tabValue} onChange={handleTabChange} centered>
-                            <Tab label="Academic" />
-                            <Tab label="Financial" />
-                            <Tab label="Other" />
-                        </Tabs>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                            <Tabs value={filterTabValue} onChange={handleFilterTabChange} centered>
+                                <Tab label="Academic" />
+                                <Tab label="Financial" />
+                                <Tab label="Other" />
+                            </Tabs>
+                            <IconButton onClick={() => setFilterOpen(false)}>
+                                <CloseIcon />
+                            </IconButton>
+                        </Stack>
                     </DialogTitle>
                     <DialogContent dividers>
-                        <TabPanel value={tabValue} index={0}>
+                        <TabPanel value={filterTabValue} index={0}>
                             <Stack spacing={3}>
                                 <Box>
                                     <Typography gutterBottom>GPA Range</Typography>
                                     <Slider
-                                        defaultValue={3.0}
+                                        value={filters.gpa}
                                         step={0.1}
                                         min={0}
                                         max={4.0}
@@ -363,17 +457,36 @@ export default function Programs() {
                                 </Box>
                                 <FormControl fullWidth>
                                     <InputLabel>English Proficiency Test</InputLabel>
-                                    <Select label="English Proficiency Test" name="englishTest" value={filters.englishTest} onChange={handleFilterChange}>
+                                    <Select
+                                        label="English Proficiency Test"
+                                        name="englishTest"
+                                        value={filters.englishTest}
+                                        onChange={handleFilterChange}
+                                    >
+                                        <MenuItem value="">None</MenuItem>
                                         <MenuItem value="ielts">IELTS</MenuItem>
                                         <MenuItem value="toefl">TOEFL</MenuItem>
                                         <MenuItem value="pte">PTE</MenuItem>
                                         <MenuItem value="duolingo">Duolingo</MenuItem>
                                     </Select>
                                 </FormControl>
-                                <TextField type="number" label="Test Score" name="testScore" value={filters.testScore} onChange={handleFilterChange} />
+                                <TextField
+                                    type="number"
+                                    label="Test Score"
+                                    name="testScore"
+                                    value={filters.testScore}
+                                    onChange={handleFilterChange}
+                                    disabled={!filters.englishTest} // Disable if no test is selected
+                                />
                                 <FormControl fullWidth>
                                     <InputLabel>Academic Level</InputLabel>
-                                    <Select label="Academic Level" name="academicLevel" value={filters.academicLevel} onChange={handleFilterChange}>
+                                    <Select
+                                        label="Academic Level"
+                                        name="academicLevel"
+                                        value={filters.academicLevel}
+                                        onChange={handleFilterChange}
+                                    >
+                                        <MenuItem value="">None</MenuItem>
                                         <MenuItem value="high_school">High School</MenuItem>
                                         <MenuItem value="bachelors">Bachelor's Degree</MenuItem>
                                         <MenuItem value="masters">Master's Degree</MenuItem>
@@ -382,18 +495,23 @@ export default function Programs() {
                                 </FormControl>
                                 <FormControl fullWidth>
                                     <InputLabel>Field of Study</InputLabel>
-                                    <Select label="Field of Study" name="fieldOfStudy" value={filters.fieldOfStudy} onChange={handleFilterChange}>
-                                        <MenuItem value="cs">Computer Science</MenuItem>
-                                        <MenuItem value="engineering">Engineering</MenuItem>
-                                        <MenuItem value="business">Business</MenuItem>
-                                        <MenuItem value="arts">Arts</MenuItem>
-                                        <MenuItem value="medicine">Medicine</MenuItem>
-                                        <MenuItem value="law">Law</MenuItem>
+                                    <Select
+                                        label="Field of Study"
+                                        name="fieldOfStudy"
+                                        value={filters.fieldOfStudy}
+                                        onChange={handleFilterChange}
+                                    >
+                                        <MenuItem value="">None</MenuItem>
+                                        <MenuItem value="Information Technology">Information Technology</MenuItem>
+                                        <MenuItem value="Business">Business</MenuItem>
+                                        <MenuItem value="Engineering">Engineering</MenuItem>
+                                        <MenuItem value="Medicine">Medicine</MenuItem>
+                                        <MenuItem value="Arts">Arts</MenuItem>
                                     </Select>
                                 </FormControl>
                             </Stack>
                         </TabPanel>
-                        <TabPanel value={tabValue} index={1}>
+                        <TabPanel value={filterTabValue} index={1}>
                             <Stack spacing={3}>
                                 <Card variant="outlined">
                                     <CardContent>
@@ -425,6 +543,7 @@ export default function Programs() {
                                                 <FormControl fullWidth>
                                                     <InputLabel>Source Type</InputLabel>
                                                     <Select label="Source Type">
+                                                        <MenuItem value="">None</MenuItem>
                                                         <MenuItem value="salary">Salary</MenuItem>
                                                         <MenuItem value="business">Business</MenuItem>
                                                         <MenuItem value="rent">Rental Income</MenuItem>
@@ -436,6 +555,7 @@ export default function Programs() {
                                                 <FormControl fullWidth>
                                                     <InputLabel>Source Owner (Sponsor)</InputLabel>
                                                     <Select label="Source Owner (Sponsor)">
+                                                        <MenuItem value="">None</MenuItem>
                                                         <MenuItem value="father">Father</MenuItem>
                                                         <MenuItem value="mother">Mother</MenuItem>
                                                         <MenuItem value="brother">Brother</MenuItem>
@@ -474,13 +594,31 @@ export default function Programs() {
                                 </Card>
                             </Stack>
                         </TabPanel>
-                        <TabPanel value={tabValue} index={2}>
+                        <TabPanel value={filterTabValue} index={2}>
                             <Stack spacing={3}>
-                                <TextField type="number" label="Study Gap (Years)" name="studyGap" value={filters.studyGap} onChange={handleFilterChange} />
-                                <TextField type="number" label="Work Experience (Years)" name="workExperience" value={filters.workExperience} onChange={handleFilterChange} />
+                                <TextField
+                                    type="number"
+                                    label="Study Gap (Years)"
+                                    name="studyGap"
+                                    value={filters.studyGap}
+                                    onChange={handleFilterChange}
+                                />
+                                <TextField
+                                    type="number"
+                                    label="Work Experience (Years)"
+                                    name="workExperience"
+                                    value={filters.workExperience}
+                                    onChange={handleFilterChange}
+                                />
                                 <FormControl fullWidth>
                                     <InputLabel>Preferred Location</InputLabel>
-                                    <Select label="Preferred Location" name="preferredLocation" value={filters.preferredLocation} onChange={handleFilterChange}>
+                                    <Select
+                                        label="Preferred Location"
+                                        name="preferredLocation"
+                                        value={filters.preferredLocation}
+                                        onChange={handleFilterChange}
+                                    >
+                                        <MenuItem value="">None</MenuItem>
                                         <MenuItem value="sydney">Sydney</MenuItem>
                                         <MenuItem value="melbourne">Melbourne</MenuItem>
                                         <MenuItem value="brisbane">Brisbane</MenuItem>
@@ -497,13 +635,35 @@ export default function Programs() {
                                     <CardContent>
                                         <Stack spacing={2}>
                                             <Typography variant="subtitle1">Immigration History</Typography>
-                                            <FormControlLabel control={<Switch name="visaRefusal" checked={filters.visaRefusal} onChange={handleSwitchChange("visaRefusal")} />} label="Previous Visa Refusal" />
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        name="visaRefusal"
+                                                        checked={filters.visaRefusal}
+                                                        onChange={handleSwitchChange("visaRefusal")}
+                                                    />
+                                                }
+                                                label="Previous Visa Refusal"
+                                            />
                                         </Stack>
                                     </CardContent>
                                 </Card>
                             </Stack>
                         </TabPanel>
                     </DialogContent>
+                    <Box sx={{ p: 2, display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<ClearIcon />}
+                            onClick={handleClearFilters}
+                            sx={{ color: "#6b7280", borderColor: "#6b7280" }}
+                        >
+                            Clear Filters
+                        </Button>
+                        <Button variant="contained" onClick={handleApplyFilters}>
+                            Apply Filters
+                        </Button>
+                    </Box>
                 </Dialog>
             </Box>
         </ThemeProvider>
