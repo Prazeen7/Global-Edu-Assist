@@ -88,7 +88,7 @@ export default function InstitutionsPage() {
           display: "flex",
           flexDirection: { xs: "column", sm: "row" },
           gap: 2,
-          width: "100%", // Ensure full width
+          width: "100%", 
         }}
       >
         <Input

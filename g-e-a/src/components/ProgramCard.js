@@ -1,98 +1,203 @@
 import {
-    Avatar,
-    Box,
-    Button,
     Card,
     CardContent,
-    Chip,
-    Grid,
-    Stack,
     Typography,
+    Box,
+    Chip,
+    Divider,
+    Button,
+    Stack,
+    Avatar,
+    Grid,
 } from "@mui/material";
-import { BookmarkBorder as BookmarkIcon, School as SchoolIcon } from "@mui/icons-material";
+import {
+    School as SchoolIcon,
+    LocationOn as LocationIcon,
+    AccessTime as TimeIcon,
+    ArrowForward as ArrowIcon,
+    AttachMoney as MoneyIcon,
+} from "@mui/icons-material";
 
-function ProgramCard({ program }) {
+const ProgramCard = ({ program }) => {
     return (
-        <Card sx={{ height: "100%", maxWidth: 450 }}>
-            <CardContent>
-                <Stack spacing={3}>
-                    <Stack direction="row" spacing={2}>
-                        <Avatar
-                            sx={{
-                                width: 64,
-                                height: 64,
-                                bgcolor: "primary.main",
-                                background: (theme) =>
-                                    `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}20)`,
-                                border: (theme) => `2px solid ${theme.palette.primary.main}20`,
-                            }}
-                        >
-                            <SchoolIcon sx={{ color: "primary.main" }} />
-                        </Avatar>
-                        <Stack spacing={0.5} flex={1}>
-                            <Typography variant="h6" component="h2">
-                                {program.program}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {program.institution}
-                            </Typography>
-                        </Stack>
-                    </Stack>
+        <Card
+            variant="outlined"
+            sx={{
+                height: "100%",
+                width: "450px", // Increased width to fit more content
+                display: "flex",
+                flexDirection: "column",
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)",
+                },
+            }}
+        >
+            <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+                {/* Header with Avatar and Program Name */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Avatar
+                        sx={{ width: 56, height: 56, bgcolor: "#4f46e5" }}
+                        alt={program.institution}
+                    >
+                        {program.institution[0]}
+                    </Avatar>
+                    <Box>
+                        <Typography variant="h6" fontWeight="bold">
+                            {program.program}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {program.institution}
+                        </Typography>
+                    </Box>
+                </Box>
 
-                    <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                            <Stack spacing={1}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Level: <Typography component="span">{program.level}</Typography>
+                <Divider sx={{ my: 1 }} />
+
+                {/* Level, Campus, and Duration in a Row */}
+                <Box sx={{ display: "flex", gap: 3, mb: 2 }}>
+                    {/* Campus */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <LocationIcon sx={{ fontSize: 20, color: "#4f46e5" }} />
+                        <Box>
+                            <Typography variant="body2">
+                                {program.campus}
+                            </Typography>
+                        </Box>
+                    </Box>
+
+                    {/* Level */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <SchoolIcon sx={{ fontSize: 20, color: "#4f46e5" }} />
+                        <Box>
+                            <Typography variant="body2">
+                                {program.level}
+                            </Typography>
+                        </Box>
+                    </Box>
+
+                    {/* Duration */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <TimeIcon sx={{ fontSize: 20, color: "#4f46e5" }} />
+                        <Box>
+                            <Typography variant="body2">
+                                {program.duration}
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Box>
+
+                {/* Program Details in Two Columns */}
+                <Grid container spacing={2}>
+                    {/* Left Column */}
+                    <Grid item xs={6}>
+                        <Stack spacing={2}>
+                            {/* Intakes */}
+                            <Box>
+                                <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
+                                    Intakes:
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    Discipline: <Typography component="span">{program.discipline}</Typography>
+                                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                                    {program.intakes.map((intake, index) => (
+                                        <Chip
+                                            key={index}
+                                            label={intake}
+                                            size="small"
+                                            sx={{
+                                                borderRadius: 1,
+                                                backgroundColor: "#e0e7ff",
+                                                color: "#4f46e5",
+                                            }}
+                                        />
+                                    ))}
+                                </Box>
+                            </Box>
+
+                            {/* Language Requirements */}
+                            <Box>
+                                <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
+                                    Language Requirements:
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    Duration: <Typography component="span">{program.duration}</Typography>
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    Campus: <Typography component="span">{program.campus}</Typography>
-                                </Typography>
-                            </Stack>
-                        </Grid>
-                        <Grid item xs={6}>
-                            <Stack spacing={1}>
-                                <Typography variant="h6" component="div">
-                                    ${program.fees.toLocaleString()}
-                                    <Typography variant="caption" color="text.secondary">
-                                        /year
-                                    </Typography>
+                                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                                    <Chip
+                                        label={`IELTS: ${program.ielts}`}
+                                        size="small"
+                                        sx={{
+                                            borderRadius: 1,
+                                            backgroundColor: "#e0e7ff",
+                                            color: "#4f46e5",
+                                        }}
+                                    />
+                                </Box>
+                            </Box>
+
+                            {/* GPA */}
+                            <Box>
+                                <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
+                                    GPA Requirement:
                                 </Typography>
                                 <Typography variant="body2">
-                                    Min. GPA:{" "}
-                                    <Typography component="span" fontWeight="medium">
-                                        {program.gpa}
-                                    </Typography>
+                                    {program.gpa}
                                 </Typography>
-                                <Typography variant="body2">
-                                    IELTS:{" "}
-                                    <Typography component="span" fontWeight="medium">
-                                        {program.ielts}
-                                    </Typography>
-                                </Typography>
-                            </Stack>
-                        </Grid>
+                            </Box>
+                        </Stack>
                     </Grid>
 
-                    <Stack direction="row" spacing={1}>
-                        {program.intakes.map((intake) => (
-                            <Chip key={intake} label={`${intake} Intake`} size="small" variant="outlined" />
-                        ))}
-                    </Stack>
+                    {/* Right Column */}
+                    <Grid item xs={6}>
+                        <Stack spacing={2}>
+                            {/* Tuition Fees */}
+                            <Box>
+                                <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
+                                    Tuition Fees:
+                                </Typography>
+                                <Typography variant="body2">
+                                    ${program.fees.toLocaleString()} per year
+                                </Typography>
+                            </Box>
 
-                    <Button variant="outlined" startIcon={<BookmarkIcon />} fullWidth>
-                        Save Program
-                    </Button>
-                </Stack>
+                            {/* Application Fees */}
+                            <Box>
+                                <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
+                                    Application Fees:
+                                </Typography>
+                                <Typography variant="body2">
+                                    ${program.applicationFees?.toLocaleString() || "N/A"}
+                                </Typography>
+                            </Box>
+
+                            {/* Funds Required */}
+                            <Box>
+                                <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
+                                    Funds Required:
+                                </Typography>
+                                <Typography variant="body2">
+                                    ${program.requiredFunds?.toLocaleString() || "N/A"}
+                                </Typography>
+                            </Box>
+                        </Stack>
+                    </Grid>
+                </Grid>
+
+                {/* Divider and Button */}
+                <Divider sx={{ my: 2 }} />
+                <Button
+                    fullWidth
+                    variant="contained"
+                    endIcon={<ArrowIcon />}
+                    sx={{
+                        backgroundColor: "#4f46e5",
+                        "&:hover": {
+                            backgroundColor: "#4338ca",
+                        },
+                    }}
+                >
+                    Learn More
+                </Button>
             </CardContent>
         </Card>
-    )
-}
+    );
+};
 
 export default ProgramCard;
