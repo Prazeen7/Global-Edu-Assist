@@ -109,7 +109,7 @@ export default function Login() {
     if (!validateInputs(email, password)) return;
 
     axios
-      .post('http://localhost:3001/login', { email, password })
+      .post('http://localhost:3001/api/login', { email, password })
       .then((result) => {
         if (result.data.message === 'Success') {
           setAlertMessage('Logged in successfully.');

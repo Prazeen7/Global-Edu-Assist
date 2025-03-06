@@ -152,7 +152,7 @@ export default function Signup() {
     console.log("Formatted Data:", data);
 
     axios
-      .post('http://localhost:3001/registerUser', data)
+      .post('http://localhost:3001/api/registerUser', data)
       .then((result) => {
         console.log(result);
         setShowSuccessAlert(true); 

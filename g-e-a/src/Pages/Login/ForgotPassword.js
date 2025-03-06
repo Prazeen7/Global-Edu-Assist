@@ -22,7 +22,7 @@ function ForgotPassword({ open, handleClose }) {
         event.preventDefault();
 
         axios
-            .post('http://localhost:3001/forgot-password', { email })
+            .post('http://localhost:3001/api/forgot-password', { email })
             .then((response) => {
                 setAlertMessage('An email with the new password has been sent to your inbox.');
                 setAlertSeverity('success');
