@@ -32,7 +32,7 @@ export default function InstitutionsPage() {
   // Fetch data from the API
   useEffect(() => {
     axios
-      .get("http://localhost:3001/institutions")
+      .get("http://localhost:3001/api/institutions")
       .then((response) => {
         setInstitutions(response.data);
         setLoading(false);

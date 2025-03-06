@@ -40,7 +40,7 @@ export default function Documents() {
   const [documentCategories, setDocumentCategories] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:3001/documents')
+    axios.get('http://localhost:3001/api/documents')
       .then((response) => {
         const formattedData = response.data.map((category) => ({
           title: category.document,
