@@ -23,6 +23,7 @@ export default function AccountMenu() {
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
     setLoggedIn(false);
     setUserType('u');
   }

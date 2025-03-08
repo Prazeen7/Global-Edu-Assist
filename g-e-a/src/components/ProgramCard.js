@@ -1,30 +1,40 @@
+import { useState } from "react";
 import {
+    Avatar,
+    Box,
+    Button,
     Card,
     CardContent,
-    Typography,
-    Box,
     Chip,
+    Collapse,
     Divider,
-    Button,
-    Stack,
-    Avatar,
     Grid,
+    IconButton,
+    Stack,
+    Typography,
 } from "@mui/material";
 import {
     School as SchoolIcon,
     LocationOn as LocationIcon,
     AccessTime as TimeIcon,
     ArrowForward as ArrowIcon,
-    AttachMoney as MoneyIcon,
+    ExpandMore as ExpandMoreIcon,
+    ExpandLess as ExpandLessIcon,
 } from "@mui/icons-material";
 
-const ProgramCard = ({ program }) => {
+function ProgramCard({ program }) {
+    const [isIntakesOpen, setIsIntakesOpen] = useState(false);
+
+    // Show first 2 intakes by default
+    const visibleIntakes = program.intakes.slice(0, 2);
+    const hiddenIntakes = program.intakes.slice(2);
+    const hasMoreIntakes = hiddenIntakes.length > 0;
+
     return (
         <Card
             variant="outlined"
             sx={{
                 height: "100%",
-                width: "450px", // Increased width to fit more content
                 display: "flex",
                 flexDirection: "column",
                 transition: "transform 0.2s, box-shadow 0.2s",
@@ -34,7 +44,7 @@ const ProgramCard = ({ program }) => {
                 },
             }}
         >
-            <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+            <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 2, pb: 1 }}>
                 {/* Header with Avatar and Program Name */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Avatar
@@ -53,53 +63,63 @@ const ProgramCard = ({ program }) => {
                     </Box>
                 </Box>
 
-                <Divider sx={{ my: 1 }} />
+                <Divider />
 
                 {/* Level, Campus, and Duration in a Row */}
-                <Box sx={{ display: "flex", gap: 3, mb: 2 }}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 1 }}>
                     {/* Campus */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <LocationIcon sx={{ fontSize: 20, color: "#4f46e5" }} />
-                        <Box>
-                            <Typography variant="body2">
-                                {program.campus}
-                            </Typography>
-                        </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <LocationIcon sx={{ fontSize: 18, color: "#4f46e5" }} />
+                        <Typography variant="body2">
+                            {program.campus}
+                        </Typography>
                     </Box>
 
                     {/* Level */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <SchoolIcon sx={{ fontSize: 20, color: "#4f46e5" }} />
-                        <Box>
-                            <Typography variant="body2">
-                                {program.level}
-                            </Typography>
-                        </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <SchoolIcon sx={{ fontSize: 18, color: "#4f46e5" }} />
+                        <Typography variant="body2">
+                            {program.level}
+                        </Typography>
                     </Box>
 
                     {/* Duration */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <TimeIcon sx={{ fontSize: 20, color: "#4f46e5" }} />
-                        <Box>
-                            <Typography variant="body2">
-                                {program.duration}
-                            </Typography>
-                        </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <TimeIcon sx={{ fontSize: 18, color: "#4f46e5" }} />
+                        <Typography variant="body2">
+                            {program.duration}
+                        </Typography>
                     </Box>
                 </Box>
 
                 {/* Program Details in Two Columns */}
                 <Grid container spacing={2}>
                     {/* Left Column */}
-                    <Grid item xs={6}>
+                    <Grid item xs={12} sm={6}>
                         <Stack spacing={2}>
                             {/* Intakes */}
                             <Box>
-                                <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
-                                    Intakes:
-                                </Typography>
-                                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                                    {program.intakes.map((intake, index) => (
+                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                                    <Typography variant="body2" fontWeight="bold">
+                                        Intakes:
+                                    </Typography>
+                                    {hasMoreIntakes && (
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => setIsIntakesOpen(!isIntakesOpen)}
+                                            sx={{ p: 0 }}
+                                        >
+                                            {isIntakesOpen ? (
+                                                <ExpandLessIcon fontSize="small" color="action" />
+                                            ) : (
+                                                <ExpandMoreIcon fontSize="small" color="action" />
+                                            )}
+                                        </IconButton>
+                                    )}
+                                </Box>
+
+                                <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                                    {visibleIntakes.map((intake, index) => (
                                         <Chip
                                             key={index}
                                             label={intake}
@@ -111,7 +131,39 @@ const ProgramCard = ({ program }) => {
                                             }}
                                         />
                                     ))}
+                                    {!isIntakesOpen && hasMoreIntakes && (
+                                        <Chip
+                                            label={`+${hiddenIntakes.length} more`}
+                                            size="small"
+                                            variant="outlined"
+                                            onClick={() => setIsIntakesOpen(true)}
+                                            sx={{
+                                                borderRadius: 1,
+                                                cursor: "pointer",
+                                                "&:hover": {
+                                                    backgroundColor: "rgba(224, 231, 255, 0.5)",
+                                                }
+                                            }}
+                                        />
+                                    )}
                                 </Box>
+
+                                <Collapse in={isIntakesOpen}>
+                                    <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mt: 0.5 }}>
+                                        {hiddenIntakes.map((intake, index) => (
+                                            <Chip
+                                                key={index}
+                                                label={intake}
+                                                size="small"
+                                                sx={{
+                                                    borderRadius: 1,
+                                                    backgroundColor: "#e0e7ff",
+                                                    color: "#4f46e5",
+                                                }}
+                                            />
+                                        ))}
+                                    </Box>
+                                </Collapse>
                             </Box>
 
                             {/* Language Requirements */}
@@ -119,14 +171,35 @@ const ProgramCard = ({ program }) => {
                                 <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
                                     Language Requirements:
                                 </Typography>
-                                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                                <Box sx={{ display: "flex", gap: 1 }}>
+                                    {/* IELTS Chip */}
                                     <Chip
-                                        label={`IELTS: ${program.ielts}`}
+                                        label={`IELTS: ${program.language_requirements?.ielts || "N/A"}`}
                                         size="small"
                                         sx={{
                                             borderRadius: 1,
-                                            backgroundColor: "#e0e7ff",
-                                            color: "#4f46e5",
+                                            backgroundColor: "#e0e7ff", // Light purple background
+                                            color: "#4f46e5", // Dark purple text
+                                        }}
+                                    />
+                                    {/* TOEFL Chip */}
+                                    <Chip
+                                        label={`TOEFL: ${program.language_requirements?.toefl || "N/A"}`}
+                                        size="small"
+                                        sx={{
+                                            borderRadius: 1,
+                                            backgroundColor: "#e0f2fe", // Light blue background
+                                            color: "#0369a1", // Dark blue text
+                                        }}
+                                    />
+                                    {/* PTE Chip */}
+                                    <Chip
+                                        label={`PTE: ${program.language_requirements?.pte || "N/A"}`}
+                                        size="small"
+                                        sx={{
+                                            borderRadius: 1,
+                                            backgroundColor: "#f3e8ff", // Light lavender background
+                                            color: "#7c3aed", // Dark lavender text
                                         }}
                                     />
                                 </Box>
@@ -137,23 +210,21 @@ const ProgramCard = ({ program }) => {
                                 <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
                                     GPA Requirement:
                                 </Typography>
-                                <Typography variant="body2">
-                                    {program.gpa}
-                                </Typography>
+                                <Typography variant="body2">{program.gpa.toFixed(1)}</Typography>
                             </Box>
                         </Stack>
                     </Grid>
 
                     {/* Right Column */}
-                    <Grid item xs={6}>
+                    <Grid item xs={12} sm={6}>
                         <Stack spacing={2}>
                             {/* Tuition Fees */}
                             <Box>
                                 <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
                                     Tuition Fees:
                                 </Typography>
-                                <Typography variant="body2">
-                                    ${program.fees.toLocaleString()} per year
+                                <Typography variant="body2" fontWeight="medium">
+                                    {program.fees.toLocaleString()} per year
                                 </Typography>
                             </Box>
 
@@ -163,7 +234,7 @@ const ProgramCard = ({ program }) => {
                                     Application Fees:
                                 </Typography>
                                 <Typography variant="body2">
-                                    ${program.applicationFees?.toLocaleString() || "N/A"}
+                                    {program.applicationFees ? `$${program.applicationFees.toLocaleString()}` : "N/A"}
                                 </Typography>
                             </Box>
 
@@ -173,19 +244,21 @@ const ProgramCard = ({ program }) => {
                                     Funds Required:
                                 </Typography>
                                 <Typography variant="body2">
-                                    ${program.requiredFunds?.toLocaleString() || "N/A"}
+                                    {program.requiredFunds ? `$${program.requiredFunds.toLocaleString()}` : "N/A"}
                                 </Typography>
                             </Box>
                         </Stack>
                     </Grid>
                 </Grid>
+            </CardContent>
 
-                {/* Divider and Button */}
-                <Divider sx={{ my: 2 }} />
+            <Box sx={{ mt: "auto", px: 2, pb: 2 }}>
+                <Divider sx={{ mb: 2 }} />
                 <Button
                     fullWidth
                     variant="contained"
                     endIcon={<ArrowIcon />}
+                    href="#"
                     sx={{
                         backgroundColor: "#4f46e5",
                         "&:hover": {
@@ -195,9 +268,9 @@ const ProgramCard = ({ program }) => {
                 >
                     Learn More
                 </Button>
-            </CardContent>
+            </Box>
         </Card>
     );
-};
+}
 
 export default ProgramCard;

@@ -34,6 +34,7 @@ export default function InstitutionPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const agentsRef = useRef(null);
   const bannerIntervalRef = useRef(null);
+  const [currentPage, setCurrentPage] = useState(1); // Default to page 1
 
   // Fetch institution data
   useEffect(() => {
@@ -47,7 +48,11 @@ export default function InstitutionPage() {
           console.error("Error fetching institution:", error);
         });
     }
-  }, [id, location.state]);
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", 
+  });
+  }, [id, location.state, currentPage]);
 
   // Auto-play banner
   const startBannerInterval = () => {
