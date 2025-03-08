@@ -1,15 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const InstitutionModel = require("../models/institutions");
+const { getAllInstitutions } = require("../controllers/institutionController");
 
 // Get all institutions
-router.get("/institutions", async (req, res) => {
-    try {
-        const institutions = await InstitutionModel.find();
-        res.json(institutions.length ? institutions : { message: "No institutions found" });
-    } catch (err) {
-        res.status(500).json({ error: "An error occurred while fetching the institutions" });
-    }
-});
+router.get("/institutions", getAllInstitutions);
 
 module.exports = router;
