@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Box,
     Button,
@@ -14,7 +14,9 @@ import {
     Grid,
     IconButton,
     InputAdornment,
+    CircularProgress,
     InputLabel,
+    Menu,
     MenuItem,
     Select,
     Slider,
@@ -26,6 +28,7 @@ import {
     Typography,
     createTheme,
     ThemeProvider,
+    Pagination,
 } from "@mui/material";
 import {
     FilterList as FilterListIcon,
@@ -34,10 +37,12 @@ import {
     Search as SearchIcon,
     Add as AddIcon,
     Remove as RemoveIcon,
+    Sort as SortIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import ProgramCard from "../../components/ProgramCard";
 import TabPanel from "../../components/TabPanel";
+import axios from "axios";
 
 // SearchBar Component
 const SearchBar = ({ searchQuery, onSearchChange }) => {
@@ -79,7 +84,7 @@ const theme = createTheme({
             dark: "#4338ca",
         },
         secondary: {
-            main: "#6b7280", // Color for the Clear button
+            main: "#6b7280", 
         },
         background: {
             default: "#ffffff",
@@ -204,6 +209,13 @@ export default function Programs() {
         workExperience: "",
         visaRefusal: false,
     }); // Initialize appliedFilters with defaults
+    const [sortOrder, setSortOrder] = useState(""); // "highToLow", "lowToHigh", or ""
+    const [sortAnchorEl, setSortAnchorEl] = useState(null); // Anchor element for the dropdown menu
+    const isSortMenuOpen = Boolean(sortAnchorEl); // Whether the dropdown menu is open
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(6); // Set items per page to 9
 
     // Default filter values
     const defaultFilters = {
@@ -218,74 +230,93 @@ export default function Programs() {
         visaRefusal: false,
     };
 
-    // Programs Data
-    const programs = [
-        {
-            id: 1,
-            program: "Computer Science",
-            institution: "University of Tech",
-            level: "Undergraduate",
-            discipline: "Information Technology",
-            duration: "4 years",
-            intakes: ["Fall", "Spring"],
-            fees: 15000,
-            campus: "Main Campus",
-            ielts: 6.5,
-            gpa: 3.5,
-        },
-        {
-            id: 2,
-            program: "Business Administration",
-            institution: "Business School",
-            level: "Graduate",
-            discipline: "Business",
-            duration: "2 years",
-            intakes: ["Fall"],
-            fees: 20000,
-            campus: "Downtown Campus",
-            ielts: 7.0,
-            gpa: 3.8,
-        },
-        {
-            id: 3,
-            program: "Data Science",
-            institution: "Tech Institute",
-            level: "Graduate",
-            discipline: "Information Technology",
-            duration: "2 years",
-            intakes: ["Fall", "Spring"],
-            fees: 18000,
-            campus: "Innovation Campus",
-            ielts: 7.0,
-            gpa: 3.7,
-        },
-    ];
+    const [institutions, setInstitutions] = useState([]); // State to store fetched institutions
+    const [loading, setLoading] = useState(true); // Loading state
+    const [error, setError] = useState(""); // Error state
+
+    // Fetch data from the API
+    useEffect(() => {
+        axios
+            .get("http://localhost:3001/api/institutions")
+            .then((response) => {
+                setInstitutions(response.data);
+                setLoading(false);
+            })
+            .catch((error) => {
+                console.error("Error fetching institutions:", error);
+                setError("Failed to fetch institutions. Please try again later.");
+                setLoading(false);
+            });
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
+    }, [currentPage]);
+
+    const parseGPA = (gpaString) => {
+        if (!gpaString) return 0; // Default to 0 if no GPA is provided
+        const gpaMatch = gpaString.match(/\d+(\.\d+)?/); // Extract numeric GPA value
+        return gpaMatch ? parseFloat(gpaMatch[0]) : 0; // Convert to number or default to 0
+    };
+
+    // Map institutions data to programs format
+    const programs = institutions.flatMap((institution) =>
+        Object.entries(institution.programs || {}).map(([programName, programDetails]) => ({
+            id: `${institution.university}-${programName}`, // Unique key combining university and program name
+            program: programName || "N/A",
+            institution: institution.university || "N/A",
+            level: programDetails.Level || "N/A",
+            discipline: programDetails.discipline,
+            duration: programDetails.duration || "N/A",
+            intakes: programDetails.intakes ? programDetails.intakes.split(",") : [],
+            fees: programDetails.Fees_First_Year || "N/A",
+            campus: programDetails.campuses || "N/A",
+            language_requirements: {
+                ielts: parseFloat(programDetails.Language_Requirements?.IELTS) || 0,
+                toefl: parseFloat(programDetails.Language_Requirements?.TOEFL) || 0,
+                pte: parseFloat(programDetails.Language_Requirements?.PTE) || 0,
+            },
+            gpa:
+                programDetails.Level === "Undergraduate"
+                    ? parseGPA(institution.academic_requirements?.undergraduate)
+                    : parseGPA(institution.academic_requirements?.postgraduate),
+            applicationFees: programDetails.Application_Fee,
+            requiredFunds: programDetails.Funds_Required,
+        }))
+    );
+
+    // Extract unique disciplines from the programs array
+    const uniqueDisciplines = [...new Set(programs.map((program) => program.discipline || ""))].filter(Boolean);
 
     // Filter programs based on search query, selected discipline, and program level
     const filteredPrograms = programs.filter((program) => {
         const matchesSearch =
-            program.program.toLowerCase().includes(searchQuery) ||
-            program.level.toLowerCase().includes(searchQuery) ||
-            program.institution.toLowerCase().includes(searchQuery) ||
-            program.campus.toLowerCase().includes(searchQuery);
+            (program.program?.toLowerCase() || "").includes(searchQuery) ||
+            (program.level?.toLowerCase() || "").includes(searchQuery) ||
+            (program.institution?.toLowerCase() || "").includes(searchQuery) ||
+            (program.campus?.toLowerCase() || "").includes(searchQuery) ||
+            (program.discipline?.toLowerCase() || "").includes(searchQuery);
         const matchesDiscipline = selectedDiscipline
-            ? program.discipline.toLowerCase() === selectedDiscipline.toLowerCase()
+            ? (program.discipline?.toLowerCase() || "") === selectedDiscipline.toLowerCase()
             : true;
         const matchesLevel =
             tabValue === 0 || // All Programs
             (tabValue === 1 && program.level === "Undergraduate") || // Undergraduate
-            (tabValue === 2 && program.level === "Graduate"); // Postgraduate
-        const matchesGPA = program.gpa >= appliedFilters.gpa; // Apply GPA filter
+            (tabValue === 2 && program.level === "Postgraduate"); // Postgraduate
+
+        // Only apply GPA filter if appliedFilters.gpa is greater than 0
+        const matchesGPA = appliedFilters.gpa > 0 ? program.gpa <= appliedFilters.gpa : true;
+
         const matchesEnglishTest =
-            !appliedFilters.englishTest || // No filter selected
-            (appliedFilters.englishTest === "ielts" && program.ielts >= Number(appliedFilters.testScore)); // IELTS filter
+            !appliedFilters.englishTest ||
+            (appliedFilters.englishTest === "ielts" && program.ielts >= Number(appliedFilters.testScore));
         const matchesAcademicLevel =
-            !appliedFilters.academicLevel || // No filter selected
-            (appliedFilters.academicLevel === "high_school" && program.level === "Undergraduate") || // High School -> Undergraduate
-            (appliedFilters.academicLevel === "bachelors" && program.level === "Graduate"); // Bachelor -> Postgraduate
+            !appliedFilters.academicLevel ||
+            (appliedFilters.academicLevel === "high_school" && program.level === "Undergraduate") ||
+            (appliedFilters.academicLevel === "bachelors" && program.level === "Graduate");
         const matchesFieldOfStudy =
-            !appliedFilters.fieldOfStudy || // No filter selected
-            program.discipline.toLowerCase() === appliedFilters.fieldOfStudy.toLowerCase(); // Field of Study filter
+            !appliedFilters.fieldOfStudy ||
+            (program.discipline?.toLowerCase() || "") === appliedFilters.fieldOfStudy.toLowerCase();
 
         return (
             matchesSearch &&
@@ -297,6 +328,83 @@ export default function Programs() {
             matchesFieldOfStudy
         );
     });
+
+    // Sort programs by tuition fee
+    const sortedPrograms = [...filteredPrograms].sort((a, b) => {
+        const feeA = parseFloat(a.fees.replace(/[^0-9.]/g, "")) || 0;
+        const feeB = parseFloat(b.fees.replace(/[^0-9.]/g, "")) || 0;
+        if (sortOrder === "highToLow") {
+            return feeB - feeA;
+        } else if (sortOrder === "lowToHigh") {
+            return feeA - feeB;
+        }
+        return 0;
+    });
+
+    // Pagination logic
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentPrograms = sortedPrograms.slice(indexOfFirstItem, indexOfLastItem);
+
+    // Handle page change
+    const handlePageChange = (event, value) => {
+        setCurrentPage(value);
+    };
+
+    // Handle opening the sort dropdown menu
+    const handleSortMenuOpen = (event) => {
+        setSortAnchorEl(event.currentTarget);
+    };
+
+    // Handle closing the sort dropdown menu
+    const handleSortMenuClose = () => {
+        setSortAnchorEl(null);
+    };
+
+    // Handle selecting a sort option
+    const handleSortOptionSelect = (order) => {
+        setSortOrder(order);
+        handleSortMenuClose(); // Close the dropdown menu after selection
+    };
+
+    // Function to remove a specific filter
+    const handleRemoveFilter = (filterKey) => {
+        setAppliedFilters((prev) => ({
+            ...prev,
+            [filterKey]: defaultFilters[filterKey], // Reset to default value
+        }));
+    };
+
+    // Function to get applied filters as chips
+    const getAppliedFilterChips = () => {
+        const chips = [];
+        for (const [key, value] of Object.entries(appliedFilters)) {
+            if (value && value !== defaultFilters[key]) {
+                chips.push(
+                    <Chip
+                        key={key}
+                        label={`${key}: ${value}`}
+                        onDelete={() => handleRemoveFilter(key)}
+                        deleteIcon={<CloseIcon />}
+                        sx={{ m: 0.5 }}
+                    />
+                );
+            }
+        }
+        // Add sort filter chip if a sort order is selected
+        if (sortOrder) {
+            chips.push(
+                <Chip
+                    key="sort"
+                    label={`${sortOrder === "highToLow" ? "Fee: High to Low" : "Fee: Low to High"}`}
+                    onDelete={() => setSortOrder("")}
+                    deleteIcon={<CloseIcon />}
+                    sx={{ m: 0.5 }}
+                />
+            );
+        }
+        return chips;
+    };
 
     // Handlers
     const handleTabChange = (event, newValue) => {
@@ -330,9 +438,7 @@ export default function Programs() {
     };
 
     const handleChipClick = (discipline) => {
-        setSelectedDiscipline(
-            discipline === selectedDiscipline ? "" : discipline
-        );
+        setSelectedDiscipline(discipline === selectedDiscipline ? "" : discipline);
     };
 
     const handleSearchChange = (event) => {
@@ -378,17 +484,48 @@ export default function Programs() {
                             >
                                 Filters
                             </Button>
+
+                            {/* Sort Button with Dropdown Menu */}
+                            <Button
+                                variant="outlined"
+                                startIcon={<SortIcon />}
+                                sx={{ width: { xs: "100%", sm: "auto" } }}
+                                onClick={handleSortMenuOpen}
+                                aria-controls="sort-menu"
+                                aria-haspopup="true"
+                                aria-expanded={isSortMenuOpen ? "true" : undefined}
+                            >
+                                Sort
+                            </Button>
+                            <Menu
+                                id="sort-menu"
+                                anchorEl={sortAnchorEl}
+                                open={isSortMenuOpen}
+                                onClose={handleSortMenuClose}
+                                MenuListProps={{
+                                    "aria-labelledby": "sort-button",
+                                }}
+                            >
+                                <MenuItem onClick={() => handleSortOptionSelect("")}>
+                                    None
+                                </MenuItem>
+                                <MenuItem onClick={() => handleSortOptionSelect("highToLow")}>
+                                    Fee: High to Low
+                                </MenuItem>
+                                <MenuItem onClick={() => handleSortOptionSelect("lowToHigh")}>
+                                    Fee: Low to High
+                                </MenuItem>
+                            </Menu>
                         </SearchContainer>
+
+                        {/* Applied Filters Chips */}
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                            {getAppliedFilterChips()}
+                        </Box>
 
                         {/* Discipline Chips */}
                         <Stack direction="row" spacing={1} sx={{ mt: 0 }} flexWrap="wrap">
-                            {[
-                                "Information Technology",
-                                "Business",
-                                "Engineering",
-                                "Medicine",
-                                "Arts",
-                            ].map((discipline) => (
+                            {uniqueDisciplines.map((discipline) => (
                                 <Chip
                                     key={discipline}
                                     label={discipline}
@@ -412,14 +549,43 @@ export default function Programs() {
                             </Tabs>
                         </Box>
 
+                        {/* Loading State */}
+                        {loading && (
+                            <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+                                <CircularProgress />
+                            </Box>
+                        )}
+
+                        {/* Error State */}
+                        {error && (
+                            <Box sx={{ textAlign: "center", py: 8 }}>
+                                <Typography level="h3" sx={{ mb: 1 }}>
+                                    Error
+                                </Typography>
+                                <Typography level="body-md" color="neutral">
+                                    {error}
+                                </Typography>
+                            </Box>
+                        )}
+
                         {/* Program Cards */}
                         <Grid container spacing={3}>
-                            {filteredPrograms.map((program) => (
-                                <Grid item key={program.id}>
+                            {currentPrograms.map((program) => (
+                                <Grid item key={program.id} xs={12} sm={6} md={4}>
                                     <ProgramCard program={program} />
                                 </Grid>
                             ))}
                         </Grid>
+
+                        {/* Pagination */}
+                        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                            <Pagination
+                                count={Math.ceil(filteredPrograms.length / itemsPerPage)} // Total number of pages
+                                page={currentPage}
+                                onChange={handlePageChange}
+                                color="primary"
+                            />
+                        </Box>
                     </Stack>
                 </Container>
 
