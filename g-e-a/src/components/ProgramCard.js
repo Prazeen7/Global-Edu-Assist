@@ -30,6 +30,9 @@ function ProgramCard({ program }) {
     const hiddenIntakes = program.intakes.slice(2);
     const hasMoreIntakes = hiddenIntakes.length > 0;
 
+    // Access language_requirements from the program object
+    const languageRequirements = program.language_requirement || {};
+
     return (
         <Card
             variant="outlined"
@@ -171,37 +174,50 @@ function ProgramCard({ program }) {
                                 <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
                                     Language Requirements:
                                 </Typography>
-                                <Box sx={{ display: "flex", gap: 1 }}>
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        flexWrap: "wrap",
+                                        gap: 1,
+                                        alignItems: "center",
+                                    }}
+                                >
                                     {/* IELTS Chip */}
-                                    <Chip
-                                        label={`IELTS: ${program.language_requirements?.ielts || "N/A"}`}
-                                        size="small"
-                                        sx={{
-                                            borderRadius: 1,
-                                            backgroundColor: "#e0e7ff", // Light purple background
-                                            color: "#4f46e5", // Dark purple text
-                                        }}
-                                    />
+                                    {languageRequirements.IELTS && (
+                                        <Chip
+                                            label={`IELTS: ${languageRequirements.IELTS}`}
+                                            size="small"
+                                            sx={{
+                                                borderRadius: 1,
+                                                backgroundColor: "#e0e7ff",
+                                                color: "#4f46e5",
+                                            }}
+                                        />
+                                    )}
                                     {/* TOEFL Chip */}
-                                    <Chip
-                                        label={`TOEFL: ${program.language_requirements?.toefl || "N/A"}`}
-                                        size="small"
-                                        sx={{
-                                            borderRadius: 1,
-                                            backgroundColor: "#e0f2fe", // Light blue background
-                                            color: "#0369a1", // Dark blue text
-                                        }}
-                                    />
+                                    {languageRequirements.TOEFL && (
+                                        <Chip
+                                            label={`TOEFL: ${languageRequirements.TOEFL}`}
+                                            size="small"
+                                            sx={{
+                                                borderRadius: 1,
+                                                backgroundColor: "#e0f2fe",
+                                                color: "#0369a1",
+                                            }}
+                                        />
+                                    )}
                                     {/* PTE Chip */}
-                                    <Chip
-                                        label={`PTE: ${program.language_requirements?.pte || "N/A"}`}
-                                        size="small"
-                                        sx={{
-                                            borderRadius: 1,
-                                            backgroundColor: "#f3e8ff", // Light lavender background
-                                            color: "#7c3aed", // Dark lavender text
-                                        }}
-                                    />
+                                    {languageRequirements.PTE && (
+                                        <Chip
+                                            label={`PTE: ${languageRequirements.PTE}`}
+                                            size="small"
+                                            sx={{
+                                                borderRadius: 1,
+                                                backgroundColor: "#f3e8ff",
+                                                color: "#7c3aed",
+                                            }}
+                                        />
+                                    )}
                                 </Box>
                             </Box>
 
@@ -258,7 +274,9 @@ function ProgramCard({ program }) {
                     fullWidth
                     variant="contained"
                     endIcon={<ArrowIcon />}
-                    href="#"
+                    href={program.url}  
+                    target="_blank"
+                    rel="noopener noreferrer"
                     sx={{
                         backgroundColor: "#4f46e5",
                         "&:hover": {
