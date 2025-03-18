@@ -1,15 +1,19 @@
 const UserModel = require("../models/user");
 const nodemailer = require("nodemailer");
 const Jwt = require("jsonwebtoken");
-const JWT_SECRET = "GEA_Login@User";
+const bcrypt = require("bcrypt");
 const generatePassword = require("../utils/generatePassword");
+
+// Load environment variables
+require("dotenv").config();
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Nodemailer transporter configuration
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-        user: "np03cs4a220278@heraldcollege.edu.np",
-        pass: "mkak rsmp stzl fyme",
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
     },
 });
 
@@ -20,26 +24,27 @@ const login = async (req, res) => {
     try {
         const existingUser = await UserModel.findOne({ email });
         if (!existingUser) {
-            return res.json({ message: "Please sign up first" });
+            return res.status(400).json({ message: "Please sign up first" });
         }
-        if (existingUser.password !== password) {
-            return res.json({ message: "Password is incorrect" });
+
+        const isPasswordValid = await bcrypt.compare(password, existingUser.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: "Password is incorrect" });
         }
-        if (existingUser) {
-            Jwt.sign({ existingUser }, JWT_SECRET, (err, token) => {
-                if (err) {
-                    return res.json({ message: "Something went wrong" });
-                }
-                res.json({
-                    message: "Success",
-                    firstName: existingUser.firstName,
-                    user: existingUser.user,
-                    auth: token,
-                });
+
+        Jwt.sign({ userId: existingUser._id }, JWT_SECRET, (err, token) => {
+            if (err) {
+                return res.status(500).json({ message: "Something went wrong" });
+            }
+            res.json({
+                message: "Success",
+                firstName: existingUser.firstName,
+                user: existingUser.user,
+                auth: token,
             });
-        }
+        });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(500).json({ message: "Server error", error: err.message });
     }
 };
 
@@ -54,11 +59,12 @@ const forgotPassword = async (req, res) => {
         }
 
         const newPassword = generatePassword();
-        user.password = newPassword;
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
         await user.save();
 
         const mailOptions = {
-            from: "np03cs4a220278@heraldcollege.edu.np",
+            from: process.env.EMAIL_USER,
             to: email,
             subject: "Your New Password",
             text: `Your new password is: ${newPassword}`,
@@ -71,7 +77,7 @@ const forgotPassword = async (req, res) => {
             res.status(200).json({ message: "Email sent successfully" });
         });
     } catch (err) {
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Server error", error: err.message });
     }
 };
 
