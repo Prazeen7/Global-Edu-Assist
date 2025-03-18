@@ -112,14 +112,24 @@ export default function Login() {
       .post('http://localhost:3001/api/login', { email, password })
       .then((result) => {
         if (result.data.message === 'Success') {
-          setAlertMessage('Logged in successfully.');
-          setAlertSeverity('success');
+          // Store the token in local storage
+          localStorage.setItem('token', result.data.auth);
+          localStorage.setItem('userAvatar', result.data.firstName); // Store UserAvatar
+          localStorage.setItem('userType', result.data.user); // Store UserType
+    
+          // Update the authentication context
           setLoggedIn(true);
           setUserAvatar(result.data.firstName);
           setUserType(result.data.user);
-          navigate('/');
 
+          // Show success message
+          setAlertMessage('Logged in successfully.');
+          setAlertSeverity('success');
+
+          // Redirect to the home page
+          navigate('/');
         } else {
+          // Handle login failure
           setAlertMessage(result.data.message || 'Login failed.');
           setAlertSeverity('error');
         }
@@ -129,7 +139,7 @@ export default function Login() {
         setAlertMessage('An error occurred. Please try again later.');
         setAlertSeverity('error');
       });
-};
+  };
 
 
 

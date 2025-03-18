@@ -1,4 +1,5 @@
 import React from 'react';
+import { useState, useEffect } from "react";
 import {
     Container,
     Box,
@@ -56,6 +57,14 @@ const keyPoints = [
 export default function LandingPage() {
     const theme = useTheme();
     const brandColor = "#4f46e5";
+    const [currentPage, setCurrentPage] = useState(1); // Default to page 1
+
+    useEffect(() => {
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
+    }, [currentPage]);
 
     return (
         <Box component="main">

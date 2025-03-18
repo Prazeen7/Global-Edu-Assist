@@ -38,6 +38,7 @@ const StyledTableHeader = styled(TableRow)(({ theme }) => ({
 
 export default function Documents() {
   const [documentCategories, setDocumentCategories] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1); 
 
   useEffect(() => {
     axios.get('http://localhost:3001/api/documents')
@@ -52,8 +53,14 @@ export default function Documents() {
         }));
         setDocumentCategories(formattedData);
       })
-      .catch(console.error);
-  }, []);
+      .catch((error) => {
+        console.error("Error fetching institutions:", error);
+    });
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth", 
+    });
+}, [currentPage]);
 
   return (
     <div style={{

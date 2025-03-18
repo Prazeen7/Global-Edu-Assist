@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Box,
     Button,
@@ -14,7 +14,9 @@ import {
     Grid,
     IconButton,
     InputAdornment,
+    CircularProgress,
     InputLabel,
+    Menu,
     MenuItem,
     Select,
     Slider,
@@ -26,6 +28,7 @@ import {
     Typography,
     createTheme,
     ThemeProvider,
+    Pagination,
 } from "@mui/material";
 import {
     FilterList as FilterListIcon,
@@ -34,10 +37,21 @@ import {
     Search as SearchIcon,
     Add as AddIcon,
     Remove as RemoveIcon,
+    Sort as SortIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import ProgramCard from "../../components/ProgramCard";
 import TabPanel from "../../components/TabPanel";
+import axios from "axios";
+
+// Utility function to shuffle an array using the Fisher-Yates algorithm
+const shuffleArray = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+};
 
 // SearchBar Component
 const SearchBar = ({ searchQuery, onSearchChange }) => {
@@ -79,7 +93,7 @@ const theme = createTheme({
             dark: "#4338ca",
         },
         secondary: {
-            main: "#6b7280", // Color for the Clear button
+            main: "#6b7280",
         },
         background: {
             default: "#ffffff",
@@ -179,20 +193,19 @@ export default function Programs() {
     const [filterOpen, setFilterOpen] = useState(false);
     const [tabValue, setTabValue] = useState(0); // For program level tabs
     const [filterTabValue, setFilterTabValue] = useState(0); // For filter dialog tabs
-    const [incomeSourceCount, setIncomeSourceCount] = useState(1);
-    const [filters, setFilters] = useState({
-        gpa: 0, // Default GPA starts at 0
+    const [tempFilters, setTempFilters] = useState({
+        gpa: 0,
         englishTest: "",
         testScore: "",
         academicLevel: "",
         fieldOfStudy: "",
         preferredLocation: "",
-        studyGap: "",
-        workExperience: "",
         visaRefusal: false,
+        bankBalance: null,
+        educationLoan: null,
+        educationLoanBank: "",
+        incomeSources: [{ incomeSourceType: "", totalIncome: null, sourceOwner: "" }],
     });
-    const [selectedDiscipline, setSelectedDiscipline] = useState("");
-    const [searchQuery, setSearchQuery] = useState("");
     const [appliedFilters, setAppliedFilters] = useState({
         gpa: 0,
         englishTest: "",
@@ -200,10 +213,23 @@ export default function Programs() {
         academicLevel: "",
         fieldOfStudy: "",
         preferredLocation: "",
-        studyGap: "",
-        workExperience: "",
         visaRefusal: false,
-    }); // Initialize appliedFilters with defaults
+        bankBalance: null,
+        educationLoan: null,
+        educationLoanBank: "",
+        incomeSources: [{ incomeSourceType: "", totalIncome: null, sourceOwner: "" }],
+    });
+    const [selectedDiscipline, setSelectedDiscipline] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [sortOrder, setSortOrder] = useState("");
+    const [sortAnchorEl, setSortAnchorEl] = useState(null);
+    const isSortMenuOpen = Boolean(sortAnchorEl);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(6);
+    const [institutions, setInstitutions] = useState([]);
+    const [filteredPrograms, setFilteredPrograms] = useState([]); // Store filtered programs
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     // Default filter values
     const defaultFilters = {
@@ -213,140 +239,425 @@ export default function Programs() {
         academicLevel: "",
         fieldOfStudy: "",
         preferredLocation: "",
-        studyGap: "",
-        workExperience: "",
         visaRefusal: false,
+        bankBalance: null,
+        educationLoan: null,
+        educationLoanBank: "",
+        incomeSources: [{ incomeSourceType: "", totalIncome: null, sourceOwner: "" }],
     };
 
-    // Programs Data
-    const programs = [
-        {
-            id: 1,
-            program: "Computer Science",
-            institution: "University of Tech",
-            level: "Undergraduate",
-            discipline: "Information Technology",
-            duration: "4 years",
-            intakes: ["Fall", "Spring"],
-            fees: 15000,
-            campus: "Main Campus",
-            ielts: 6.5,
-            gpa: 3.5,
-        },
-        {
-            id: 2,
-            program: "Business Administration",
-            institution: "Business School",
-            level: "Graduate",
-            discipline: "Business",
-            duration: "2 years",
-            intakes: ["Fall"],
-            fees: 20000,
-            campus: "Downtown Campus",
-            ielts: 7.0,
-            gpa: 3.8,
-        },
-        {
-            id: 3,
-            program: "Data Science",
-            institution: "Tech Institute",
-            level: "Graduate",
-            discipline: "Information Technology",
-            duration: "2 years",
-            intakes: ["Fall", "Spring"],
-            fees: 18000,
-            campus: "Innovation Campus",
-            ielts: 7.0,
-            gpa: 3.7,
-        },
-    ];
+    // Fetch data from the API and shuffle programs only once on page load
+    useEffect(() => {
+        axios
+            .get("http://localhost:3001/api/institutions")
+            .then((response) => {
+                const shuffledPrograms = shuffleArray(
+                    response.data.flatMap((institution) =>
+                        Object.entries(institution.programs || {}).map(([programName, programDetails]) => ({
+                            id: `${institution.university}-${programName}`,
+                            program: programName || "N/A",
+                            institution: institution.university || "N/A",
+                            level: programDetails.Level || "N/A",
+                            discipline: programDetails.discipline,
+                            duration: programDetails.duration || "N/A",
+                            intakes: programDetails.intakes ? programDetails.intakes.split(",") : [],
+                            fees: programDetails.Fees_First_Year || "N/A",
+                            campus: programDetails.campuses || "N/A",
+                            language_requirement: programDetails.language_requirement || {}, // Ensure this is included
+                            gpa:
+                                programDetails.Level === "Undergraduate"
+                                    ? parseGPA(institution.academic_requirements?.undergraduate)
+                                    : parseGPA(institution.academic_requirements?.postgraduate),
+                            applicationFees: programDetails.Application_Fee,
+                            requiredFunds: programDetails.Funds_Required,
+                            institutionData: institution,
+                            url: programDetails.url || "#",
+                        }))
+                    )
+                );
+                setInstitutions(shuffledPrograms);
+                setFilteredPrograms(shuffledPrograms); // Initialize filteredPrograms with all programs
+                setLoading(false);
+            })
+            .catch((error) => {
+                console.error("Error fetching institutions:", error);
+                setError("Failed to fetch institutions. Please try again later.");
+                setLoading(false);
+            });
+    }, []);
 
-    // Filter programs based on search query, selected discipline, and program level
-    const filteredPrograms = programs.filter((program) => {
-        const matchesSearch =
-            program.program.toLowerCase().includes(searchQuery) ||
-            program.level.toLowerCase().includes(searchQuery) ||
-            program.institution.toLowerCase().includes(searchQuery) ||
-            program.campus.toLowerCase().includes(searchQuery);
-        const matchesDiscipline = selectedDiscipline
-            ? program.discipline.toLowerCase() === selectedDiscipline.toLowerCase()
-            : true;
-        const matchesLevel =
-            tabValue === 0 || // All Programs
-            (tabValue === 1 && program.level === "Undergraduate") || // Undergraduate
-            (tabValue === 2 && program.level === "Graduate"); // Postgraduate
-        const matchesGPA = program.gpa >= appliedFilters.gpa; // Apply GPA filter
-        const matchesEnglishTest =
-            !appliedFilters.englishTest || // No filter selected
-            (appliedFilters.englishTest === "ielts" && program.ielts >= Number(appliedFilters.testScore)); // IELTS filter
-        const matchesAcademicLevel =
-            !appliedFilters.academicLevel || // No filter selected
-            (appliedFilters.academicLevel === "high_school" && program.level === "Undergraduate") || // High School -> Undergraduate
-            (appliedFilters.academicLevel === "bachelors" && program.level === "Graduate"); // Bachelor -> Postgraduate
-        const matchesFieldOfStudy =
-            !appliedFilters.fieldOfStudy || // No filter selected
-            program.discipline.toLowerCase() === appliedFilters.fieldOfStudy.toLowerCase(); // Field of Study filter
+    // Parse GPA from string
+    const parseGPA = (gpaString) => {
+        if (!gpaString) return 0;
+        const gpaMatch = gpaString.match(/\d+(\.\d+)?/);
+        return gpaMatch ? parseFloat(gpaMatch[0]) : 0;
+    };
 
-        return (
-            matchesSearch &&
-            matchesDiscipline &&
-            matchesLevel &&
-            matchesGPA &&
-            matchesEnglishTest &&
-            matchesAcademicLevel &&
-            matchesFieldOfStudy
-        );
+    // Calculate total required funds for a program
+    const calculateTotalRequiredFunds = (program) => {
+        const firstYearFees = parseFloat(program.fees.replace(/[^0-9.]/g, "")) || 0;
+        const livingExpenses = 29710; // AUD 29,710
+        const travellingExpenses = 2500; // AUD 2,500
+        const healthCover = 2500; // AUD 2,500
+        return firstYearFees + livingExpenses + travellingExpenses + healthCover;
+    };
+
+    // Extract unique disciplines
+    const uniqueDisciplines = [...new Set(institutions.map((program) => program.discipline || ""))].filter(Boolean);
+
+    // Extract unique acceptable banks
+    const acceptableBanks = [
+        ...new Set(
+            institutions.flatMap((institution) =>
+                institution.institutionData?.documents?.GS_Stage?.additional_info?.["Acceptable Banks"] || []
+            )
+        ),
+    ].filter((bank) => bank);
+
+    // Filter programs based on search query, selected discipline, program level, and financial filters
+    const filterPrograms = (programs, filters) => {
+        return programs.filter((program) => {
+            const matchesSearch =
+                (program.program?.toLowerCase() || "").includes(searchQuery) ||
+                (program.level?.toLowerCase() || "").includes(searchQuery) ||
+                (program.institution?.toLowerCase() || "").includes(searchQuery) ||
+                (program.campus?.toLowerCase() || "").includes(searchQuery) ||
+                (program.discipline?.toLowerCase() || "").includes(searchQuery);
+            const matchesDiscipline = selectedDiscipline
+                ? (program.discipline?.toLowerCase() || "") === selectedDiscipline.toLowerCase()
+                : true;
+            const matchesLevel =
+                tabValue === 0 || // All Programs
+                (tabValue === 1 && program.level === "Undergraduate") || // Undergraduate
+                (tabValue === 2 && program.level === "Postgraduate"); // Postgraduate
+
+            // GPA Filter Logic
+            const matchesGPA = filters.gpa > 0 ? program.gpa <= filters.gpa : true;
+
+            // English Proficiency Test Filter Logic
+            const matchesEnglishTest = (program) => {
+                const { englishTest, testScore } = filters;
+
+                // No filter applied if either field is empty
+                if (!englishTest || !testScore) return true;
+
+                const languageRequirements = program.language_requirement || {};
+
+                // Get the raw score for the selected test (e.g., "IELTS")
+                const rawScore = languageRequirements[englishTest.toUpperCase()];
+
+                // Exclude programs that don't require this test
+                if (!rawScore) return false;
+
+                let parsedScore;
+
+                // Handle different test formats
+                if (['IELTS', 'PTE'].includes(englishTest.toUpperCase())) {
+                    // Split the score into parts (e.g., "6.5/6.0" => ["6.5", "6.0"])
+                    const parts = rawScore.split('/');
+                    parsedScore = parseFloat(parts[0].trim()); // Take the first part (overall score)
+                } else if (englishTest.toUpperCase() === 'TOEFL') {
+                    // TOEFL scores are typically a single number (e.g., "90")
+                    parsedScore = parseFloat(rawScore);
+                } else {
+                    // For other tests, attempt direct parsing
+                    parsedScore = parseFloat(rawScore);
+                }
+
+                // Exclude programs with non-numeric scores (e.g., text-based requirements)
+                if (isNaN(parsedScore)) return false;
+
+                // Check if the user's score meets or exceeds the program's requirement
+                return parsedScore <= Number(testScore);
+            };
+
+            // Academic Level Filter Logic
+            const matchesAcademicLevel =
+                !filters.academicLevel ||
+                (filters.academicLevel === "high_school" && program.level === "Undergraduate") ||
+                (filters.academicLevel === "bachelors" && program.level === "Postgraduate") ||
+                (filters.academicLevel === "masters" && program.level === "Postgraduate") ||
+                (filters.academicLevel === "phd" && program.level === "Postgraduate");
+
+            // Field of Study Filter Logic
+            const matchesFieldOfStudy =
+                !filters.fieldOfStudy ||
+                (program.discipline?.toLowerCase() || "") === filters.fieldOfStudy.toLowerCase();
+
+            // Financial Filter Logic
+            const totalRequiredFunds = calculateTotalRequiredFunds(program);
+            const matchesBankBalance =
+                filters.bankBalance === null || filters.bankBalance >= totalRequiredFunds;
+
+            // Education Loan Filter Logic
+            const matchesEducationLoan =
+                filters.educationLoan === null ||
+                (filters.educationLoan >= totalRequiredFunds &&
+                    filters.educationLoanBank &&
+                    program.institutionData?.documents?.GS_Stage?.additional_info?.["Acceptable Banks"]?.includes(
+                        filters.educationLoanBank
+                    ));
+
+            // Income Source Filter Logic
+            const acceptableIncomeSources =
+                program.institutionData?.documents?.GS_Stage?.additional_info?.["Acceptable Income Sources"] || [];
+            const minimumIncomeAmountRequired =
+                parseFloat(
+                    program.institutionData?.documents?.GS_Stage?.additional_info?.["Minimum Income Amount Required"]?.replace(
+                        /[^0-9.]/g,
+                        ""
+                    )
+                ) || 0;
+            const acceptableSponsors =
+                program.institutionData?.documents?.GS_Stage?.additional_info?.["Acceptable Sponsors"] || [];
+
+            // Sum total income from all income sources
+            const totalIncome = filters.incomeSources.reduce(
+                (sum, source) => sum + (source.totalIncome || 0),
+                0
+            );
+
+            const matchesIncomeSource =
+                filters.incomeSources.every((source) =>
+                    !source.incomeSourceType || acceptableIncomeSources.includes(source.incomeSourceType)
+                );
+
+            const matchesTotalIncome =
+                !totalIncome || totalIncome >= minimumIncomeAmountRequired;
+
+            const matchesSourceOwner =
+                filters.incomeSources.every((source) =>
+                    !source.sourceOwner || acceptableSponsors.includes(source.sourceOwner)
+                );
+
+            // Preferred Location Filter Logic
+            const matchesPreferredLocation =
+                !filters.preferredLocation ||
+                (program.campus?.toLowerCase() || "").includes(filters.preferredLocation.toLowerCase());
+
+            // Immigration History Filter Logic
+            const matchesVisaRefusal =
+                !filters.visaRefusal ||
+                program.institutionData?.documents?.GS_Stage?.additional_info?.["Previous Visa Refusal"]?.startsWith("Accepted");
+
+            return (
+                matchesSearch &&
+                matchesDiscipline &&
+                matchesLevel &&
+                matchesGPA &&
+                matchesEnglishTest(program) &&
+                matchesAcademicLevel &&
+                matchesFieldOfStudy &&
+                matchesBankBalance &&
+                matchesEducationLoan &&
+                matchesIncomeSource &&
+                matchesTotalIncome &&
+                matchesSourceOwner &&
+                matchesPreferredLocation &&
+                matchesVisaRefusal
+            );
+        });
+    };
+
+    // Apply filters when the "Apply Filter" button is pressed
+    const handleApplyFilters = () => {
+        const filtered = filterPrograms(institutions, tempFilters);
+        setFilteredPrograms(filtered);
+        setAppliedFilters(tempFilters);
+        setFilterOpen(false);
+    };
+
+    // Clear filters
+    const handleClearFilters = () => {
+        setTempFilters(defaultFilters);
+        setAppliedFilters(defaultFilters);
+        setFilteredPrograms(institutions); // Reset filtered programs to all programs
+    };
+
+    // Handle income source change
+    const handleIncomeSourceChange = (index, field, value) => {
+        const updatedIncomeSources = [...tempFilters.incomeSources];
+        updatedIncomeSources[index][field] = value;
+        setTempFilters((prev) => ({
+            ...prev,
+            incomeSources: updatedIncomeSources,
+        }));
+    };
+
+    // Add new income source
+    const addIncomeSource = () => {
+        setTempFilters((prev) => ({
+            ...prev,
+            incomeSources: [...prev.incomeSources, { incomeSourceType: "", totalIncome: null, sourceOwner: "" }],
+        }));
+    };
+
+    // Remove income source
+    const removeIncomeSource = (index) => {
+        const updatedIncomeSources = tempFilters.incomeSources.filter((_, i) => i !== index);
+        setTempFilters((prev) => ({
+            ...prev,
+            incomeSources: updatedIncomeSources,
+        }));
+    };
+
+    // Initialize temporary filters when dialog opens
+    const handleFilterDialogOpen = () => {
+        setTempFilters(appliedFilters);
+        setFilterOpen(true);
+    };
+
+    // Reset temporary filters when dialog closes without applying
+    const handleFilterDialogClose = () => {
+        setTempFilters(appliedFilters);
+        setFilterOpen(false);
+    };
+
+    // Sort programs by tuition fee
+    const sortedPrograms = [...filteredPrograms].sort((a, b) => {
+        const feeA = parseFloat(a.fees.replace(/[^0-9.]/g, "")) || 0;
+        const feeB = parseFloat(b.fees.replace(/[^0-9.]/g, "")) || 0;
+        if (sortOrder === "highToLow") {
+            return feeB - feeA;
+        } else if (sortOrder === "lowToHigh") {
+            return feeA - feeB;
+        }
+        return 0;
     });
+
+    // Pagination logic
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentPrograms = sortedPrograms.slice(indexOfFirstItem, indexOfLastItem);
+
+    // Handle page change
+    const handlePageChange = (event, value) => {
+        setCurrentPage(value);
+    };
+
+    // Handle opening the sort dropdown menu
+    const handleSortMenuOpen = (event) => {
+        setSortAnchorEl(event.currentTarget);
+    };
+
+    // Handle closing the sort dropdown menu
+    const handleSortMenuClose = () => {
+        setSortAnchorEl(null);
+    };
+
+    // Handle selecting a sort option
+    const handleSortOptionSelect = (order) => {
+        setSortOrder(order);
+        handleSortMenuClose();
+    };
+
+    // Function to remove a specific filter
+    const handleRemoveFilter = (filterKey) => {
+        setAppliedFilters((prev) => ({
+            ...prev,
+            [filterKey]: defaultFilters[filterKey],
+        }));
+        setTempFilters((prev) => ({
+            ...prev,
+            [filterKey]: defaultFilters[filterKey],
+        }));
+    };
+
+    // Function to get applied filters as chips
+    const getAppliedFilterChips = () => {
+        const chips = [];
+        for (const [key, value] of Object.entries(appliedFilters)) {
+            if (value && value !== defaultFilters[key]) {
+                let displayValue = value;
+
+                // Handle income sources separately
+                if (key === "incomeSources") {
+                    const hasNonDefaultIncomeSources = value.some(
+                        (source) =>
+                            source.incomeSourceType !== "" ||
+                            source.totalIncome !== null ||
+                            source.sourceOwner !== ""
+                    );
+
+                    if (hasNonDefaultIncomeSources) {
+                        displayValue = value
+                            .map((source) => `${source.incomeSourceType}: $${source.totalIncome}`)
+                            .join(", ");
+                        chips.push(
+                            <Chip
+                                key={key}
+                                label={`${key}: ${displayValue}`}
+                                onDelete={() => handleRemoveFilter(key)}
+                                deleteIcon={<CloseIcon />}
+                                sx={{ m: 0.5 }}
+                            />
+                        );
+                    }
+                } else {
+                    chips.push(
+                        <Chip
+                            key={key}
+                            label={`${key}: ${displayValue}`}
+                            onDelete={() => handleRemoveFilter(key)}
+                            deleteIcon={<CloseIcon />}
+                            sx={{ m: 0.5 }}
+                        />
+                    );
+                }
+            }
+        }
+        // Add sort filter chip if a sort order is selected
+        if (sortOrder) {
+            chips.push(
+                <Chip
+                    key="sort"
+                    label={`${sortOrder === "highToLow" ? "Fee: High to Low" : "Fee: Low to High"}`}
+                    onDelete={() => setSortOrder("")}
+                    deleteIcon={<CloseIcon />}
+                    sx={{ m: 0.5 }}
+                />
+            );
+        }
+        return chips;
+    };
 
     // Handlers
     const handleTabChange = (event, newValue) => {
-        setTabValue(newValue); // For program level tabs
+        setTabValue(newValue);
     };
 
     const handleFilterTabChange = (event, newValue) => {
-        setFilterTabValue(newValue); // For filter dialog tabs
+        setFilterTabValue(newValue);
     };
 
     const handleFilterChange = (event) => {
         const { name, value } = event.target;
-        setFilters((prev) => ({
+        setTempFilters((prev) => ({
             ...prev,
             [name]: value,
         }));
     };
 
     const handleSliderChange = (name) => (event, newValue) => {
-        setFilters((prev) => ({
+        setTempFilters((prev) => ({
             ...prev,
             [name]: newValue,
         }));
     };
 
     const handleSwitchChange = (name) => (event) => {
-        setFilters((prev) => ({
+        setTempFilters((prev) => ({
             ...prev,
             [name]: event.target.checked,
         }));
     };
 
     const handleChipClick = (discipline) => {
-        setSelectedDiscipline(
-            discipline === selectedDiscipline ? "" : discipline
-        );
+        setSelectedDiscipline(discipline === selectedDiscipline ? "" : discipline);
     };
 
     const handleSearchChange = (event) => {
         setSearchQuery(event.target.value.toLowerCase());
-    };
-
-    const handleApplyFilters = () => {
-        setAppliedFilters(filters); // Apply filters
-        setFilterOpen(false); // Close the dialog
-    };
-
-    const handleClearFilters = () => {
-        setFilters(defaultFilters); // Reset filters to default values
-        setAppliedFilters(defaultFilters); // Clear applied filters
     };
 
     return (
@@ -374,21 +685,52 @@ export default function Programs() {
                                 variant="outlined"
                                 startIcon={<FilterListIcon />}
                                 sx={{ width: { xs: "100%", sm: "auto" } }}
-                                onClick={() => setFilterOpen(true)}
+                                onClick={handleFilterDialogOpen}
                             >
                                 Filters
                             </Button>
+
+                            {/* Sort Button with Dropdown Menu */}
+                            <Button
+                                variant="outlined"
+                                startIcon={<SortIcon />}
+                                sx={{ width: { xs: "100%", sm: "auto" } }}
+                                onClick={handleSortMenuOpen}
+                                aria-controls="sort-menu"
+                                aria-haspopup="true"
+                                aria-expanded={isSortMenuOpen ? "true" : undefined}
+                            >
+                                Sort
+                            </Button>
+                            <Menu
+                                id="sort-menu"
+                                anchorEl={sortAnchorEl}
+                                open={isSortMenuOpen}
+                                onClose={handleSortMenuClose}
+                                MenuListProps={{
+                                    "aria-labelledby": "sort-button",
+                                }}
+                            >
+                                <MenuItem onClick={() => handleSortOptionSelect("")}>
+                                    None
+                                </MenuItem>
+                                <MenuItem onClick={() => handleSortOptionSelect("highToLow")}>
+                                    Fee: High to Low
+                                </MenuItem>
+                                <MenuItem onClick={() => handleSortOptionSelect("lowToHigh")}>
+                                    Fee: Low to High
+                                </MenuItem>
+                            </Menu>
                         </SearchContainer>
+
+                        {/* Applied Filters Chips */}
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                            {getAppliedFilterChips()}
+                        </Box>
 
                         {/* Discipline Chips */}
                         <Stack direction="row" spacing={1} sx={{ mt: 0 }} flexWrap="wrap">
-                            {[
-                                "Information Technology",
-                                "Business",
-                                "Engineering",
-                                "Medicine",
-                                "Arts",
-                            ].map((discipline) => (
+                            {uniqueDisciplines.map((discipline) => (
                                 <Chip
                                     key={discipline}
                                     label={discipline}
@@ -412,19 +754,59 @@ export default function Programs() {
                             </Tabs>
                         </Box>
 
+                        {/* Loading State */}
+                        {loading && (
+                            <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+                                <CircularProgress />
+                            </Box>
+                        )}
+
+                        {/* Error State */}
+                        {error && (
+                            <Box sx={{ textAlign: "center", py: 8 }}>
+                                <Typography level="h3" sx={{ mb: 1 }}>
+                                    Error
+                                </Typography>
+                                <Typography level="body-md" color="neutral">
+                                    {error}
+                                </Typography>
+                            </Box>
+                        )}
+
                         {/* Program Cards */}
-                        <Grid container spacing={3}>
-                            {filteredPrograms.map((program) => (
-                                <Grid item key={program.id}>
-                                    <ProgramCard program={program} />
-                                </Grid>
-                            ))}
-                        </Grid>
+                        {filteredPrograms.length === 0 ? (
+                            <Box sx={{ textAlign: "center", py: 8 }}>
+                                <Typography level="h3" sx={{ mb: 1 }}>
+                                    No Programs Found
+                                </Typography>
+                                <Typography level="body-md" color="neutral">
+                                    Try adjusting your filters or search terms.
+                                </Typography>
+                            </Box>
+                        ) : (
+                            <Grid container spacing={3}>
+                                {currentPrograms.map((program) => (
+                                    <Grid item key={program.id} xs={12} sm={6} md={4}>
+                                        <ProgramCard program={program} />
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        )}
+
+                        {/* Pagination */}
+                        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                            <Pagination
+                                count={Math.ceil(filteredPrograms.length / itemsPerPage)}
+                                page={currentPage}
+                                onChange={handlePageChange}
+                                color="primary"
+                            />
+                        </Box>
                     </Stack>
                 </Container>
 
                 {/* Filter Dialog */}
-                <Dialog open={filterOpen} onClose={() => setFilterOpen(false)} maxWidth="md" fullWidth scroll="paper">
+                <Dialog open={filterOpen} onClose={handleFilterDialogClose} maxWidth="md" fullWidth scroll="paper">
                     <DialogTitle>
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
                             <Tabs value={filterTabValue} onChange={handleFilterTabChange} centered>
@@ -432,7 +814,7 @@ export default function Programs() {
                                 <Tab label="Financial" />
                                 <Tab label="Other" />
                             </Tabs>
-                            <IconButton onClick={() => setFilterOpen(false)}>
+                            <IconButton onClick={handleFilterDialogClose}>
                                 <CloseIcon />
                             </IconButton>
                         </Stack>
@@ -443,7 +825,7 @@ export default function Programs() {
                                 <Box>
                                     <Typography gutterBottom>GPA Range</Typography>
                                     <Slider
-                                        value={filters.gpa}
+                                        value={tempFilters.gpa}
                                         step={0.1}
                                         min={0}
                                         max={4.0}
@@ -460,7 +842,7 @@ export default function Programs() {
                                     <Select
                                         label="English Proficiency Test"
                                         name="englishTest"
-                                        value={filters.englishTest}
+                                        value={tempFilters.englishTest}
                                         onChange={handleFilterChange}
                                     >
                                         <MenuItem value="">None</MenuItem>
@@ -474,16 +856,16 @@ export default function Programs() {
                                     type="number"
                                     label="Test Score"
                                     name="testScore"
-                                    value={filters.testScore}
+                                    value={tempFilters.testScore}
                                     onChange={handleFilterChange}
-                                    disabled={!filters.englishTest} // Disable if no test is selected
+                                    disabled={!tempFilters.englishTest}
                                 />
                                 <FormControl fullWidth>
                                     <InputLabel>Academic Level</InputLabel>
                                     <Select
                                         label="Academic Level"
                                         name="academicLevel"
-                                        value={filters.academicLevel}
+                                        value={tempFilters.academicLevel}
                                         onChange={handleFilterChange}
                                     >
                                         <MenuItem value="">None</MenuItem>
@@ -498,7 +880,7 @@ export default function Programs() {
                                     <Select
                                         label="Field of Study"
                                         name="fieldOfStudy"
-                                        value={filters.fieldOfStudy}
+                                        value={tempFilters.fieldOfStudy}
                                         onChange={handleFilterChange}
                                     >
                                         <MenuItem value="">None</MenuItem>
@@ -517,24 +899,67 @@ export default function Programs() {
                                     <CardContent>
                                         <Stack spacing={3}>
                                             <Typography variant="subtitle1">Available Funds</Typography>
-                                            <TextField type="number" label="Bank Balance" fullWidth />
-                                            <TextField type="number" label="Education Loan Amount" fullWidth />
-                                            <TextField label="Bank Name" fullWidth />
+                                            <TextField
+                                                type="number"
+                                                label="Bank Balance"
+                                                fullWidth
+                                                value={tempFilters.bankBalance || ""}
+                                                onChange={(e) =>
+                                                    setTempFilters((prev) => ({
+                                                        ...prev,
+                                                        bankBalance: e.target.value ? parseFloat(e.target.value) : null,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                type="number"
+                                                label="Education Loan Amount"
+                                                fullWidth
+                                                value={tempFilters.educationLoan || ""}
+                                                onChange={(e) =>
+                                                    setTempFilters((prev) => ({
+                                                        ...prev,
+                                                        educationLoan: e.target.value ? parseFloat(e.target.value) : null,
+                                                    }))
+                                                }
+                                            />
+                                            <FormControl fullWidth>
+                                                <InputLabel>Bank Name</InputLabel>
+                                                <Select
+                                                    label="Bank Name"
+                                                    value={tempFilters.educationLoanBank || ""}
+                                                    onChange={(e) =>
+                                                        setTempFilters((prev) => ({
+                                                            ...prev,
+                                                            educationLoanBank: e.target.value,
+                                                        }))
+                                                    }
+                                                >
+                                                    <MenuItem value="">None</MenuItem>
+                                                    {acceptableBanks.map((bank) => (
+                                                        <MenuItem key={bank} value={bank}>
+                                                            {bank}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
                                         </Stack>
                                     </CardContent>
                                 </Card>
-                                {Array.from({ length: incomeSourceCount }).map((_, index) => (
+
+                                {/* Income Source Section */}
+                                {tempFilters.incomeSources.map((source, index) => (
                                     <Card key={index} variant="outlined">
                                         <CardContent>
                                             <Stack spacing={3}>
                                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                                     <Typography variant="subtitle1">Income Source {index + 1}</Typography>
-                                                    {index === incomeSourceCount - 1 && (
+                                                    {index === tempFilters.incomeSources.length - 1 && (
                                                         <Stack direction="row" spacing={1}>
-                                                            <IconButton size="small" onClick={() => setIncomeSourceCount(Math.max(1, incomeSourceCount - 1))}>
+                                                            <IconButton size="small" onClick={() => removeIncomeSource(index)}>
                                                                 <RemoveIcon />
                                                             </IconButton>
-                                                            <IconButton size="small" onClick={() => setIncomeSourceCount(incomeSourceCount + 1)}>
+                                                            <IconButton size="small" onClick={addIncomeSource}>
                                                                 <AddIcon />
                                                             </IconButton>
                                                         </Stack>
@@ -542,80 +967,64 @@ export default function Programs() {
                                                 </Stack>
                                                 <FormControl fullWidth>
                                                     <InputLabel>Source Type</InputLabel>
-                                                    <Select label="Source Type">
+                                                    <Select
+                                                        label="Source Type"
+                                                        value={source.incomeSourceType || ""}
+                                                        onChange={(e) =>
+                                                            handleIncomeSourceChange(index, "incomeSourceType", e.target.value)
+                                                        }
+                                                    >
                                                         <MenuItem value="">None</MenuItem>
-                                                        <MenuItem value="salary">Salary</MenuItem>
-                                                        <MenuItem value="business">Business</MenuItem>
-                                                        <MenuItem value="rent">Rental Income</MenuItem>
-                                                        <MenuItem value="vehicle">Vehicle Income</MenuItem>
-                                                        <MenuItem value="pension">Pension</MenuItem>
+                                                        <MenuItem value="Salary from Employment">Salary from Employment</MenuItem>
+                                                        <MenuItem value="Business Income">Business Income</MenuItem>
+                                                        <MenuItem value="Rental Income">Rental Income</MenuItem>
+                                                        <MenuItem value="Agricultural Income">Agricultural Income</MenuItem>
+                                                        <MenuItem value="Pension">Pension</MenuItem>
+                                                        <MenuItem value="Foreign Employment Income">Foreign Employment Income</MenuItem>
+                                                        <MenuItem value="Income from Investments">Income from Investments</MenuItem>
                                                     </Select>
                                                 </FormControl>
-                                                <TextField type="number" label="Annual Amount" fullWidth />
+                                                <TextField
+                                                    type="number"
+                                                    label="Total Income (Annual)"
+                                                    fullWidth
+                                                    value={source.totalIncome || ""}
+                                                    onChange={(e) =>
+                                                        handleIncomeSourceChange(index, "totalIncome", e.target.value ? parseFloat(e.target.value) : null)
+                                                    }
+                                                />
                                                 <FormControl fullWidth>
                                                     <InputLabel>Source Owner (Sponsor)</InputLabel>
-                                                    <Select label="Source Owner (Sponsor)">
+                                                    <Select
+                                                        label="Source Owner (Sponsor)"
+                                                        value={source.sourceOwner || ""}
+                                                        onChange={(e) =>
+                                                            handleIncomeSourceChange(index, "sourceOwner", e.target.value)
+                                                        }
+                                                    >
                                                         <MenuItem value="">None</MenuItem>
-                                                        <MenuItem value="father">Father</MenuItem>
-                                                        <MenuItem value="mother">Mother</MenuItem>
-                                                        <MenuItem value="brother">Brother</MenuItem>
-                                                        <MenuItem value="sister">Sister</MenuItem>
-                                                        <MenuItem value="uncle">Uncle</MenuItem>
-                                                        <MenuItem value="grandfather">Grandfather</MenuItem>
-                                                        <MenuItem value="grandmother">Grandmother</MenuItem>
+                                                        <MenuItem value="Parents">Parents</MenuItem>
+                                                        <MenuItem value="Siblings">Siblings</MenuItem>
+                                                        <MenuItem value="Spouse">Spouse</MenuItem>
+                                                        <MenuItem value="Relatives">Relatives</MenuItem>
+                                                        <MenuItem value="Employers">Employers</MenuItem>
+                                                        <MenuItem value="Educational Institutions">Educational Institutions</MenuItem>
                                                     </Select>
                                                 </FormControl>
                                             </Stack>
                                         </CardContent>
                                     </Card>
                                 ))}
-                                <Card variant="outlined">
-                                    <CardContent>
-                                        <Stack spacing={3}>
-                                            <Typography variant="subtitle1">Total Financial Capacity</Typography>
-                                            <Box>
-                                                <Typography gutterBottom>Required Funds Range</Typography>
-                                                <Slider
-                                                    defaultValue={25000}
-                                                    step={1000}
-                                                    min={0}
-                                                    max={100000}
-                                                    marks={[
-                                                        { value: 0, label: "$0" },
-                                                        { value: 100000, label: "$100,000+" },
-                                                    ]}
-                                                    valueLabelDisplay="auto"
-                                                    valueLabelFormat={(value) => `$${value.toLocaleString()}`}
-                                                />
-                                            </Box>
-                                            <FormControlLabel control={<Switch />} label="Include Living Expenses" />
-                                        </Stack>
-                                    </CardContent>
-                                </Card>
                             </Stack>
                         </TabPanel>
                         <TabPanel value={filterTabValue} index={2}>
                             <Stack spacing={3}>
-                                <TextField
-                                    type="number"
-                                    label="Study Gap (Years)"
-                                    name="studyGap"
-                                    value={filters.studyGap}
-                                    onChange={handleFilterChange}
-                                />
-                                <TextField
-                                    type="number"
-                                    label="Work Experience (Years)"
-                                    name="workExperience"
-                                    value={filters.workExperience}
-                                    onChange={handleFilterChange}
-                                />
                                 <FormControl fullWidth>
                                     <InputLabel>Preferred Location</InputLabel>
                                     <Select
                                         label="Preferred Location"
                                         name="preferredLocation"
-                                        value={filters.preferredLocation}
+                                        value={tempFilters.preferredLocation}
                                         onChange={handleFilterChange}
                                     >
                                         <MenuItem value="">None</MenuItem>
@@ -639,7 +1048,7 @@ export default function Programs() {
                                                 control={
                                                     <Switch
                                                         name="visaRefusal"
-                                                        checked={filters.visaRefusal}
+                                                        checked={tempFilters.visaRefusal}
                                                         onChange={handleSwitchChange("visaRefusal")}
                                                     />
                                                 }
