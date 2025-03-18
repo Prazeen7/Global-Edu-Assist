@@ -18,11 +18,40 @@ import {
   Paper,
   Chip,
   TextField,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import Grid from "@mui/joy/Grid";
-import { ChevronLeft, ChevronRight } from "@mui/icons-material";
+import { ChevronLeft, ChevronRight, ExpandMore, Description, Info } from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
 import axios from "axios";
 import "./institutions.css";
+
+const StyledAccordion = styled(Accordion)(({ theme }) => ({
+  margin: "12px 0",
+  borderRadius: "12px",
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: "none",
+  "&:before": { display: "none" },
+  "&.Mui-expanded": { margin: "12px 0" },
+}));
+
+const StyledTableHeader = styled(TableRow)(({ theme }) => ({
+  "& th": {
+    backgroundColor: "#f8fafc",
+    color: "#4f46e5",
+    fontWeight: 600,
+    fontSize: "0.875rem",
+    borderBottom: `2px solid #e2e8f0`,
+  },
+}));
 
 export default function InstitutionPage() {
   const { id } = useParams();
@@ -34,6 +63,7 @@ export default function InstitutionPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const agentsRef = useRef(null);
   const bannerIntervalRef = useRef(null);
+  const [currentPage, setCurrentPage] = useState(1); // Default to page 1
 
   // Fetch institution data
   useEffect(() => {
@@ -47,7 +77,11 @@ export default function InstitutionPage() {
           console.error("Error fetching institution:", error);
         });
     }
-  }, [id, location.state]);
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [id, location.state, currentPage]);
 
   // Auto-play banner
   const startBannerInterval = () => {
@@ -375,61 +409,183 @@ export default function InstitutionPage() {
     </Paper>,
 
     // Documents Tab
-    <Paper
-      elevation={0} 
-      sx={{
-        p: 2,
-        backgroundColor: "background.paper",
-        borderRadius: 3,
-        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)'
-      }}
-    >
-      <Typography
-        variant="h6"
-        gutterBottom
-        sx={{
-          color: "primary.main",
-          fontWeight: "bold",
-          mb: 2
-        }}
-      >
-        Required Documents
-      </Typography>
+    <div style={{ backgroundColor: "#f8fafc", minHeight: "100vh", padding: "40px 24px" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <Typography
+          variant="h4"
+          sx={{
+            mb: 3,
+            color: "#1e293b",
+            fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Description sx={{ color: "#4f46e5", fontSize: "2rem" }} />
+          Required Documents
+        </Typography>
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <Typography
-            variant="subtitle1"
-            gutterBottom
-            sx={{
-              fontWeight: "bold",
-              color: "text.secondary"
-            }}
-          >
-            Offer Documents
-          </Typography>
-          <List dense>
-            {Object.entries(institution.documents.Offer_letter).map(([key, value], index) => (
-              <ListItem
-                key={index}
-                sx={{
-                  py: 0.5,
-                  px: 1
-                }}
-              >
-                <ListItemText
-                  primary={value}
-                  primaryTypographyProps={{
-                    fontWeight: "medium",
-                    color: "text.primary"
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "16px",
+            padding: "32px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            border: "1px solid #e2e8f0",
+          }}
+        >
+          {Object.entries(institution.documents).map(([documentType, documentDetails], index) => (
+            <React.Fragment key={index}>
+              <StyledAccordion>
+                <AccordionSummary
+                  expandIcon={<ExpandMore sx={{ color: "#4f46e5" }} />}
+                  sx={{
+                    "&:hover": { backgroundColor: "#f8fafc" },
+                    padding: "0 16px",
                   }}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </Grid>
-      </Grid>
-    </Paper>,
+                >
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 600,
+                      color: "#1e293b",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        backgroundColor: "#e0e7ff",
+                        borderRadius: "6px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#4f46e5",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      {index + 1}
+                    </span>
+                    {documentType.replace(/_/g, " ")}
+                  </Typography>
+                </AccordionSummary>
+
+                <AccordionDetails sx={{ padding: 0 }}>
+                  <TableContainer
+                    sx={{
+                      borderTop: "1px solid #e2e8f0",
+                      borderRadius: "0 0 12px 12px",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Table>
+                      <TableHead>
+                        <StyledTableHeader>
+                          <TableCell align="center" sx={{ width: "10%" }}>
+                            S.N.
+                          </TableCell>
+                          <TableCell align="left" sx={{ width: "30%" }}>
+                            Document
+                          </TableCell>
+                          <TableCell align="left" sx={{ width: "30%" }}>
+                            Source
+                          </TableCell>
+                          <TableCell align="left" sx={{ width: "30%" }}>
+                            Details
+                          </TableCell>
+                        </StyledTableHeader>
+                      </TableHead>
+                      <TableBody>
+                        {documentDetails.docs.map((doc, idx) => (
+                          <TableRow
+                            key={idx}
+                            sx={{
+                              "&:last-child td": { borderBottom: 0 },
+                              "&:hover": { backgroundColor: "#f8fafc" },
+                            }}
+                          >
+                            <TableCell align="center" sx={{ color: "#64748b" }}>
+                              {idx + 1}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 500 }}>{doc}</TableCell>
+                            <TableCell sx={{ color: "#4f46e5" }}>
+                              {documentDetails.src[idx]}
+                            </TableCell>
+                            <TableCell sx={{ color: "#64748b" }}>
+                              {documentDetails.info[idx]}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+
+                  {/* Additional Info Section in Grid */}
+                  {documentDetails.additional_info && (
+                    <Box sx={{ p: 3, backgroundColor: "#f1f5f9", borderTop: "1px solid #e2e8f0" }}>
+                      <Typography variant="h6" sx={{ mb: 2, color: "#4f46e5", fontWeight: 600 }}>
+                        Additional Information
+                      </Typography>
+                      <Grid container spacing={3}>
+                        {Object.entries(documentDetails.additional_info).map(([key, value], idx) => (
+                          <Grid item xs={12} sm={6} md={4} key={idx}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 2,
+                                height: "100%", // Ensure all cards have the same height
+                                display: "flex",
+                                flexDirection: "column",
+                                borderRadius: "8px",
+                                backgroundColor: "white",
+                                border: "1px solid #e2e8f0",
+                              }}
+                            >
+                              <Typography variant="subtitle1" sx={{ fontWeight: 500, color: "#1e293b", mb: 1 }}>
+                                {key}
+                              </Typography>
+                              <Box sx={{ flexGrow: 1, overflow: "auto" }}>
+                                {Array.isArray(value) ? (
+                                  <List dense>
+                                    {value.map((item, itemIndex) => (
+                                      <ListItem key={itemIndex} sx={{ py: 0.5, px: 1 }}>
+                                        <ListItemText
+                                          primary={item}
+                                          primaryTypographyProps={{
+                                            fontWeight: "medium",
+                                            color: "text.primary",
+                                          }}
+                                        />
+                                      </ListItem>
+                                    ))}
+                                  </List>
+                                ) : (
+                                  <Typography variant="body2" sx={{ color: "#64748b" }}>
+                                    {value}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
+                </AccordionDetails>
+              </StyledAccordion>
+
+              {index < Object.entries(institution.documents).length - 1 && (
+                <Divider sx={{ my: 1, borderColor: "#e2e8f0" }} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    </div>,
   ];
 
   return (
@@ -562,7 +718,7 @@ export default function InstitutionPage() {
         <Box sx={{ mb: 4 }}>{tabContent[tabIndex]}</Box>
 
         {/* Agents Section */}
-        <Box sx={{ mt: 6, userSelect: 'text' }}>
+        <Box sx={{ mt: 6, userSelect: "text" }}>
           <Typography variant="h5" fontWeight="bold" mb={4}>
             Authorized Agents
           </Typography>

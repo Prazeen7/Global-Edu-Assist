@@ -1,6 +1,7 @@
+import React, { useState, useEffect } from 'react';
 import "./App.css";
 import Navbar from "./components/NavBar";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import LandingPage from "./Pages/LandingPage/LandingPage";
 import Destinations from "./Pages/Programs/Programs";
 import Institutions from "./Pages/Institutions/Institutions";
@@ -10,11 +11,36 @@ import Login from "./Pages/Login/Login";
 import Signup from "./Pages/Signup/Signup";
 import Documents from "./Pages/Documents/Documents";
 import InstitutionPage from './Pages/Institutions/InstitutionPage';
+import Admin from './layouts/Admin/DashboardLayout';
+import AdminAbout from './Pages/Admin/About';
+import AdminAgents from './Pages/Admin/Agents';
+import AdminDashboard from './Pages/Admin/Dashboard';
+import AdminDocuments from './Pages/Admin/Documents';
+import AdminInstitutions from './Pages/Admin/Institutions';
+import AdminLandingPage from './Pages/Admin/LandingPage';
+import AdminSetting from './Pages/Admin/Settings';
 import { AuthContext } from "./Context/context";
-import { useState } from "react";
 import Footer from './components/Footer';
 
 function App() {
+  // State for authentication context
+  const [LoggedIn, setLoggedIn] = useState(false);
+  const [UserAvatar, setUserAvatar] = useState('');
+  const [UserType, setUserType] = useState('u');
+
+  // Check for token in local storage on initial load
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userAvatar = localStorage.getItem('userAvatar');
+    const userType = localStorage.getItem('userType');
+
+    if (token) {
+      setLoggedIn(true); // Update the auth context if token exists
+      setUserAvatar(userAvatar || ''); // Set UserAvatar from local storage
+      setUserType(userType || 'u'); // Set UserType from local storage
+    }
+  }, []);
+
   // Create routes using React Router
   const router = createBrowserRouter([
     {
@@ -23,7 +49,6 @@ function App() {
         <>
           <Navbar />
           <LandingPage />
-
           <Footer />
         </>
       ),
@@ -34,7 +59,6 @@ function App() {
         <>
           <Navbar />
           <About />
-
           <Footer />
         </>
       ),
@@ -45,7 +69,6 @@ function App() {
         <>
           <Navbar />
           <Institutions />
-
           <Footer />
         </>
       ),
@@ -56,7 +79,6 @@ function App() {
         <>
           <Navbar />
           <Destinations />
-
           <Footer />
         </>
       ),
@@ -67,7 +89,6 @@ function App() {
         <>
           <Navbar />
           <Documents />
-
           <Footer />
         </>
       ),
@@ -78,7 +99,6 @@ function App() {
         <>
           <Navbar />
           <Agents />
-
           <Footer />
         </>
       ),
@@ -105,21 +125,63 @@ function App() {
       path: "/institutionPage/:id",
       element: (
         <>
-        <Navbar />
-        <InstitutionPage />
-        <Footer />
+          <Navbar />
+          <InstitutionPage />
+          <Footer />
         </>
-      )
-    }
+      ),
+    },
+    {
+      path: "/admin",
+      element: <Admin />, 
+      children: [
+        {
+          index: true, 
+          element: <AdminDashboard />,
+        },
+        {
+          path: "dashboard", 
+          element: <AdminDashboard />,
+        },
+        {
+          path: "institutions", 
+          element: <AdminInstitutions />,
+        },
+        {
+          path: "documents", 
+          element: <AdminDocuments />,
+        },
+        {
+          path: "agents", 
+          element: <AdminAgents />,
+        },
+        {
+          path: "landingPage", 
+          element: <AdminLandingPage />,
+        },
+        {
+          path: "about",
+          element: <AdminAbout />,
+        },
+        {
+          path: "settings", 
+          element: <AdminSetting />,
+        },
+      ],
+    },
   ]);
 
-  // State for authentication context
-  const [LoggedIn, setLoggedIn] = useState(false);
-  const [UserAvatar, setUserAvatar] = useState('');
-  const [UserType, setUserType] = useState('u');
-
   return (
-    <AuthContext.Provider value={{ LoggedIn, setLoggedIn, UserAvatar, setUserAvatar, UserType, setUserType}}>
+    <AuthContext.Provider
+      value={{
+        LoggedIn,
+        setLoggedIn,
+        UserAvatar,
+        setUserAvatar,
+        UserType,
+        setUserType,
+      }}
+    >
       <div className="App">
         <RouterProvider router={router} />
       </div>
