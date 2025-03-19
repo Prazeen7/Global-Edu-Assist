@@ -32,12 +32,14 @@ const Navbar = () => {
         };
     }, []);
 
+    // Close the menu when a link is clicked
     const handleLinkClick = () => {
         setIsMenuOpen(false);
     };
 
     return (
         <nav className="navbar">
+            {/* Logo and Website Name */}
             <NavLink to="/" onClick={handleLinkClick}>
                 <div className="logo-container">
                     <img src={Logo} alt="Logo" className="logo" />
@@ -45,35 +47,62 @@ const Navbar = () => {
                 </div>
             </NavLink>
 
-            {/* Navigation links */}
+            {/* Navigation Links */}
             <ul className={`nav-links ${isMenuOpen ? "active" : ""}`}>
+                {/* Institutions */}
                 <li>
                     <NavLink className={(e) => (e.isActive ? "activeColor" : "")} to="/institutions" onClick={handleLinkClick}>
                         Institutions
                     </NavLink>
                 </li>
+
+                {/* Programs */}
                 <li>
                     <NavLink className={(e) => (e.isActive ? "activeColor" : "")} to="/programs" onClick={handleLinkClick}>
                         Programs
                     </NavLink>
                 </li>
+
+                {/* Documents */}
                 <li>
                     <NavLink className={(e) => (e.isActive ? "activeColor" : "")} to="/documents" onClick={handleLinkClick}>
                         Documents
                     </NavLink>
                 </li>
+
+                {/* Cost Estimation (visible only when logged in) */}
+                {LoggedIn && (
+                    <li>
+                        <NavLink className={(e) => (e.isActive ? "activeColor" : "")} to="/cost-estimation" onClick={handleLinkClick}>
+                            Cost Estimation
+                        </NavLink>
+                    </li>
+                )}
+
+                {/* Progress Tracking (visible only when logged in) */}
+                {LoggedIn && (
+                    <li>
+                        <NavLink className={(e) => (e.isActive ? "activeColor" : "")} to="/progress-tracking" onClick={handleLinkClick}>
+                            Progress Tracking
+                        </NavLink>
+                    </li>
+                )}
+
+                {/* About */}
                 <li>
                     <NavLink className={(e) => (e.isActive ? "activeColor" : "")} to="/about" onClick={handleLinkClick}>
                         About
                     </NavLink>
                 </li>
+
+                {/* Agents */}
                 <li>
                     <NavLink className={(e) => (e.isActive ? "activeColor" : "")} to="/agents" onClick={handleLinkClick}>
                         Agents
                     </NavLink>
                 </li>
 
-                {/* Show Login/Signup links if not logged in */}
+                {/* Login and Signup (visible only when not logged in) */}
                 {!LoggedIn && (
                     <>
                         <li className="auth-link" onClick={handleLinkClick}>
@@ -90,7 +119,7 @@ const Navbar = () => {
                 )}
             </ul>
 
-            {/* Show Login/Signup buttons if not logged in */}
+            {/* Auth Buttons (visible only when not logged in) */}
             {!LoggedIn && (
                 <div className="auth-buttons">
                     <NavLink to="/login">
@@ -102,10 +131,9 @@ const Navbar = () => {
                 </div>
             )}
 
-            {/* Show search, chat & profile icon if logged in*/}
+            {/* Nav Buttons (visible only when logged in) */}
             {LoggedIn && (
                 <div className="nav-buttons">
-                    <SearchBar />
                     <Chats />
                     <AccountMenu />
                 </div>
@@ -117,7 +145,6 @@ const Navbar = () => {
                     <img className="hamburger-icon" src={hamBurger} alt="hamburger" />
                 </span>
             </button>
-
         </nav>
     );
 };

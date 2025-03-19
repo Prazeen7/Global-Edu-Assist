@@ -182,12 +182,6 @@ const SearchContainer = styled(Box)(({ theme }) => ({
     },
 }));
 
-const GradientTypography = styled(Typography)(({ theme }) => ({
-    background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-}));
-
 // Main Component
 export default function Programs() {
     const [filterOpen, setFilterOpen] = useState(false);
@@ -263,7 +257,7 @@ export default function Programs() {
                             intakes: programDetails.intakes ? programDetails.intakes.split(",") : [],
                             fees: programDetails.Fees_First_Year || "N/A",
                             campus: programDetails.campuses || "N/A",
-                            language_requirement: programDetails.language_requirement || {}, // Ensure this is included
+                            language_requirement: programDetails.language_requirement || {}, 
                             gpa:
                                 programDetails.Level === "Undergraduate"
                                     ? parseGPA(institution.academic_requirements?.undergraduate)
@@ -276,7 +270,7 @@ export default function Programs() {
                     )
                 );
                 setInstitutions(shuffledPrograms);
-                setFilteredPrograms(shuffledPrograms); // Initialize filteredPrograms with all programs
+                setFilteredPrograms(shuffledPrograms); 
                 setLoading(false);
             })
             .catch((error) => {
@@ -328,8 +322,8 @@ export default function Programs() {
                 : true;
             const matchesLevel =
                 tabValue === 0 || // All Programs
-                (tabValue === 1 && program.level === "Undergraduate") || // Undergraduate
-                (tabValue === 2 && program.level === "Postgraduate"); // Postgraduate
+                (tabValue === 1 && program.level === "Undergraduate") || 
+                (tabValue === 2 && program.level === "Postgraduate");
 
             // GPA Filter Logic
             const matchesGPA = filters.gpa > 0 ? program.gpa <= filters.gpa : true;
@@ -355,7 +349,7 @@ export default function Programs() {
                 if (['IELTS', 'PTE'].includes(englishTest.toUpperCase())) {
                     // Split the score into parts (e.g., "6.5/6.0" => ["6.5", "6.0"])
                     const parts = rawScore.split('/');
-                    parsedScore = parseFloat(parts[0].trim()); // Take the first part (overall score)
+                    parsedScore = parseFloat(parts[0].trim()); 
                 } else if (englishTest.toUpperCase() === 'TOEFL') {
                     // TOEFL scores are typically a single number (e.g., "90")
                     parsedScore = parseFloat(rawScore);
@@ -471,7 +465,7 @@ export default function Programs() {
     const handleClearFilters = () => {
         setTempFilters(defaultFilters);
         setAppliedFilters(defaultFilters);
-        setFilteredPrograms(institutions); // Reset filtered programs to all programs
+        setFilteredPrograms(institutions); 
     };
 
     // Handle income source change

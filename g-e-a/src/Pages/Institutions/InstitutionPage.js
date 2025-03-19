@@ -16,7 +16,6 @@ import {
   ListItemText,
   Divider,
   Paper,
-  Chip,
   TextField,
   Accordion,
   AccordionSummary,
@@ -29,10 +28,11 @@ import {
   TableRow,
 } from "@mui/material";
 import Grid from "@mui/joy/Grid";
-import { ChevronLeft, ChevronRight, ExpandMore, Description, Info } from "@mui/icons-material";
+import { ChevronLeft, ChevronRight, ExpandMore, Description } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import axios from "axios";
 import "./institutions.css";
+import Estimation from "../../components/Estimation";
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   margin: "12px 0",
@@ -63,7 +63,6 @@ export default function InstitutionPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const agentsRef = useRef(null);
   const bannerIntervalRef = useRef(null);
-  const [currentPage, setCurrentPage] = useState(1); // Default to page 1
 
   // Fetch institution data
   useEffect(() => {
@@ -81,7 +80,7 @@ export default function InstitutionPage() {
       top: 0,
       behavior: "smooth",
     });
-  }, [id, location.state, currentPage]);
+  }, [id, location.state]);
 
   // Auto-play banner
   const startBannerInterval = () => {
@@ -110,8 +109,8 @@ export default function InstitutionPage() {
 
   // Handle agent navigation
   const handleAgentScroll = (direction) => {
-    const cardWidth = 300; // Width of each card
-    const gap = 24; // Gap between cards
+    const cardWidth = 300; 
+    const gap = 24;
     const scrollAmount = (cardWidth + gap) * 3 * (direction === "left" ? -1 : 1);
 
     if (agentsRef.current) {
@@ -396,9 +395,7 @@ export default function InstitutionPage() {
 
     // Estimate Cost Tab
     <Paper elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
-      <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
-        Tuition Fees
-      </Typography>
+      <Estimation />
       <List>
         {institution.estimate.map((estimate, index) => (
           <ListItem key={index} sx={{ py: 1 }}>
