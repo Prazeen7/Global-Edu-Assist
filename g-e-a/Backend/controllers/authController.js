@@ -1,7 +1,6 @@
 const UserModel = require("../models/user");
 const nodemailer = require("nodemailer");
 const Jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
 const generatePassword = require("../utils/generatePassword");
 
 // Load environment variables
@@ -27,8 +26,8 @@ const login = async (req, res) => {
             return res.status(400).json({ message: "Please sign up first" });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, existingUser.password);
-        if (!isPasswordValid) {
+        // Directly compare plain text passwords
+        if (password !== existingUser.password) {
             return res.status(400).json({ message: "Password is incorrect" });
         }
 
@@ -59,8 +58,7 @@ const forgotPassword = async (req, res) => {
         }
 
         const newPassword = generatePassword();
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        user.password = hashedPassword;
+        user.password = newPassword; 
         await user.save();
 
         const mailOptions = {
