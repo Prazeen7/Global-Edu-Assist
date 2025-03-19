@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import "./App.css";
 import Navbar from "./components/NavBar";
-import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LandingPage from "./Pages/LandingPage/LandingPage";
 import Destinations from "./Pages/Programs/Programs";
 import Institutions from "./Pages/Institutions/Institutions";
@@ -11,6 +11,8 @@ import Login from "./Pages/Login/Login";
 import Signup from "./Pages/Signup/Signup";
 import Documents from "./Pages/Documents/Documents";
 import InstitutionPage from './Pages/Institutions/InstitutionPage';
+import Estimation from './components/Estimation';
+import ProgressTracking from './components/ProgressTracking';
 import Admin from './layouts/Admin/DashboardLayout';
 import AdminAbout from './Pages/Admin/About';
 import AdminAgents from './Pages/Admin/Agents';
@@ -21,25 +23,31 @@ import AdminLandingPage from './Pages/Admin/LandingPage';
 import AdminSetting from './Pages/Admin/Settings';
 import { AuthContext } from "./Context/context";
 import Footer from './components/Footer';
+import ProtectedRoute from './components/ProtectedRoute';
+import AuthRoute from './components/AuthRoute';
 
 function App() {
-  // State for authentication context
   const [LoggedIn, setLoggedIn] = useState(false);
   const [UserAvatar, setUserAvatar] = useState('');
   const [UserType, setUserType] = useState('u');
+  const [isLoading, setIsLoading] = useState(true); // Add loading state
 
-  // Check for token in local storage on initial load
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userAvatar = localStorage.getItem('userAvatar');
     const userType = localStorage.getItem('userType');
 
     if (token) {
-      setLoggedIn(true); // Update the auth context if token exists
-      setUserAvatar(userAvatar || ''); // Set UserAvatar from local storage
-      setUserType(userType || 'u'); // Set UserType from local storage
+      setLoggedIn(true);
+      setUserAvatar(userAvatar || '');
+      setUserType(userType || 'u');
     }
+    setIsLoading(false); // Mark authentication check as complete
   }, []);
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Show loading indicator
+  }
 
   // Create routes using React Router
   const router = createBrowserRouter([
@@ -94,6 +102,26 @@ function App() {
       ),
     },
     {
+      path: "/cost-estimation",
+      element: (
+        <ProtectedRoute>
+          <Navbar />
+          <Estimation />
+          <Footer />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/progress-tracking",
+      element: (
+        <ProtectedRoute>
+          <Navbar />
+          <ProgressTracking />
+          <Footer />
+        </ProtectedRoute>
+      ),
+    },
+    {
       path: "/agents",
       element: (
         <>
@@ -106,19 +134,19 @@ function App() {
     {
       path: "/login",
       element: (
-        <>
+        <AuthRoute>
           <Navbar />
           <Login />
-        </>
+        </AuthRoute>
       ),
     },
     {
       path: "/signup",
       element: (
-        <>
+        <AuthRoute>
           <Navbar />
           <Signup />
-        </>
+        </AuthRoute>
       ),
     },
     {
@@ -133,30 +161,30 @@ function App() {
     },
     {
       path: "/admin",
-      element: <Admin />, 
+      element: <Admin />,
       children: [
         {
-          index: true, 
+          index: true,
           element: <AdminDashboard />,
         },
         {
-          path: "dashboard", 
+          path: "dashboard",
           element: <AdminDashboard />,
         },
         {
-          path: "institutions", 
+          path: "institutions",
           element: <AdminInstitutions />,
         },
         {
-          path: "documents", 
+          path: "documents",
           element: <AdminDocuments />,
         },
         {
-          path: "agents", 
+          path: "agents",
           element: <AdminAgents />,
         },
         {
-          path: "landingPage", 
+          path: "landingPage",
           element: <AdminLandingPage />,
         },
         {
@@ -164,7 +192,7 @@ function App() {
           element: <AdminAbout />,
         },
         {
-          path: "settings", 
+          path: "settings",
           element: <AdminSetting />,
         },
       ],
