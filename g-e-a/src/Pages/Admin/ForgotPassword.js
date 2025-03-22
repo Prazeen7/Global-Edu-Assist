@@ -12,7 +12,6 @@ import {
     Alert,
 } from '@mui/material';
 import axios from 'axios';
-import '../Institutions/institutions.css'
 
 function ForgotPassword({ open, handleClose }) {
     const [email, setEmail] = React.useState('');

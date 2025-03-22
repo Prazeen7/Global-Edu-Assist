@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom"; // Add useNavigate
 import { styled, useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
@@ -22,6 +22,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import HomeIcon from "@mui/icons-material/Home";
 import ArticleIcon from "@mui/icons-material/Article";
 import SettingsIcon from "@mui/icons-material/Settings";
+import LogoutIcon from "@mui/icons-material/Logout"; // Add LogoutIcon
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { SidebarContext } from "../../layouts/Admin/DashboardLayout";
 
@@ -47,6 +48,7 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
 function Sidebar() {
     const theme = useTheme();
     const location = useLocation();
+    const navigate = useNavigate(); // Add useNavigate
     const { isOpen, toggle } = useContext(SidebarContext);
     const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
 
@@ -60,6 +62,17 @@ function Sidebar() {
         { text: "About Section", icon: <ArticleIcon />, path: "/admin/about" },
         { text: "Settings", icon: <SettingsIcon />, path: "/admin/settings" },
     ];
+
+    // Logout function
+    const handleLogout = () => {
+        // Clear authentication data from local storage
+        localStorage.removeItem("token");
+        localStorage.removeItem("userAvatar");
+        localStorage.removeItem("userType");
+
+        // Redirect to admin login page
+        navigate("/admin");
+    };
 
     const drawer = (
         <>
@@ -166,6 +179,18 @@ function Sidebar() {
                     </ListItem>
                 ))}
             </List>
+            <Divider />
+            {/* Logout Button */}
+            <List>
+                <ListItem disablePadding>
+                    <ListItemButton onClick={handleLogout}>
+                        <ListItemIcon>
+                            <LogoutIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Logout" />
+                    </ListItemButton>
+                </ListItem>
+            </List>
         </>
     );
 
@@ -196,7 +221,7 @@ function Sidebar() {
                         open={isOpen}
                         onClose={toggle}
                         ModalProps={{
-                            keepMounted: true, // Better open performance on mobile
+                            keepMounted: true, 
                         }}
                     >
                         {drawer}

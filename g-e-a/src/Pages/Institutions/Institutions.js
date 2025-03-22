@@ -18,6 +18,7 @@ import {
 import { Search, FilterList, LocationOn, School, AccessTime, ArrowForward } from "@mui/icons-material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import './institutions.css'
 
 export default function InstitutionsPage() {
     const [institutions, setInstitutions] = useState([]);
@@ -29,6 +30,16 @@ export default function InstitutionsPage() {
     const [currentPage, setCurrentPage] = useState(1); // Default to page 1
 
     const brandColor = "#4f46e5";
+
+    // Helper function to extract months from intakes
+    const extractMonths = (intakes) => {
+        if (!intakes) return "N/A"; // Handle missing data
+        const months = intakes
+            .split(",") // Split by comma
+            .map((intake) => intake.trim().split(" ")[0]) // Extract the month
+            .filter((month, index, self) => self.indexOf(month) === index); // Remove duplicates
+        return months.join(", "); // Join with commas
+    };
 
     // Fetch data from the API
     useEffect(() => {
@@ -47,9 +58,9 @@ export default function InstitutionsPage() {
                 if (error.response && error.response.status === 404) {
                     setInstitutions([]); // Clear institutions list
                     setError([
-                      "No institutions found matching your criteria.",
-                      "Try adjusting your search or filters to see more results."
-                  ]);
+                        "No institutions found matching your criteria.",
+                        "Try adjusting your search or filters to see more results.",
+                    ]);
                 } else {
                     setError("Failed to fetch institutions. Please try again later.");
                 }
@@ -124,7 +135,7 @@ export default function InstitutionsPage() {
                     }}
                 >
                     <Option value="all">All Locations</Option>
-                    {Array.from(new Set(institutions.map((inst) => inst.locations))).map((location) => (
+                    {Array.from(new Set(institutions.flatMap(inst => inst.locations.map(loc => loc.country)))).map((location) => (
                         <Option key={location} value={location}>
                             {location}
                         </Option>
@@ -184,12 +195,12 @@ export default function InstitutionsPage() {
                                     {/* Header */}
                                     <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
                                         <Avatar
-                                            src={getValue(institution.avatar, "/placeholder.svg")}
+                                            src={`http://localhost:3001/uploads/${institution.profilePicture}`}
                                             sx={{ width: 56, height: 56 }}
                                         />
                                         <Box sx={{ flex: 1 }}>
                                             <Typography level="h4">
-                                                {getValue(institution.university)}
+                                                {getValue(institution.institutionName)}
                                             </Typography>
                                         </Box>
                                     </Box>
@@ -205,24 +216,27 @@ export default function InstitutionsPage() {
                                             gap: 2,
                                         }}
                                     >
+                                        {/* Display Locations */}
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                             <LocationOn sx={{ fontSize: 20 }} />
                                             <Typography level="body-sm">
-                                                {institution.locations || "Location not available"}
+                                                {institution.locations.map(loc => loc.city).join(", ") || "Location not available"}
                                             </Typography>
                                         </Box>
 
+                                        {/* Display Programs */}
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                             <School sx={{ fontSize: 20 }} />
                                             <Typography level="body-sm">
-                                                Tuition: {getValue(institution.average_tuition)}
+                                                Programs: {institution.programs.length}
                                             </Typography>
                                         </Box>
 
+                                        {/* Display Intakes */}
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                             <AccessTime sx={{ fontSize: 20 }} />
                                             <Typography level="body-sm">
-                                                Intakes: {getValue(institution.intakes?.join(", "))}
+                                                Intakes: {extractMonths(institution.programs[0]?.intakes)}
                                             </Typography>
                                         </Box>
 
@@ -233,13 +247,13 @@ export default function InstitutionsPage() {
                                             </Typography>
                                             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                                                 <Chip color="primary" size="sm">
-                                                    IELTS: {getValue(institution.language_requirements?.IELTS)}
+                                                    IELTS: {getValue(institution.entryRequirements?.undergraduate?.IELTS)}
                                                 </Chip>
                                                 <Chip color="primary" size="sm">
-                                                    TOEFL: {getValue(institution.language_requirements?.TOEFL)}
+                                                    TOEFL: {getValue(institution.entryRequirements?.undergraduate?.TOEFL)}
                                                 </Chip>
                                                 <Chip color="primary" size="sm">
-                                                    PTE: {getValue(institution.language_requirements?.PTE)}
+                                                    PTE: {getValue(institution.entryRequirements?.undergraduate?.PTE)}
                                                 </Chip>
                                             </Box>
                                         </Box>
@@ -250,12 +264,10 @@ export default function InstitutionsPage() {
                                                 Academic Requirements
                                             </Typography>
                                             <Typography level="body-sm" sx={{ mb: 1 }}>
-                                                Undergraduate:{" "}
-                                                {getValue(institution.academic_requirements?.undergraduate)}
+                                                Undergraduate: {getValue(institution.entryRequirements?.undergraduate?.GPA)}
                                             </Typography>
-                                            <Typography level="body-sm" sx={{ mb: 2 }}>
-                                                Postgraduate:{" "}
-                                                {getValue(institution.academic_requirements?.postgraduate)}
+                                            <Typography level="body-sm">
+                                                Postgraduate: {getValue(institution.entryRequirements?.postgraduate?.GPA)}
                                             </Typography>
                                         </Box>
                                     </Box>

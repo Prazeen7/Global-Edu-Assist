@@ -26,13 +26,13 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Grid,
 } from "@mui/material";
-import Grid from "@mui/joy/Grid";
 import { ChevronLeft, ChevronRight, ExpandMore, Description } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import axios from "axios";
-import "./institutions.css";
 import Estimation from "../../components/Estimation";
+import './institutions.css'
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   margin: "12px 0",
@@ -61,6 +61,8 @@ export default function InstitutionPage() {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [agentScrollIndex, setAgentScrollIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [documentCategories, setDocumentCategories] = useState([]); // State for fetched documents
+  const [allAgents, setAllAgents] = useState([]); // State for all agents from the API
   const agentsRef = useRef(null);
   const bannerIntervalRef = useRef(null);
 
@@ -68,7 +70,7 @@ export default function InstitutionPage() {
   useEffect(() => {
     if (!location.state) {
       axios
-        .get(`http://localhost:3001/institutions/${id}`)
+        .get(`http://localhost:3001/api/institutions/${id}`)
         .then((response) => {
           setInstitution(response.data);
         })
@@ -81,6 +83,47 @@ export default function InstitutionPage() {
       behavior: "smooth",
     });
   }, [id, location.state]);
+
+  // Fetch documents from the API
+  useEffect(() => {
+    axios
+      .get("http://localhost:3001/api/documents")
+      .then((response) => {
+        const formattedData = response.data.map((category) => ({
+          title: category.document,
+          details: category.docs.map((doc, index) => ({
+            name: doc,
+            source: category.src[index],
+            additional: category.info[index],
+          })),
+        }));
+        setDocumentCategories(formattedData);
+      })
+      .catch((error) => {
+        console.error("Error fetching documents:", error);
+      });
+  }, []);
+
+  // Fetch all agents from the API
+  useEffect(() => {
+    axios
+      .get("http://localhost:3001/api/agents")
+      .then((response) => {
+        setAllAgents(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching agents:", error);
+      });
+  }, []);
+
+  const matchedAgents = institution?.agents?.map((agentName) => {
+    const agentData = allAgents.find((agent) => agent[agentName]);
+    if (!agentData) return null;
+    return {
+      name: agentName,
+      ...agentData[agentName], // Includes head_office and other_locations
+    };
+  }).filter(agent => agent !== null);
 
   // Auto-play banner
   const startBannerInterval = () => {
@@ -109,7 +152,7 @@ export default function InstitutionPage() {
 
   // Handle agent navigation
   const handleAgentScroll = (direction) => {
-    const cardWidth = 300; 
+    const cardWidth = 300;
     const gap = 24;
     const scrollAmount = (cardWidth + gap) * 3 * (direction === "left" ? -1 : 1);
 
@@ -122,13 +165,22 @@ export default function InstitutionPage() {
 
     setAgentScrollIndex((prev) => {
       const newIndex = prev + (direction === "left" ? -3 : 3);
-      return Math.max(0, Math.min(newIndex, (institution?.agents?.length || 0) - 3));
+      return Math.max(0, Math.min(newIndex, (matchedAgents?.length || 0) - 3));
     });
   };
 
+  const extractMonths = (intakes) => {
+    if (!intakes) return "N/A"; // Handle missing data
+    const months = intakes
+      .split(",") // Split by comma
+      .map((intake) => intake.trim().split(" ")[0]) // Extract the month
+      .filter((month, index, self) => self.indexOf(month) === index); // Remove duplicates
+    return months.join(", "); // Join with commas
+  };
+
   // Filter programs based on search query
-  const filteredPrograms = Object.entries(institution?.programs || {}).filter(([programName]) =>
-    programName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredPrograms = institution?.programs?.filter((program) =>
+    program.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Render loading state if data is not available
@@ -141,10 +193,10 @@ export default function InstitutionPage() {
     // Overview Tab
     <Paper elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
       <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
-        About {institution.university}
+        About {institution.institutionName}
       </Typography>
       <Typography variant="body1" color="text.secondary" textAlign="left" sx={{ lineHeight: 1.6 }}>
-        {institution.overview}
+        {institution.overview?.details}
       </Typography>
     </Paper>,
 
@@ -154,7 +206,7 @@ export default function InstitutionPage() {
         Campuses
       </Typography>
       <Grid container spacing={3}>
-        {institution.campuses.map((campus, index) => (
+        {institution.locations?.map((location, index) => (
           <Grid item xs={12} sm={6} md={4} key={index}>
             <Card
               sx={{
@@ -169,7 +221,10 @@ export default function InstitutionPage() {
             >
               <CardContent sx={{ p: 2 }}>
                 <Typography variant="body1" sx={{ fontWeight: "medium", textAlign: "center" }}>
-                  {campus}
+                  {location.campusName}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
+                  {location.city}, {location.country}
                 </Typography>
               </CardContent>
             </Card>
@@ -191,7 +246,7 @@ export default function InstitutionPage() {
         sx={{ mb: 3 }}
       />
       <Grid container spacing={3}>
-        {filteredPrograms.map(([programName, programDetails], index) => (
+        {filteredPrograms?.map((program, index) => (
           <Grid item xs={12} sm={6} md={4} key={index}>
             <Card
               sx={{
@@ -210,40 +265,39 @@ export default function InstitutionPage() {
             >
               <CardContent sx={{ overflow: "auto", flexGrow: 1 }}>
                 <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: "bold" }}>
-                  {programName}
+                  {program.name}
                 </Typography>
                 <List>
                   <ListItem sx={{ py: 1 }}>
                     <ListItemText
-                      primary={`Level: ${programDetails.Level}`}
+                      primary={`Level: ${program.level}`}
                       primaryTypographyProps={{ fontWeight: "medium" }}
                     />
                   </ListItem>
                   <ListItem sx={{ py: 1 }}>
                     <ListItemText
-                      primary={`Duration: ${programDetails.duration}`}
+                      primary={`Duration: ${program.duration}`}
                       primaryTypographyProps={{ fontWeight: "medium" }}
                     />
                   </ListItem>
                   <ListItem sx={{ py: 1 }}>
                     <ListItemText
-                      primary={`Intakes: ${programDetails.intakes}`}
+                      primary={`Intakes: ${program.intakes}`}
                       primaryTypographyProps={{ fontWeight: "medium" }}
                     />
                   </ListItem>
                   <ListItem sx={{ py: 1 }}>
                     <ListItemText
-                      primary={`Fees: ${programDetails["Fees (first year)*"]} (annually)`}
+                      primary={`Fees: ${program.firstYearFees}`}
                       primaryTypographyProps={{ fontWeight: "medium" }}
                     />
                   </ListItem>
                   <ListItem sx={{ py: 1 }}>
-                    <ListItemText primary={`Campus: ${programDetails.campuses}`} />
+                    <ListItemText primary={`Campus: ${program.campuses}`} />
                   </ListItem>
-                  {/* IELTS Data */}
                   <ListItem sx={{ py: 1 }}>
                     <ListItemText
-                      primary={`IELTS Requirement: ${programDetails.IELTS || "Not specified"}`}
+                      primary={`IELTS Requirement: ${program.ielts || "Not specified"}`}
                       primaryTypographyProps={{ fontWeight: "medium" }}
                     />
                   </ListItem>
@@ -252,7 +306,7 @@ export default function InstitutionPage() {
               <Box sx={{ p: 2 }}>
                 <Button
                   variant="contained"
-                  href={programDetails.url}
+                  href={program.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   fullWidth
@@ -282,7 +336,7 @@ export default function InstitutionPage() {
         Intakes
       </Typography>
       <Grid container spacing={3}>
-        {institution.intakes.map((intake, index) => (
+        {institution.programs?.map((program, index) => (
           <Grid item xs={12} sm={6} md={4} key={index}>
             <Card
               sx={{
@@ -297,7 +351,7 @@ export default function InstitutionPage() {
             >
               <CardContent sx={{ p: 2 }}>
                 <Typography variant="body1" sx={{ fontWeight: "medium", textAlign: "center" }}>
-                  {intake}
+                  {extractMonths(program.intakes)}
                 </Typography>
               </CardContent>
             </Card>
@@ -312,7 +366,7 @@ export default function InstitutionPage() {
         Scholarships
       </Typography>
       <Grid container spacing={3}>
-        {Object.entries(institution.scholarships).map(([scholarshipName, scholarshipLink], index) => (
+        {institution.scholarships?.map((scholarship, index) => (
           <Grid item xs={12} sm={6} md={4} key={index}>
             <Card
               sx={{
@@ -332,11 +386,11 @@ export default function InstitutionPage() {
             >
               <CardContent sx={{ p: 2, flexGrow: 1 }}>
                 <Typography variant="body1" sx={{ fontWeight: "medium", textAlign: "center" }}>
-                  {scholarshipName}
+                  {scholarship.name}
                 </Typography>
                 <Box sx={{ textAlign: "center" }}>
                   <a
-                    href={scholarshipLink}
+                    href={scholarship.link}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -371,7 +425,25 @@ export default function InstitutionPage() {
           <List>
             <ListItem sx={{ py: 1 }}>
               <ListItemText
-                primary={institution.academic_requirements.undergraduate}
+                primary={`GPA: ${institution.entryRequirements?.undergraduate?.GPA}`}
+                primaryTypographyProps={{ fontWeight: "medium" }}
+              />
+            </ListItem>
+            <ListItem sx={{ py: 1 }}>
+              <ListItemText
+                primary={`IELTS: ${institution.entryRequirements?.undergraduate?.IELTS}`}
+                primaryTypographyProps={{ fontWeight: "medium" }}
+              />
+            </ListItem>
+            <ListItem sx={{ py: 1 }}>
+              <ListItemText
+                primary={`PTE: ${institution.entryRequirements?.undergraduate?.PTE}`}
+                primaryTypographyProps={{ fontWeight: "medium" }}
+              />
+            </ListItem>
+            <ListItem sx={{ py: 1 }}>
+              <ListItemText
+                primary={`TOEFL: ${institution.entryRequirements?.undergraduate?.TOEFL}`}
                 primaryTypographyProps={{ fontWeight: "medium" }}
               />
             </ListItem>
@@ -384,7 +456,25 @@ export default function InstitutionPage() {
           <List>
             <ListItem sx={{ py: 1 }}>
               <ListItemText
-                primary={institution.academic_requirements.postgraduate}
+                primary={`GPA: ${institution.entryRequirements?.postgraduate?.GPA}`}
+                primaryTypographyProps={{ fontWeight: "medium" }}
+              />
+            </ListItem>
+            <ListItem sx={{ py: 1 }}>
+              <ListItemText
+                primary={`IELTS: ${institution.entryRequirements?.postgraduate?.IELTS}`}
+                primaryTypographyProps={{ fontWeight: "medium" }}
+              />
+            </ListItem>
+            <ListItem sx={{ py: 1 }}>
+              <ListItemText
+                primary={`PTE: ${institution.entryRequirements?.postgraduate?.PTE}`}
+                primaryTypographyProps={{ fontWeight: "medium" }}
+              />
+            </ListItem>
+            <ListItem sx={{ py: 1 }}>
+              <ListItemText
+                primary={`TOEFL: ${institution.entryRequirements?.postgraduate?.TOEFL}`}
                 primaryTypographyProps={{ fontWeight: "medium" }}
               />
             </ListItem>
@@ -396,13 +486,6 @@ export default function InstitutionPage() {
     // Estimate Cost Tab
     <Paper elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
       <Estimation />
-      <List>
-        {institution.estimate.map((estimate, index) => (
-          <ListItem key={index} sx={{ py: 1 }}>
-            <ListItemText primary={estimate} primaryTypographyProps={{ fontWeight: "medium" }} />
-          </ListItem>
-        ))}
-      </List>
     </Paper>,
 
     // Documents Tab
@@ -432,7 +515,8 @@ export default function InstitutionPage() {
             border: "1px solid #e2e8f0",
           }}
         >
-          {Object.entries(institution.documents).map(([documentType, documentDetails], index) => (
+          {/* Render fetched documents */}
+          {documentCategories.map((category, index) => (
             <React.Fragment key={index}>
               <StyledAccordion>
                 <AccordionSummary
@@ -467,7 +551,7 @@ export default function InstitutionPage() {
                     >
                       {index + 1}
                     </span>
-                    {documentType.replace(/_/g, " ")}
+                    {category.title}
                   </Typography>
                 </AccordionSummary>
 
@@ -497,7 +581,7 @@ export default function InstitutionPage() {
                         </StyledTableHeader>
                       </TableHead>
                       <TableBody>
-                        {documentDetails.docs.map((doc, idx) => (
+                        {category.details.map((doc, idx) => (
                           <TableRow
                             key={idx}
                             sx={{
@@ -508,78 +592,77 @@ export default function InstitutionPage() {
                             <TableCell align="center" sx={{ color: "#64748b" }}>
                               {idx + 1}
                             </TableCell>
-                            <TableCell sx={{ fontWeight: 500 }}>{doc}</TableCell>
-                            <TableCell sx={{ color: "#4f46e5" }}>
-                              {documentDetails.src[idx]}
-                            </TableCell>
-                            <TableCell sx={{ color: "#64748b" }}>
-                              {documentDetails.info[idx]}
-                            </TableCell>
+                            <TableCell sx={{ fontWeight: 500 }}>{doc.name}</TableCell>
+                            <TableCell sx={{ color: "#4f46e5" }}>{doc.source}</TableCell>
+                            <TableCell sx={{ color: "#64748b" }}>{doc.additional}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </TableContainer>
-
-                  {/* Additional Info Section in Grid */}
-                  {documentDetails.additional_info && (
-                    <Box sx={{ p: 3, backgroundColor: "#f1f5f9", borderTop: "1px solid #e2e8f0" }}>
-                      <Typography variant="h6" sx={{ mb: 2, color: "#4f46e5", fontWeight: 600 }}>
-                        Additional Information
-                      </Typography>
-                      <Grid container spacing={3}>
-                        {Object.entries(documentDetails.additional_info).map(([key, value], idx) => (
-                          <Grid item xs={12} sm={6} md={4} key={idx}>
-                            <Paper
-                              elevation={0}
-                              sx={{
-                                p: 2,
-                                height: "100%", // Ensure all cards have the same height
-                                display: "flex",
-                                flexDirection: "column",
-                                borderRadius: "8px",
-                                backgroundColor: "white",
-                                border: "1px solid #e2e8f0",
-                              }}
-                            >
-                              <Typography variant="subtitle1" sx={{ fontWeight: 500, color: "#1e293b", mb: 1 }}>
-                                {key}
-                              </Typography>
-                              <Box sx={{ flexGrow: 1, overflow: "auto" }}>
-                                {Array.isArray(value) ? (
-                                  <List dense>
-                                    {value.map((item, itemIndex) => (
-                                      <ListItem key={itemIndex} sx={{ py: 0.5, px: 1 }}>
-                                        <ListItemText
-                                          primary={item}
-                                          primaryTypographyProps={{
-                                            fontWeight: "medium",
-                                            color: "text.primary",
-                                          }}
-                                        />
-                                      </ListItem>
-                                    ))}
-                                  </List>
-                                ) : (
-                                  <Typography variant="body2" sx={{ color: "#64748b" }}>
-                                    {value}
-                                  </Typography>
-                                )}
-                              </Box>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </Box>
-                  )}
                 </AccordionDetails>
               </StyledAccordion>
 
-              {index < Object.entries(institution.documents).length - 1 && (
+              {index < documentCategories.length - 1 && (
                 <Divider sx={{ my: 1, borderColor: "#e2e8f0" }} />
               )}
             </React.Fragment>
           ))}
+
+          {/* Render additional documents in cards */}
+          {institution?.documents && (
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h6" sx={{ mb: 3, color: "#4f46e5", fontWeight: 600 }}>
+                Additional Documents
+              </Typography>
+              <Grid container spacing={3}>
+                {Object.entries(institution.documents).map(([key, value], idx) => (
+                  <Grid item xs={12} sm={6} md={4} key={idx}>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        borderRadius: 2,
+                        boxShadow: 3,
+                        transition: "transform 0.2s, boxShadow 0.2s",
+                        "&:hover": {
+                          transform: "scale(1.02)",
+                          boxShadow: 6,
+                        },
+                      }}
+                    >
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 500, color: "#1e293b", mb: 1 }}>
+                          {key.replace(/_/g, " ")}
+                        </Typography>
+                        {Array.isArray(value) ? (
+                          <List dense>
+                            {value.map((item, itemIndex) => (
+                              <ListItem key={itemIndex} sx={{ py: 0.5, px: 1 }}>
+                                <ListItemText
+                                  primary={item}
+                                  primaryTypographyProps={{
+                                    fontWeight: "medium",
+                                    color: "text.primary",
+                                  }}
+                                />
+                              </ListItem>
+                            ))}
+                          </List>
+                        ) : (
+                          <Typography variant="body2" sx={{ color: "#64748b" }}>
+                            {value.toString()}
+                          </Typography>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
         </div>
       </div>
     </div>,
@@ -591,7 +674,7 @@ export default function InstitutionPage() {
         {/* Institution Header */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4 }}>
           <Avatar
-            src={institution.avatar}
+            src={`http://localhost:3001/uploads/${institution.profilePicture}`}
             alt="Institution Logo"
             sx={{
               width: 100,
@@ -611,7 +694,7 @@ export default function InstitutionPage() {
               textShadow: "1px 1px 2px rgba(0, 0, 0, 0.2)",
             }}
           >
-            {institution.university}
+            {institution.institutionName}
           </Typography>
         </Box>
 
@@ -644,7 +727,7 @@ export default function InstitutionPage() {
                 }}
               >
                 <img
-                  src={image}
+                  src={`http://localhost:3001/uploads/${image}`}
                   alt={`Campus ${index + 1}`}
                   style={{
                     width: "100%",
@@ -754,7 +837,7 @@ export default function InstitutionPage() {
                 "&::-webkit-scrollbar": { display: "none" },
               }}
             >
-              {Object.entries(institution.agents).map(([agentName, agentData], index) => (
+              {matchedAgents?.map((agent, index) => (
                 <Card
                   key={index}
                   sx={{
@@ -774,10 +857,9 @@ export default function InstitutionPage() {
                     },
                   }}
                 >
-                  {/* Card Content */}
                   <CardContent sx={{ textAlign: "center", flexGrow: 1, py: 2, overflow: "auto" }}>
                     <Avatar
-                      src={agentData.avatar}
+                      src={agent?.head_office?.avatar}
                       sx={{
                         width: 80,
                         height: 80,
@@ -789,21 +871,21 @@ export default function InstitutionPage() {
                       }}
                     />
                     <Typography variant="body1" gutterBottom sx={{ fontWeight: "bold" }}>
-                      {agentName}
+                      {agent?.name}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      📍 {agentData.location}
+                      📍 {agent?.head_office?.location}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      📞 {agentData.tel}
+                      📞 {agent?.head_office?.tel}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      ✉️ {agentData.email}
+                      ✉️ {agent?.head_office?.email}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       🌐{" "}
                       <a
-                        href={agentData.web}
+                        href={agent?.head_office?.web}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ color: "#4f46e5", textDecoration: "none" }}
@@ -812,8 +894,6 @@ export default function InstitutionPage() {
                       </a>
                     </Typography>
                   </CardContent>
-
-                  {/* Contact Agent Button */}
                   <Box sx={{ p: 2, flexShrink: 0 }}>
                     <Button
                       variant="contained"
@@ -839,7 +919,7 @@ export default function InstitutionPage() {
             {/* Right Scroll Button */}
             <IconButton
               onClick={() => handleAgentScroll("right")}
-              disabled={agentScrollIndex >= (institution.agents?.length || 0) - 3}
+              disabled={agentScrollIndex >= (matchedAgents?.length || 0) - 3}
               sx={{
                 position: "absolute",
                 right: 10,

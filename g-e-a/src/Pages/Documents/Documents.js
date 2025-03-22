@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { ExpandMore, Description, Info } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import '../Institutions/institutions.css'
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   margin: '12px 0',

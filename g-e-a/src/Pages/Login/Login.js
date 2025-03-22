@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import {
   Box,
   Button,
@@ -13,12 +13,16 @@ import {
   Alert,
   Card as MuiCard,
   Link,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { Visibility, VisibilityOff } from '@mui/icons-material'; // Import icons for show/hide password
 import ForgotPassword from './ForgotPassword';
 import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from "../../Context/context";
+import '../Institutions/institutions.css'
 
 // Styled Components
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -66,6 +70,10 @@ export default function Login() {
   const [open, setOpen] = React.useState(false);
   const [alertMessage, setAlertMessage] = React.useState('');
   const [alertSeverity, setAlertSeverity] = React.useState(null);
+  const [showPassword, setShowPassword] = React.useState(false); // State for show/hide password
+  const [rememberMe, setRememberMe] = React.useState(false); // State for Remember Me
+  const [email, setEmail] = React.useState(''); // State for email
+  const [password, setPassword] = React.useState(''); // State for password
 
   const handleForgotPasswordOpen = () => setOpen(true);
   const handleForgotPasswordClose = () => setOpen(false);
@@ -75,6 +83,17 @@ export default function Login() {
   const { setLoggedIn } = useContext(AuthContext);
   const { setUserAvatar } = useContext(AuthContext);
   const { setUserType } = useContext(AuthContext);
+
+  // Load saved email and password from localStorage when component mounts
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    const savedPassword = localStorage.getItem('rememberedPassword');
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const validateInputs = (email, password) => {
     let isValid = true;
@@ -116,7 +135,16 @@ export default function Login() {
           localStorage.setItem('token', result.data.auth);
           localStorage.setItem('userAvatar', result.data.firstName); // Store UserAvatar
           localStorage.setItem('userType', result.data.user); // Store UserType
-    
+
+          // Save email and password if "Remember Me" is checked
+          if (rememberMe) {
+            localStorage.setItem('rememberedEmail', email);
+            localStorage.setItem('rememberedPassword', password);
+          } else {
+            localStorage.removeItem('rememberedEmail');
+            localStorage.removeItem('rememberedPassword');
+          }
+
           // Update the authentication context
           setLoggedIn(true);
           setUserAvatar(result.data.firstName);
@@ -140,8 +168,6 @@ export default function Login() {
         setAlertSeverity('error');
       });
   };
-
-
 
   const handleForgotPasswordClick = (event) => {
     event.preventDefault();
@@ -186,24 +212,48 @@ export default function Login() {
                 helperText={emailErrorMessage}
                 required
                 fullWidth
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </FormControl>
             <FormControl sx={{ textAlign: 'left' }}>
               <TextField
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'} // Toggle password visibility
                 placeholder="Password"
                 autoComplete="current-password"
                 error={passwordError}
                 helperText={passwordErrorMessage}
                 required
                 fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </FormControl>
 
             <FormControlLabel
-              control={<Checkbox value="remember" color="primary" />}
+              control={
+                <Checkbox
+                  value="remember"
+                  color="primary"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+              }
               label="Remember me"
             />
             <PrimaryButton type="submit" fullWidth variant="contained">
