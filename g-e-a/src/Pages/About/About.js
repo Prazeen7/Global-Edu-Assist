@@ -30,6 +30,7 @@ import PhoneIcon from "@mui/icons-material/Phone"
 import EmailIcon from "@mui/icons-material/Email"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
 import SendIcon from "@mui/icons-material/Send"
+import '../Institutions/institutions.css'
 
 // Create a theme with the brand color
 const theme = createTheme({

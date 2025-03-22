@@ -16,6 +16,7 @@ import ProgressTracking from './components/ProgressTracking';
 import Admin from './layouts/Admin/DashboardLayout';
 import AdminAbout from './Pages/Admin/About';
 import AdminAgents from './Pages/Admin/Agents';
+import AdminLogin from './Pages/Admin/Login';
 import AdminDashboard from './Pages/Admin/Dashboard';
 import AdminDocuments from './Pages/Admin/Documents';
 import AdminInstitutions from './Pages/Admin/Institutions';
@@ -23,198 +24,206 @@ import AdminLandingPage from './Pages/Admin/LandingPage';
 import AdminSetting from './Pages/Admin/Settings';
 import { AuthContext } from "./Context/context";
 import Footer from './components/Footer';
-import ProtectedRoute from './components/ProtectedRoute';
-import AuthRoute from './components/AuthRoute';
+import ProtectedRoute from './components/ProctectedRoute/ProtectedRoute';
+import AuthRoute from './components/ProctectedRoute/AuthRoute';
 
 function App() {
-  const [LoggedIn, setLoggedIn] = useState(false);
-  const [UserAvatar, setUserAvatar] = useState('');
-  const [UserType, setUserType] = useState('u');
-  const [isLoading, setIsLoading] = useState(true); // Add loading state
+    const [LoggedIn, setLoggedIn] = useState(false);
+    const [UserAvatar, setUserAvatar] = useState('');
+    const [UserType, setUserType] = useState('u');
+    const [isLoading, setIsLoading] = useState(true); 
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userAvatar = localStorage.getItem('userAvatar');
-    const userType = localStorage.getItem('userType');
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const userAvatar = localStorage.getItem('userAvatar');
+        const userType = localStorage.getItem('userType');
 
-    if (token) {
-      setLoggedIn(true);
-      setUserAvatar(userAvatar || '');
-      setUserType(userType || 'u');
+        if (token) {
+            setLoggedIn(true);
+            setUserAvatar(userAvatar || '');
+            setUserType(userType || 'u');
+        }
+        setIsLoading(false); 
+    }, []);
+
+    if (isLoading) {
+        return <div>Loading...</div>; 
     }
-    setIsLoading(false); // Mark authentication check as complete
-  }, []);
 
-  if (isLoading) {
-    return <div>Loading...</div>; // Show loading indicator
-  }
+    // Create routes using React Router
+    const router = createBrowserRouter([
+        {
+            path: "/",
+            element: (
+                <>
+                    <Navbar />
+                    <LandingPage />
+                    <Footer />
+                </>
+            ),
+        },
+        {
+            path: "/about",
+            element: (
+                <>
+                    <Navbar />
+                    <About />
+                    <Footer />
+                </>
+            ),
+        },
+        {
+            path: "/institutions",
+            element: (
+                <>
+                    <Navbar />
+                    <Institutions />
+                    <Footer />
+                </>
+            ),
+        },
+        {
+            path: "/programs",
+            element: (
+                <>
+                    <Navbar />
+                    <Destinations />
+                    <Footer />
+                </>
+            ),
+        },
+        {
+            path: "/documents",
+            element: (
+                <>
+                    <Navbar />
+                    <Documents />
+                    <Footer />
+                </>
+            ),
+        },
+        {
+            path: "/cost-estimation",
+            element: (
+                <ProtectedRoute>
+                    <Navbar />
+                    <Estimation />
+                    <Footer />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: "/progress-tracking",
+            element: (
+                <ProtectedRoute>
+                    <Navbar />
+                    <ProgressTracking />
+                    <Footer />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: "/agents",
+            element: (
+                <>
+                    <Navbar />
+                    <Agents />
+                    <Footer />
+                </>
+            ),
+        },
+        {
+            path: "/login",
+            element: (
+                <AuthRoute>
+                    <Navbar />
+                    <Login />
+                </AuthRoute>
+            ),
+        },
+        {
+            path: "/signup",
+            element: (
+                <AuthRoute>
+                    <Navbar />
+                    <Signup />
+                </AuthRoute>
+            ),
+        },
+        {
+            path: "/institutionPage/:id",
+            element: (
+                <>
+                    <Navbar />
+                    <InstitutionPage />
+                    <Footer />
+                </>
+            ),
+        },
+        {
+            path: "/admin",
+            element: <AdminLogin />, 
+        },
+        {
+            path: "/admin/*",
+            element: (
+                <ProtectedRoute isAdminRoute>
+                    <Admin />
+                </ProtectedRoute>
+            ),
+            children: [
+                {
+                    path: "dashboard",
+                    element: <AdminDashboard />,
+                },
+                {
+                    path: "institutions",
+                    element: <AdminInstitutions />,
+                },
+                {
+                    path: "documents",
+                    element: <AdminDocuments />,
+                },
+                {
+                    path: "agents",
+                    element: <AdminAgents />,
+                },
+                {
+                    path: "landingPage",
+                    element: <AdminLandingPage />,
+                },
+                {
+                    path: "about",
+                    element: <AdminAbout />,
+                },
+                {
+                    path: "settings",
+                    element: <AdminSetting />,
+                },
+                {
+                    path: "institutionPage/:id",
+                    element: <InstitutionPage />,
+                },
+            ],
+        },
+    ]);
 
-  // Create routes using React Router
-  const router = createBrowserRouter([
-    {
-      path: "/",
-      element: (
-        <>
-          <Navbar />
-          <LandingPage />
-          <Footer />
-        </>
-      ),
-    },
-    {
-      path: "/about",
-      element: (
-        <>
-          <Navbar />
-          <About />
-          <Footer />
-        </>
-      ),
-    },
-    {
-      path: "/institutions",
-      element: (
-        <>
-          <Navbar />
-          <Institutions />
-          <Footer />
-        </>
-      ),
-    },
-    {
-      path: "/programs",
-      element: (
-        <>
-          <Navbar />
-          <Destinations />
-          <Footer />
-        </>
-      ),
-    },
-    {
-      path: "/documents",
-      element: (
-        <>
-          <Navbar />
-          <Documents />
-          <Footer />
-        </>
-      ),
-    },
-    {
-      path: "/cost-estimation",
-      element: (
-        <ProtectedRoute>
-          <Navbar />
-          <Estimation />
-          <Footer />
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: "/progress-tracking",
-      element: (
-        <ProtectedRoute>
-          <Navbar />
-          <ProgressTracking />
-          <Footer />
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: "/agents",
-      element: (
-        <>
-          <Navbar />
-          <Agents />
-          <Footer />
-        </>
-      ),
-    },
-    {
-      path: "/login",
-      element: (
-        <AuthRoute>
-          <Navbar />
-          <Login />
-        </AuthRoute>
-      ),
-    },
-    {
-      path: "/signup",
-      element: (
-        <AuthRoute>
-          <Navbar />
-          <Signup />
-        </AuthRoute>
-      ),
-    },
-    {
-      path: "/institutionPage/:id",
-      element: (
-        <>
-          <Navbar />
-          <InstitutionPage />
-          <Footer />
-        </>
-      ),
-    },
-    {
-      path: "/admin",
-      element: <Admin />,
-      children: [
-        {
-          index: true,
-          element: <AdminDashboard />,
-        },
-        {
-          path: "dashboard",
-          element: <AdminDashboard />,
-        },
-        {
-          path: "institutions",
-          element: <AdminInstitutions />,
-        },
-        {
-          path: "documents",
-          element: <AdminDocuments />,
-        },
-        {
-          path: "agents",
-          element: <AdminAgents />,
-        },
-        {
-          path: "landingPage",
-          element: <AdminLandingPage />,
-        },
-        {
-          path: "about",
-          element: <AdminAbout />,
-        },
-        {
-          path: "settings",
-          element: <AdminSetting />,
-        },
-      ],
-    },
-  ]);
-
-  return (
-    <AuthContext.Provider
-      value={{
-        LoggedIn,
-        setLoggedIn,
-        UserAvatar,
-        setUserAvatar,
-        UserType,
-        setUserType,
-      }}
-    >
-      <div className="App">
-        <RouterProvider router={router} />
-      </div>
-    </AuthContext.Provider>
-  );
+    return (
+        <AuthContext.Provider
+            value={{
+                LoggedIn,
+                setLoggedIn,
+                UserAvatar,
+                setUserAvatar,
+                UserType,
+                setUserType,
+            }}
+        >
+            <div className="App">
+                <RouterProvider router={router} />
+            </div>
+        </AuthContext.Provider>
+    );
 }
 
 export default App;

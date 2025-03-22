@@ -43,6 +43,7 @@ import { styled } from "@mui/material/styles";
 import ProgramCard from "../../components/ProgramCard";
 import TabPanel from "../../components/TabPanel";
 import axios from "axios";
+import '../Institutions/institutions.css'
 
 // Utility function to shuffle an array using the Fisher-Yates algorithm
 const shuffleArray = (array) => {
@@ -221,7 +222,6 @@ export default function Programs() {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(6);
     const [institutions, setInstitutions] = useState([]);
-    const [filteredPrograms, setFilteredPrograms] = useState([]); // Store filtered programs
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -247,30 +247,29 @@ export default function Programs() {
             .then((response) => {
                 const shuffledPrograms = shuffleArray(
                     response.data.flatMap((institution) =>
-                        Object.entries(institution.programs || {}).map(([programName, programDetails]) => ({
-                            id: `${institution.university}-${programName}`,
-                            program: programName || "N/A",
-                            institution: institution.university || "N/A",
-                            level: programDetails.Level || "N/A",
-                            discipline: programDetails.discipline,
-                            duration: programDetails.duration || "N/A",
-                            intakes: programDetails.intakes ? programDetails.intakes.split(",") : [],
-                            fees: programDetails.Fees_First_Year || "N/A",
-                            campus: programDetails.campuses || "N/A",
-                            language_requirement: programDetails.language_requirement || {}, 
-                            gpa:
-                                programDetails.Level === "Undergraduate"
-                                    ? parseGPA(institution.academic_requirements?.undergraduate)
-                                    : parseGPA(institution.academic_requirements?.postgraduate),
-                            applicationFees: programDetails.Application_Fee,
-                            requiredFunds: programDetails.Funds_Required,
+                        institution.programs.map((program) => ({
+                            id: `${institution.institutionName}-${program.name}`,
+                            program: program.name || "N/A",
+                            institution: institution.institutionName || "N/A",
+                            level: program.level || "N/A",
+                            discipline: program.discipline || "N/A",
+                            duration: program.duration || "N/A",
+                            intakes: program.intakes ? program.intakes.split(", ") : [],
+                            fees: program.firstYearFees || "N/A",
+                            campus: program.campuses || "N/A",
+                            language_requirement: {
+                                IELTS: program.ielts,
+                                PTE: program.pte,
+                                TOEFL: program.toefl,
+                            },
+                            gpa: parseGPA(institution.entryRequirements[program.level.toLowerCase()]?.GPA),
+                            applicationFees: institution.applicationFee,
+                            requiredFunds: program.fundsRequired,
                             institutionData: institution,
-                            url: programDetails.url || "#",
+                            url: program.url || "#",
                         }))
-                    )
-                );
+                    ))
                 setInstitutions(shuffledPrograms);
-                setFilteredPrograms(shuffledPrograms); 
                 setLoading(false);
             })
             .catch((error) => {
@@ -299,213 +298,148 @@ export default function Programs() {
     // Extract unique disciplines
     const uniqueDisciplines = [...new Set(institutions.map((program) => program.discipline || ""))].filter(Boolean);
 
-    // Extract unique acceptable banks
+    // Extract unique acceptable banks from all institutions
     const acceptableBanks = [
         ...new Set(
-            institutions.flatMap((institution) =>
-                institution.institutionData?.documents?.GS_Stage?.additional_info?.["Acceptable Banks"] || []
+            institutions.flatMap(program =>
+                program.institutionData?.documents?.banks || []
             )
         ),
-    ].filter((bank) => bank);
+    ].filter(bank => bank);
 
     // Filter programs based on search query, selected discipline, program level, and financial filters
-    const filterPrograms = (programs, filters) => {
-        return programs.filter((program) => {
-            const matchesSearch =
-                (program.program?.toLowerCase() || "").includes(searchQuery) ||
-                (program.level?.toLowerCase() || "").includes(searchQuery) ||
-                (program.institution?.toLowerCase() || "").includes(searchQuery) ||
-                (program.campus?.toLowerCase() || "").includes(searchQuery) ||
-                (program.discipline?.toLowerCase() || "").includes(searchQuery);
-            const matchesDiscipline = selectedDiscipline
-                ? (program.discipline?.toLowerCase() || "") === selectedDiscipline.toLowerCase()
-                : true;
-            const matchesLevel =
-                tabValue === 0 || // All Programs
-                (tabValue === 1 && program.level === "Undergraduate") || 
-                (tabValue === 2 && program.level === "Postgraduate");
+    const filteredPrograms = institutions.filter((program) => {
+        const matchesSearch =
+            (program.program?.toLowerCase() || "").includes(searchQuery) ||
+            (program.level?.toLowerCase() || "").includes(searchQuery) ||
+            (program.institution?.toLowerCase() || "").includes(searchQuery) ||
+            (program.campus?.toLowerCase() || "").includes(searchQuery) ||
+            (program.discipline?.toLowerCase() || "").includes(searchQuery);
+        const matchesDiscipline = selectedDiscipline
+            ? (program.discipline?.toLowerCase() || "") === selectedDiscipline.toLowerCase()
+            : true;
+        const matchesLevel =
+            tabValue === 0 || // All Programs
+            (tabValue === 1 && program.level === "Undergraduate") || // Undergraduate
+            (tabValue === 2 && program.level === "Postgraduate"); // Postgraduate
 
-            // GPA Filter Logic
-            const matchesGPA = filters.gpa > 0 ? program.gpa <= filters.gpa : true;
+        // GPA Filter Logic
+        const matchesGPA = appliedFilters.gpa > 0 ? program.gpa <= appliedFilters.gpa : true;
 
-            // English Proficiency Test Filter Logic
-            const matchesEnglishTest = (program) => {
-                const { englishTest, testScore } = filters;
+        // English Proficiency Test Filter Logic
+        const matchesEnglishTest = (program) => {
+            const { englishTest, testScore } = appliedFilters;
 
-                // No filter applied if either field is empty
-                if (!englishTest || !testScore) return true;
+            // No filter applied if either field is empty
+            if (!englishTest || !testScore) return true;
 
-                const languageRequirements = program.language_requirement || {};
+            const languageRequirements = program.language_requirement || {};
 
-                // Get the raw score for the selected test (e.g., "IELTS")
-                const rawScore = languageRequirements[englishTest.toUpperCase()];
+            // Get the raw score for the selected test (e.g., "IELTS")
+            const rawScore = languageRequirements[englishTest.toUpperCase()];
 
-                // Exclude programs that don't require this test
-                if (!rawScore) return false;
+            // Exclude programs that don't require this test
+            if (!rawScore) return false;
 
-                let parsedScore;
+            let parsedScore;
 
-                // Handle different test formats
-                if (['IELTS', 'PTE'].includes(englishTest.toUpperCase())) {
-                    // Split the score into parts (e.g., "6.5/6.0" => ["6.5", "6.0"])
-                    const parts = rawScore.split('/');
-                    parsedScore = parseFloat(parts[0].trim()); 
-                } else if (englishTest.toUpperCase() === 'TOEFL') {
-                    // TOEFL scores are typically a single number (e.g., "90")
-                    parsedScore = parseFloat(rawScore);
-                } else {
-                    // For other tests, attempt direct parsing
-                    parsedScore = parseFloat(rawScore);
-                }
+            // Handle different test formats
+            if (['IELTS', 'PTE'].includes(englishTest.toUpperCase())) {
+                // Split the score into parts (e.g., "6.5/6.0" => ["6.5", "6.0"])
+                const parts = rawScore.split('/');
+                parsedScore = parseFloat(parts[0].trim()); // Take the first part (overall score)
+            } else if (englishTest.toUpperCase() === 'TOEFL') {
+                // TOEFL scores are typically a single number (e.g., "90")
+                parsedScore = parseFloat(rawScore);
+            } else {
+                // For other tests, attempt direct parsing
+                parsedScore = parseFloat(rawScore);
+            }
 
-                // Exclude programs with non-numeric scores (e.g., text-based requirements)
-                if (isNaN(parsedScore)) return false;
+            // Exclude programs with non-numeric scores (e.g., text-based requirements)
+            if (isNaN(parsedScore)) return false;
 
-                // Check if the user's score meets or exceeds the program's requirement
-                return parsedScore <= Number(testScore);
-            };
+            // Check if the user's score meets or exceeds the program's requirement
+            return parsedScore <= Number(testScore);
+        };
 
-            // Academic Level Filter Logic
-            const matchesAcademicLevel =
-                !filters.academicLevel ||
-                (filters.academicLevel === "high_school" && program.level === "Undergraduate") ||
-                (filters.academicLevel === "bachelors" && program.level === "Postgraduate") ||
-                (filters.academicLevel === "masters" && program.level === "Postgraduate") ||
-                (filters.academicLevel === "phd" && program.level === "Postgraduate");
+        // Academic Level Filter Logic
+        const matchesAcademicLevel =
+            !appliedFilters.academicLevel ||
+            (appliedFilters.academicLevel === "high_school" && program.level === "Undergraduate") ||
+            (appliedFilters.academicLevel === "bachelors" && program.level === "Postgraduate") ||
+            (appliedFilters.academicLevel === "masters" && program.level === "Postgraduate") ||
+            (appliedFilters.academicLevel === "phd" && program.level === "Postgraduate");
 
-            // Field of Study Filter Logic
-            const matchesFieldOfStudy =
-                !filters.fieldOfStudy ||
-                (program.discipline?.toLowerCase() || "") === filters.fieldOfStudy.toLowerCase();
+        // Field of Study Filter Logic
+        const matchesFieldOfStudy =
+            !appliedFilters.fieldOfStudy ||
+            (program.discipline?.toLowerCase() || "") === appliedFilters.fieldOfStudy.toLowerCase();
 
-            // Financial Filter Logic
-            const totalRequiredFunds = calculateTotalRequiredFunds(program);
-            const matchesBankBalance =
-                filters.bankBalance === null || filters.bankBalance >= totalRequiredFunds;
+        // Financial Filter Logic
+        const totalRequiredFunds = calculateTotalRequiredFunds(program);
+        const matchesBankBalance =
+            appliedFilters.bankBalance === null || appliedFilters.bankBalance >= totalRequiredFunds;
 
-            // Education Loan Filter Logic
-            const matchesEducationLoan =
-                filters.educationLoan === null ||
-                (filters.educationLoan >= totalRequiredFunds &&
-                    filters.educationLoanBank &&
-                    program.institutionData?.documents?.GS_Stage?.additional_info?.["Acceptable Banks"]?.includes(
-                        filters.educationLoanBank
-                    ));
+        // Education Loan Filter Logic
+        const matchesEducationLoan =
+            appliedFilters.educationLoan === null ||
+            (appliedFilters.educationLoan >= totalRequiredFunds &&
+                appliedFilters.educationLoanBank &&
+                program.institutionData?.documents?.banks?.includes(appliedFilters.educationLoanBank));
 
-            // Income Source Filter Logic
-            const acceptableIncomeSources =
-                program.institutionData?.documents?.GS_Stage?.additional_info?.["Acceptable Income Sources"] || [];
-            const minimumIncomeAmountRequired =
-                parseFloat(
-                    program.institutionData?.documents?.GS_Stage?.additional_info?.["Minimum Income Amount Required"]?.replace(
-                        /[^0-9.]/g,
-                        ""
-                    )
-                ) || 0;
-            const acceptableSponsors =
-                program.institutionData?.documents?.GS_Stage?.additional_info?.["Acceptable Sponsors"] || [];
+        // Income Source Filter Logic
+        const acceptableIncomeSources = program.institutionData?.documents?.incomeSources || [];
+        const minimumIncomeAmountRequired =
+            parseFloat(program.institutionData?.documents?.minIncomeAmount?.replace(/[^0-9.]/g, "")) || 0;
+        const acceptableSponsors = program.institutionData?.documents?.sponsors || [];
 
-            // Sum total income from all income sources
-            const totalIncome = filters.incomeSources.reduce(
-                (sum, source) => sum + (source.totalIncome || 0),
-                0
+        // Sum total income from all income sources
+        const totalIncome = appliedFilters.incomeSources.reduce(
+            (sum, source) => sum + (source.totalIncome || 0),
+            0
+        );
+
+        const matchesIncomeSource =
+            appliedFilters.incomeSources.every((source) =>
+                !source.incomeSourceType || acceptableIncomeSources.includes(source.incomeSourceType)
             );
 
-            const matchesIncomeSource =
-                filters.incomeSources.every((source) =>
-                    !source.incomeSourceType || acceptableIncomeSources.includes(source.incomeSourceType)
-                );
+        const matchesTotalIncome =
+            !totalIncome || totalIncome >= minimumIncomeAmountRequired;
 
-            const matchesTotalIncome =
-                !totalIncome || totalIncome >= minimumIncomeAmountRequired;
-
-            const matchesSourceOwner =
-                filters.incomeSources.every((source) =>
-                    !source.sourceOwner || acceptableSponsors.includes(source.sourceOwner)
-                );
-
-            // Preferred Location Filter Logic
-            const matchesPreferredLocation =
-                !filters.preferredLocation ||
-                (program.campus?.toLowerCase() || "").includes(filters.preferredLocation.toLowerCase());
-
-            // Immigration History Filter Logic
-            const matchesVisaRefusal =
-                !filters.visaRefusal ||
-                program.institutionData?.documents?.GS_Stage?.additional_info?.["Previous Visa Refusal"]?.startsWith("Accepted");
-
-            return (
-                matchesSearch &&
-                matchesDiscipline &&
-                matchesLevel &&
-                matchesGPA &&
-                matchesEnglishTest(program) &&
-                matchesAcademicLevel &&
-                matchesFieldOfStudy &&
-                matchesBankBalance &&
-                matchesEducationLoan &&
-                matchesIncomeSource &&
-                matchesTotalIncome &&
-                matchesSourceOwner &&
-                matchesPreferredLocation &&
-                matchesVisaRefusal
+        const matchesSourceOwner =
+            appliedFilters.incomeSources.every((source) =>
+                !source.sourceOwner || acceptableSponsors.includes(source.sourceOwner)
             );
-        });
-    };
 
-    // Apply filters when the "Apply Filter" button is pressed
-    const handleApplyFilters = () => {
-        const filtered = filterPrograms(institutions, tempFilters);
-        setFilteredPrograms(filtered);
-        setAppliedFilters(tempFilters);
-        setFilterOpen(false);
-    };
+        // Preferred Location Filter Logic
+        const matchesPreferredLocation =
+            !appliedFilters.preferredLocation ||
+            (program.campus?.toLowerCase() || "").includes(appliedFilters.preferredLocation.toLowerCase());
 
-    // Clear filters
-    const handleClearFilters = () => {
-        setTempFilters(defaultFilters);
-        setAppliedFilters(defaultFilters);
-        setFilteredPrograms(institutions); 
-    };
+        // Immigration History Filter Logic
+        const matchesVisaRefusal =
+            !appliedFilters.visaRefusal ||
+            program.institutionData?.documents?.previousVisaRefusal === "yes";
 
-    // Handle income source change
-    const handleIncomeSourceChange = (index, field, value) => {
-        const updatedIncomeSources = [...tempFilters.incomeSources];
-        updatedIncomeSources[index][field] = value;
-        setTempFilters((prev) => ({
-            ...prev,
-            incomeSources: updatedIncomeSources,
-        }));
-    };
-
-    // Add new income source
-    const addIncomeSource = () => {
-        setTempFilters((prev) => ({
-            ...prev,
-            incomeSources: [...prev.incomeSources, { incomeSourceType: "", totalIncome: null, sourceOwner: "" }],
-        }));
-    };
-
-    // Remove income source
-    const removeIncomeSource = (index) => {
-        const updatedIncomeSources = tempFilters.incomeSources.filter((_, i) => i !== index);
-        setTempFilters((prev) => ({
-            ...prev,
-            incomeSources: updatedIncomeSources,
-        }));
-    };
-
-    // Initialize temporary filters when dialog opens
-    const handleFilterDialogOpen = () => {
-        setTempFilters(appliedFilters);
-        setFilterOpen(true);
-    };
-
-    // Reset temporary filters when dialog closes without applying
-    const handleFilterDialogClose = () => {
-        setTempFilters(appliedFilters);
-        setFilterOpen(false);
-    };
+        return (
+            matchesSearch &&
+            matchesDiscipline &&
+            matchesLevel &&
+            matchesGPA &&
+            matchesEnglishTest(program) &&
+            matchesAcademicLevel &&
+            matchesFieldOfStudy &&
+            matchesBankBalance &&
+            matchesEducationLoan &&
+            matchesIncomeSource &&
+            matchesTotalIncome &&
+            matchesSourceOwner &&
+            matchesPreferredLocation &&
+            matchesVisaRefusal
+        );
+    });
 
     // Sort programs by tuition fee
     const sortedPrograms = [...filteredPrograms].sort((a, b) => {
@@ -652,6 +586,55 @@ export default function Programs() {
 
     const handleSearchChange = (event) => {
         setSearchQuery(event.target.value.toLowerCase());
+    };
+
+    const handleApplyFilters = () => {
+        setAppliedFilters(tempFilters);
+        setFilterOpen(false);
+    };
+
+    const handleClearFilters = () => {
+        setTempFilters(defaultFilters);
+        setAppliedFilters(defaultFilters);
+    };
+
+    // Handle income source change
+    const handleIncomeSourceChange = (index, field, value) => {
+        const updatedIncomeSources = [...tempFilters.incomeSources];
+        updatedIncomeSources[index][field] = value;
+        setTempFilters((prev) => ({
+            ...prev,
+            incomeSources: updatedIncomeSources,
+        }));
+    };
+
+    // Add new income source
+    const addIncomeSource = () => {
+        setTempFilters((prev) => ({
+            ...prev,
+            incomeSources: [...prev.incomeSources, { incomeSourceType: "", totalIncome: null, sourceOwner: "" }],
+        }));
+    };
+
+    // Remove income source
+    const removeIncomeSource = (index) => {
+        const updatedIncomeSources = tempFilters.incomeSources.filter((_, i) => i !== index);
+        setTempFilters((prev) => ({
+            ...prev,
+            incomeSources: updatedIncomeSources,
+        }));
+    };
+
+    // Initialize temporary filters when dialog opens
+    const handleFilterDialogOpen = () => {
+        setTempFilters(appliedFilters);
+        setFilterOpen(true);
+    };
+
+    // Reset temporary filters when dialog closes without applying
+    const handleFilterDialogClose = () => {
+        setTempFilters(appliedFilters);
+        setFilterOpen(false);
     };
 
     return (
@@ -869,24 +852,9 @@ export default function Programs() {
                                         <MenuItem value="phd">PhD</MenuItem>
                                     </Select>
                                 </FormControl>
-                                <FormControl fullWidth>
-                                    <InputLabel>Field of Study</InputLabel>
-                                    <Select
-                                        label="Field of Study"
-                                        name="fieldOfStudy"
-                                        value={tempFilters.fieldOfStudy}
-                                        onChange={handleFilterChange}
-                                    >
-                                        <MenuItem value="">None</MenuItem>
-                                        <MenuItem value="Information Technology">Information Technology</MenuItem>
-                                        <MenuItem value="Business">Business</MenuItem>
-                                        <MenuItem value="Engineering">Engineering</MenuItem>
-                                        <MenuItem value="Medicine">Medicine</MenuItem>
-                                        <MenuItem value="Arts">Arts</MenuItem>
-                                    </Select>
-                                </FormControl>
                             </Stack>
                         </TabPanel>
+                        {/* Financial Tab */}
                         <TabPanel value={filterTabValue} index={1}>
                             <Stack spacing={3}>
                                 <Card variant="outlined">
@@ -998,7 +966,6 @@ export default function Programs() {
                                                     >
                                                         <MenuItem value="">None</MenuItem>
                                                         <MenuItem value="Parents">Parents</MenuItem>
-                                                        <MenuItem value="Siblings">Siblings</MenuItem>
                                                         <MenuItem value="Spouse">Spouse</MenuItem>
                                                         <MenuItem value="Relatives">Relatives</MenuItem>
                                                         <MenuItem value="Employers">Employers</MenuItem>

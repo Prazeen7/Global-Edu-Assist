@@ -1,10 +1,10 @@
-import Card from "@mui/material/Card"
-import CardContent from "@mui/material/CardContent"
-import Typography from "@mui/material/Typography"
-import Box from "@mui/material/Box"
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 
 function StatCard({ title, value, change, icon }) {
-    const isPositive = change > 0
+    const isPositive = change > 0;
 
     return (
         <Card>
@@ -30,8 +30,7 @@ function StatCard({ title, value, change, icon }) {
                 </Box>
             </CardContent>
         </Card>
-    )
+    );
 }
 
-export default StatCard
-
+export default StatCard;

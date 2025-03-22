@@ -17,6 +17,7 @@ import FinancialImg from '../../images/Financial.png';
 import Bestfit from '../../images/BestFit.png';
 import CostAnalysisImg from '../../images/financial.jpg';
 import ThingsToConsider from '../../images/thingsToConsider.png';
+import '../Institutions/institutions.css'
 
 const cardsData = [
     {

@@ -17,6 +17,7 @@ import {
   styled,
 } from "@mui/material"
 import { Search, ChevronLeft, ChevronRight, KeyboardArrowDown, Favorite, ChatBubbleOutline } from "@mui/icons-material"
+import '../Institutions/institutions.css'
 
 // Styled components
 const StyledAgentCard = styled(Card)(({ theme }) => ({

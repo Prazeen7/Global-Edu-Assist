@@ -11,6 +11,7 @@ import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
 import { NavLink, useNavigate } from "react-router-dom";
 import axios from 'axios';
+import '../Institutions/institutions.css'
 
 // Styled Components
 const Card = styled(MuiCard)(({ theme }) => ({
