@@ -1,3 +1,4 @@
+const AdminModel = require("../models/admin"); 
 const UserModel = require("../models/user");
 const nodemailer = require("nodemailer");
 const Jwt = require("jsonwebtoken");
@@ -21,9 +22,14 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const existingUser = await UserModel.findOne({ email });
+        // Check if the user is an admin
+        let existingUser = await AdminModel.findOne({ email });
         if (!existingUser) {
-            return res.status(400).json({ message: "Please sign up first" });
+            // If not an admin, check if it's a regular user
+            existingUser = await UserModel.findOne({ email });
+            if (!existingUser) {
+                return res.status(400).json({ message: "Please sign up first" });
+            }
         }
 
         // Directly compare plain text passwords
@@ -38,7 +44,7 @@ const login = async (req, res) => {
             res.json({
                 message: "Success",
                 firstName: existingUser.firstName,
-                user: existingUser.user,
+                user: existingUser.user, 
                 auth: token,
             });
         });
