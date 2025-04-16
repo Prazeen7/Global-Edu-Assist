@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from 'react';
 import {
     Box,
     Button,
@@ -21,7 +21,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import ForgotPassword from './ForgotPassword';
 import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AuthContext } from "../../Context/context";
+import { AuthContext } from '../../Context/context';
 
 // Styled Components
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -33,8 +33,7 @@ const Card = styled(MuiCard)(({ theme }) => ({
     gap: theme.spacing(2),
     margin: 'auto',
     borderRadius: theme.spacing(1),
-    boxShadow:
-        '0px 5px 15px rgba(0, 0, 0, 0.1), 0px 15px 35px rgba(0, 0, 0, 0.05)',
+    boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.1), 0px 15px 35px rgba(0, 0, 0, 0.05)',
     [theme.breakpoints.up('sm')]: {
         padding: theme.spacing(4),
     },
@@ -43,8 +42,7 @@ const Card = styled(MuiCard)(({ theme }) => ({
 const SignInContainer = styled(Stack)(({ theme }) => ({
     minHeight: '100vh',
     padding: theme.spacing(2),
-    backgroundImage:
-        'radial-gradient(circle, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
+    backgroundImage: 'radial-gradient(circle, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
     [theme.breakpoints.up('sm')]: {
         padding: theme.spacing(4),
     },
@@ -60,41 +58,32 @@ const PrimaryButton = styled(Button)(({ theme }) => ({
     },
 }));
 
-// Main Component
 export default function Login() {
-    const [emailError, setEmailError] = React.useState(false);
-    const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
-    const [passwordError, setPasswordError] = React.useState(false);
-    const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
-    const [open, setOpen] = React.useState(false);
-    const [alertMessage, setAlertMessage] = React.useState('');
-    const [alertSeverity, setAlertSeverity] = React.useState(null);
-    const [showPassword, setShowPassword] = React.useState(false); // State for show/hide password
-    const [rememberMe, setRememberMe] = React.useState(false); // State for Remember Me
-    const [email, setEmail] = React.useState(''); // State for email
-    const [password, setPassword] = React.useState(''); // State for password
-
-    const handleForgotPasswordOpen = () => setOpen(true);
-    const handleForgotPasswordClose = () => setOpen(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [emailError, setEmailError] = useState(false);
+    const [emailErrorMessage, setEmailErrorMessage] = useState('');
+    const [passwordError, setPasswordError] = useState(false);
+    const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
+    const [alertMessage, setAlertMessage] = useState('');
+    const [alertSeverity, setAlertSeverity] = useState(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
+    const [open, setOpen] = useState(false);
 
     const navigate = useNavigate();
+    const { setLoggedIn, setUserAvatar, setUserType } = useContext(AuthContext);
 
-    const { setLoggedIn } = useContext(AuthContext);
-    const { setUserAvatar } = useContext(AuthContext);
-    const { setUserType } = useContext(AuthContext);
-
-    // Load saved email and password from localStorage when component mounts
+    // Load saved email from localStorage (avoid storing password)
     useEffect(() => {
         const savedEmail = localStorage.getItem('rememberedEmail');
-        const savedPassword = localStorage.getItem('rememberedPassword');
-        if (savedEmail && savedPassword) {
+        if (savedEmail) {
             setEmail(savedEmail);
-            setPassword(savedPassword);
             setRememberMe(true);
         }
     }, []);
 
-    const validateInputs = (email, password) => {
+    const validateInputs = () => {
         let isValid = true;
 
         if (!email || !/\S+@\S+\.\S+/.test(email)) {
@@ -106,9 +95,9 @@ export default function Login() {
             setEmailErrorMessage('');
         }
 
-        if (!password || password.length < 6) {
+        if (!password || password.length < 8) {
             setPasswordError(true);
-            setPasswordErrorMessage('Password must be at least 6 characters long.');
+            setPasswordErrorMessage('Password must be at least 8 characters long.');
             isValid = false;
         } else {
             setPasswordError(false);
@@ -118,92 +107,65 @@ export default function Login() {
         return isValid;
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        const email = data.get('email');
-        const password = data.get('password');
 
-        if (!validateInputs(email, password)) return;
+        if (!validateInputs()) return;
 
-        axios
-            .post('http://localhost:3001/api/login', { email, password })
-            .then((result) => {
-                if (result.data.message === 'Success') {
-                    // Store the token in local storage
-                    localStorage.setItem('token', result.data.auth);
-                    localStorage.setItem('userAvatar', result.data.firstName); // Store UserAvatar
-                    localStorage.setItem('userType', result.data.user); // Store UserType
+        try {
+            const response = await axios.post('http://localhost:3001/api/admin-login', { email, password });
+            const { message, auth, firstName, user } = response.data;
 
-                    // Save email and password if "Remember Me" is checked
-                    if (rememberMe) {
-                        localStorage.setItem('rememberedEmail', email);
-                        localStorage.setItem('rememberedPassword', password);
-                    } else {
-                        localStorage.removeItem('rememberedEmail');
-                        localStorage.removeItem('rememberedPassword');
-                    }
+            if (message === 'Success') {
+                localStorage.setItem('token', auth);
+                localStorage.setItem('userAvatar', firstName);
+                localStorage.setItem('userType', user);
 
-                    // Update the authentication context
-                    setLoggedIn(true);
-                    setUserAvatar(result.data.firstName);
-                    setUserType(result.data.user);
-
-                    // Show success message
-                    setAlertMessage('Logged in successfully.');
-                    setAlertSeverity('success');
-
-                    // Redirect based on user type
-                    if (result.data.user === 'admin') {
-                        navigate('/admin/dashboard'); // Redirect to admin dashboard
-                    } else {
-                        navigate('/'); // Redirect to home page for regular users
-                    }
+                // Save email only if "Remember Me" is checked
+                if (rememberMe) {
+                    localStorage.setItem('rememberedEmail', email);
                 } else {
-                    // Handle login failure
-                    setAlertMessage(result.data.message || 'Login failed.');
-                    setAlertSeverity('error');
+                    localStorage.removeItem('rememberedEmail');
                 }
-            })
-            .catch((err) => {
-                console.error(err);
-                setAlertMessage('An error occurred. Please try again later.');
+
+                setLoggedIn(true);
+                setUserAvatar(firstName);
+                setUserType(user);
+
+                setAlertMessage('Logged in successfully.');
+                setAlertSeverity('success');
+
+                navigate('/admin/dashboard');
+            } else {
+                setAlertMessage(message || 'Login failed.');
                 setAlertSeverity('error');
-            });
+            }
+        } catch (err) {
+            const errorMessage = err.response?.data?.message || 'An error occurred. Please try again.';
+            setAlertMessage(errorMessage);
+            setAlertSeverity('error');
+        }
     };
 
-    const handleForgotPasswordClick = (event) => {
-        event.preventDefault();
-        handleForgotPasswordOpen();
-    };
+    const handleForgotPasswordOpen = () => setOpen(true);
+    const handleForgotPasswordClose = () => setOpen(false);
 
     return (
         <>
             <CssBaseline enableColorScheme />
             <SignInContainer alignItems="center" justifyContent="center">
                 <Card variant="outlined">
-                    <Typography
-                        component="h1"
-                        variant="h4"
-                        fontWeight="bold"
-                        sx={{ textAlign: 'center' }}
-                    >
-                        Login
+                    <Typography component="h1" variant="h4" fontWeight="bold" sx={{ textAlign: 'center' }}>
+                        Admin Login
                     </Typography>
 
-                    {/* Alert Message */}
                     {alertMessage && (
                         <Stack sx={{ width: '100%' }} spacing={2}>
                             <Alert severity={alertSeverity}>{alertMessage}</Alert>
                         </Stack>
                     )}
 
-                    <Box
-                        component="form"
-                        onSubmit={handleSubmit}
-                        noValidate
-                        sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-                    >
+                    <Box component="form" onSubmit={handleSubmit} noValidate sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <FormControl sx={{ textAlign: 'left' }}>
                             <TextField
                                 id="email"
@@ -223,7 +185,7 @@ export default function Login() {
                             <TextField
                                 id="password"
                                 name="password"
-                                type={showPassword ? 'text' : 'password'} // Toggle password visibility
+                                type={showPassword ? 'text' : 'password'}
                                 placeholder="Password"
                                 autoComplete="current-password"
                                 error={passwordError}
@@ -249,46 +211,19 @@ export default function Login() {
                         </FormControl>
 
                         <FormControlLabel
-                            control={
-                                <Checkbox
-                                    value="remember"
-                                    color="primary"
-                                    checked={rememberMe}
-                                    onChange={(e) => setRememberMe(e.target.checked)}
-                                />
-                            }
+                            control={<Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} color="primary" />}
                             label="Remember me"
                         />
                         <PrimaryButton type="submit" fullWidth variant="contained">
                             Login
                         </PrimaryButton>
-                        <Link
-                            component="button"
-                            onClick={handleForgotPasswordClick}
-                            variant="body2"
-                            sx={{ alignSelf: 'left' }}
-                        >
-                            Forgot your password?
-                        </Link>
+                        <Typography variant="body2" sx={{ alignSelf: 'left', color: 'text.secondary' }}>
+                            Note: Admin password reset is not available through this portal. Contact support for assistance.
+                        </Typography>
                     </Box>
-                    <Typography textAlign="center">
-                        Don&apos;t have an account?{' '}
-                        <NavLink
-                            to="/signup"
-                            variant="body2"
-                            style={{
-                                color: '#0078D7',
-                                fontWeight: 'bold',
-                                textDecoration: 'none',
-                            }}
-                        >
-                            Sign up
-                        </NavLink>
-                    </Typography>
                 </Card>
             </SignInContainer>
 
-            {/* Forgot Password Modal */}
             <ForgotPassword open={open} handleClose={handleForgotPasswordClose} />
         </>
     );

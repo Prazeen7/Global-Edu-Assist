@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../Context/context';
+import { validateToken, isTokenExpired } from '../../utils/utils';
 
 const ProtectedRoute = ({ children, isAdminRoute = false }) => {
-    const { LoggedIn, UserType } = useContext(AuthContext);
+    const { LoggedIn, UserType, setLoggedIn } = useContext(AuthContext);
     const location = useLocation();
-    const [shouldRedirect, setShouldRedirect] = useState(false); // State to control redirection
+    const [isTokenValid, setIsTokenValid] = useState(null); 
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -13,12 +14,33 @@ const ProtectedRoute = ({ children, isAdminRoute = false }) => {
 
         // If no token or userType, the user is not logged in
         if (!token || !userType) {
-            setShouldRedirect(true); // Trigger redirection
+            setIsTokenValid(false);
+            return;
         }
-    }, [LoggedIn, UserType, isAdminRoute, location]);
 
-    // If not logged in, redirect to login but preserve intended location
-    if (!LoggedIn || shouldRedirect) {
+        // Validate the token
+        const { isValid } = validateToken(token);
+        const expired = isTokenExpired(token);
+
+        if (!isValid || expired) {
+            // Clear invalid/expired token and log out
+            localStorage.removeItem('token');
+            localStorage.removeItem('userAvatar');
+            localStorage.removeItem('userType');
+            setLoggedIn(false);
+            setIsTokenValid(false);
+        } else {
+            setIsTokenValid(true);
+        }
+    }, [LoggedIn, UserType, isAdminRoute, location, setLoggedIn]);
+
+    // Show loading state while validating token
+    if (isTokenValid === null) {
+        return <div>Loading...</div>;
+    }
+
+    // If not logged in or token is invalid, redirect to login
+    if (!LoggedIn || !isTokenValid) {
         return <Navigate to={isAdminRoute ? "/admin" : "/login"} state={{ from: location }} replace />;
     }
 
@@ -27,7 +49,7 @@ const ProtectedRoute = ({ children, isAdminRoute = false }) => {
         return <Navigate to="/" replace />;
     }
 
-    // If it's an admin route and the user is an admin, allow access
+    // If token is valid and user has access, render the children
     return children;
 };
 

@@ -1,95 +1,91 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import TableSortLabel from "@mui/material/TableSortLabel";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
-import Chip from "@mui/material/Chip";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import Menu from "@mui/material/Menu";
-import Avatar from "@mui/material/Avatar";
-import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import Pagination from "@mui/material/Pagination";
+// Material-UI components imports
+import {
+    Box, Paper, Table, TableBody, TableCell, TableContainer,
+    TableHead, TableRow, TableSortLabel, Toolbar, Typography,
+    Chip, IconButton, Tooltip, TextField, InputAdornment,
+    MenuItem, Select, FormControl, InputLabel, Menu, Avatar,
+    Pagination
+} from "@mui/material";
+// Icons imports
+import { Add, Search, FilterList, MoreVert } from "@mui/icons-material";
 import PageHeader from "../../components/Admin/PageHeader";
 
 function Agents() {
-    // State variables
-    const [agents, setAgents] = useState([]);
-    const [order, setOrder] = useState("asc");
-    const [orderBy, setOrderBy] = useState("name");
-    const [searchTerm, setSearchTerm] = useState("");
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [page, setPage] = useState(0);
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [actionMenuAnchorEl, setActionMenuAnchorEl] = useState(null);
-    const [selectedAgent, setSelectedAgent] = useState(null);
-    const [error, setError] = useState(null);
+    // State management for agents data and UI controls
+    const [agents, setAgents] = useState([]); 
+    const [order, setOrder] = useState("asc"); 
+    const [orderBy, setOrderBy] = useState("name"); 
+    const [searchTerm, setSearchTerm] = useState(""); 
+    const [rowsPerPage, setRowsPerPage] = useState(10); 
+    const [page, setPage] = useState(0); 
+    const [anchorEl, setAnchorEl] = useState(null); 
+    const [actionMenuAnchorEl, setActionMenuAnchorEl] = useState(null); 
+    const [selectedAgent, setSelectedAgent] = useState(null); 
+    const [error, setError] = useState(null); 
+    const [isLoading, setIsLoading] = useState(true); 
 
-    // Fetch agents from the backend
+    // Fetch agents data
     useEffect(() => {
         const fetchAgents = async () => {
             try {
+                setIsLoading(true);
                 const response = await axios.get("http://localhost:3001/api/agents");
-                const agentDocuments = response.data;
 
-                // Transform the data to match the frontend structure
-                const transformedAgents = agentDocuments.map((doc) => {
-                    // Extract the agent name (e.g., "AECC Global")
-                    const agentName = Object.keys(doc).find((key) => key !== "_id");
+                // Validate response data structure
+                if (!response.data || !Array.isArray(response.data)) {
+                    throw new Error("Invalid data format received from server");
+                }
 
-                    // Get the agent data nested under the agentName key
+                const transformedAgents = response.data.map((doc) => {
+                    // Extract agent name 
+                    const agentName = Object.keys(doc).find(key => key !== "_id" && key !== "__v");
+
+                    // Skip invalid documents missing required fields
+                    if (!agentName || !doc[agentName]?.head_office) {
+                        console.warn("Skipping invalid agent document:", doc);
+                        return null;
+                    }
+
                     const agentData = doc[agentName];
-
                     return {
-                        id: doc._id, // Use MongoDB's _id as the unique identifier
+                        id: doc._id, 
                         name: agentName,
-                        email: agentData.head_office.email,
-                        country: agentData.head_office.location,
-                        institutions: agentData.other_locations.length,
-                        status: "Active", // Default status
-                        avatar: agentData.head_office.avatar,
-                        initials: agentName
+                        email: agentData.head_office.email || "No email",
+                        country: agentData.head_office.location || "Unknown",
+                        institutions: agentData.other_locations?.length || 0, 
+                        status: "Active", 
+                        avatar: agentData.head_office.avatar || "",
+                        initials: agentName 
                             .split(" ")
-                            .map((word) => word[0])
-                            .join(""),
+                            .map(word => word[0])
+                            .join("")
+                            .toUpperCase()
+                            .substring(0, 2)
                     };
-                });
+                }).filter(agent => agent !== null); // Remove any null entries
 
                 setAgents(transformedAgents);
             } catch (error) {
-                console.error("Error fetching agents:", error);
-                setError("Failed to fetch agents. Please try again later.");
+                console.error("Failed to load agents:", error);
+                setError(error.response?.data?.message || error.message || "Could not load agent data");
+            } finally {
+                setIsLoading(false);
             }
         };
 
         fetchAgents();
     }, []);
 
-    // Sorting logic
+    // Handle sorting column changes
     const handleRequestSort = (property) => {
         const isAsc = orderBy === property && order === "asc";
         setOrder(isAsc ? "desc" : "asc");
         setOrderBy(property);
     };
 
-    // Filter menu logic
+    // Filter menu handlers
     const handleFilterClick = (event) => {
         setAnchorEl(event.currentTarget);
     };
@@ -98,7 +94,7 @@ function Agents() {
         setAnchorEl(null);
     };
 
-    // Action menu logic
+    // Action menu handlers
     const handleActionClick = (event, agent) => {
         setActionMenuAnchorEl(event.currentTarget);
         setSelectedAgent(agent);
@@ -109,49 +105,45 @@ function Agents() {
         setSelectedAgent(null);
     };
 
-    // Get status color for chips
+    // Determine color for status chips
     const getStatusColor = (status) => {
         switch (status) {
-            case "Active":
-                return "success";
-            case "Inactive":
-                return "default";
-            case "Pending":
-                return "warning";
-            default:
-                return "default";
+            case "Active": return "success";
+            case "Inactive": return "default";
+            case "Pending": return "warning";
+            default: return "default";
         }
     };
 
-    // Action handlers
+    // Action handlers for agent operations
     const handleViewProfile = () => {
-        console.log("View profile:", selectedAgent);
+        console.log("Viewing profile:", selectedAgent);
         handleActionClose();
     };
 
     const handleEdit = () => {
-        console.log("Edit:", selectedAgent);
+        console.log("Editing:", selectedAgent);
         handleActionClose();
     };
 
     const handleViewStudents = () => {
-        console.log("View students:", selectedAgent);
+        console.log("Viewing students:", selectedAgent);
         handleActionClose();
     };
 
     const handleToggleStatus = () => {
-        console.log("Toggle status:", selectedAgent);
+        console.log("Toggling status:", selectedAgent);
         handleActionClose();
     };
 
-    // Filter agents based on search term
+    // Filter agents based on search term (name, email, or country)
     const filteredAgents = agents.filter((agent) =>
         agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         agent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         agent.country.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Sort agents
+    // Sort agents based on current sort column and direction
     const sortedAgents = filteredAgents.sort((a, b) => {
         const isAsc = order === "asc";
         if (orderBy === "name") {
@@ -166,24 +158,47 @@ function Agents() {
         return 0;
     });
 
-    // Paginate agents
+    // Paginate the sorted agents list
     const paginatedAgents = sortedAgents.slice(
         page * rowsPerPage,
         (page + 1) * rowsPerPage
     );
 
+    // Loading state UI
+    if (isLoading) {
+        return (
+            <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
+                <Typography>Loading agent data...</Typography>
+            </Box>
+        );
+    }
+
+    // Error state UI
+    if (error) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Typography color="error">{error}</Typography>
+            </Box>
+        );
+    }
+
+    // Main component render
     return (
         <Box sx={{ p: 3 }}>
+            {/* Page header with title and add button */}
             <PageHeader
                 title="Agent Management"
                 subtitle="Manage educational agents in the system"
                 action={true}
-                actionIcon={<AddIcon />}
+                actionIcon={<Add />}
                 actionText="Add Agent"
             />
 
+            {/* Main table container */}
             <Paper sx={{ width: "100%", mt: 3 }}>
+                {/* Toolbar with search and pagination controls */}
                 <Toolbar sx={{ pl: { sm: 2 }, pr: { xs: 1, sm: 1 } }}>
+                    {/* Search input field */}
                     <TextField
                         size="small"
                         placeholder="Search agents..."
@@ -192,18 +207,20 @@ function Agents() {
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    <SearchIcon fontSize="small" />
+                                    <Search fontSize="small" />
                                 </InputAdornment>
                             ),
                         }}
                         sx={{ width: { xs: "100%", md: 300 } }}
                     />
                     <Box sx={{ flexGrow: 1 }} />
+                    {/* Filter button */}
                     <Tooltip title="Filter list">
                         <IconButton onClick={handleFilterClick}>
-                            <FilterListIcon />
+                            <FilterList />
                         </IconButton>
                     </Tooltip>
+                    {/* Rows per page selector */}
                     <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
                         <InputLabel id="rows-per-page-label">Per Page</InputLabel>
                         <Select
@@ -220,10 +237,13 @@ function Agents() {
                         </Select>
                     </FormControl>
                 </Toolbar>
+
+                {/* Agents table */}
                 <TableContainer>
                     <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle">
                         <TableHead>
                             <TableRow>
+                                {/* Sortable table headers */}
                                 <TableCell>
                                     <TableSortLabel
                                         active={orderBy === "name"}
@@ -248,7 +268,7 @@ function Agents() {
                                         direction={orderBy === "institutions" ? order : "asc"}
                                         onClick={() => handleRequestSort("institutions")}
                                     >
-                                        Institutions
+                                        Offices
                                     </TableSortLabel>
                                 </TableCell>
                                 <TableCell>
@@ -264,10 +284,12 @@ function Agents() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
+                            {/* Render each agent row */}
                             {paginatedAgents.map((agent) => (
                                 <TableRow hover key={agent.id} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                                     <TableCell component="th" scope="row">
                                         <Box sx={{ display: "flex", alignItems: "center" }}>
+                                            {/* Agent avatar with fallback to initials */}
                                             <Avatar src={agent.avatar} alt={agent.name} sx={{ mr: 2, width: 32, height: 32 }}>
                                                 {agent.initials}
                                             </Avatar>
@@ -282,6 +304,7 @@ function Agents() {
                                     <TableCell>{agent.country}</TableCell>
                                     <TableCell align="right">{agent.institutions}</TableCell>
                                     <TableCell>
+                                        {/* Status indicator chip */}
                                         <Chip
                                             label={agent.status}
                                             color={getStatusColor(agent.status)}
@@ -293,8 +316,9 @@ function Agents() {
                                         />
                                     </TableCell>
                                     <TableCell align="right">
+                                        {/* Action menu trigger */}
                                         <IconButton size="small" onClick={(event) => handleActionClick(event, agent)}>
-                                            <MoreVertIcon />
+                                            <MoreVert />
                                         </IconButton>
                                     </TableCell>
                                 </TableRow>
@@ -302,16 +326,19 @@ function Agents() {
                         </TableBody>
                     </Table>
                 </TableContainer>
-                <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+
+                {/* Pagination controls */}
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 2, p: 2 }}>
                     <Pagination
                         count={Math.ceil(sortedAgents.length / rowsPerPage)}
                         page={page + 1}
                         onChange={(event, value) => setPage(value - 1)}
+                        color="primary"
                     />
                 </Box>
             </Paper>
 
-            {/* Filter Menu */}
+            {/* Filter dropdown menu */}
             <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleFilterClose}>
                 <MenuItem onClick={handleFilterClose}>All Agents</MenuItem>
                 <MenuItem onClick={handleFilterClose}>Active Only</MenuItem>
@@ -319,8 +346,12 @@ function Agents() {
                 <MenuItem onClick={handleFilterClose}>Pending Approval</MenuItem>
             </Menu>
 
-            {/* Action Menu */}
-            <Menu anchorEl={actionMenuAnchorEl} open={Boolean(actionMenuAnchorEl)} onClose={handleActionClose}>
+            {/* Action dropdown menu */}
+            <Menu
+                anchorEl={actionMenuAnchorEl}
+                open={Boolean(actionMenuAnchorEl)}
+                onClose={handleActionClose}
+            >
                 <MenuItem onClick={handleViewProfile}>View profile</MenuItem>
                 <MenuItem onClick={handleEdit}>Edit</MenuItem>
                 <MenuItem onClick={handleViewStudents}>View students</MenuItem>
@@ -328,12 +359,6 @@ function Agents() {
                     {selectedAgent?.status === "Active" ? "Deactivate" : "Activate"}
                 </MenuItem>
             </Menu>
-
-            {error && (
-                <Typography color="error" sx={{ mt: 2 }}>
-                    {error}
-                </Typography>
-            )}
         </Box>
     );
 }

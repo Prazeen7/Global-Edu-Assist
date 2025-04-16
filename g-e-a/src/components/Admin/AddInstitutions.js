@@ -260,11 +260,41 @@ export default function AddInstitution({ onClose }) {
         event.preventDefault();
 
         // Frontend validation
+        if (!institutionName || !institutionType) {
+            alert("Institution name and type are required");
+            return;
+        }
+
         if (bannerImages.length > MAX_BANNER_IMAGES) {
             setBannerError(`Maximum ${MAX_BANNER_IMAGES} banner images allowed`);
             return;
         }
 
+        // Validate profile picture if exists
+        if (profilePicture.file) {
+            if (!['image/jpeg', 'image/png', 'image/jpg'].includes(profilePicture.file.type)) {
+                alert('Profile picture must be a JPEG/PNG/JPG image');
+                return;
+            }
+            if (profilePicture.file.size > 5 * 1024 * 1024) {
+                alert('Profile picture is too large. Maximum 5MB allowed');
+                return;
+            }
+        }
+
+        // Validate banner images if exist
+        for (const image of bannerImages) {
+            if (!['image/jpeg', 'image/png', 'image/jpg'].includes(image.file.type)) {
+                alert('Banner images must be JPEG/PNG/JPG format');
+                return;
+            }
+            if (image.file.size > 5 * 1024 * 1024) {
+                alert('One or more banner images are too large. Maximum 5MB allowed');
+                return;
+            }
+        }
+
+        // Create FormData object
         const formData = new FormData();
 
         // Append files with correct field names
@@ -317,8 +347,6 @@ export default function AddInstitution({ onClose }) {
 
             const data = await response.json();
             console.log("Institution added successfully:", data);
-
-            // Show success alert
             alert("Institution added successfully!");
 
             // Clear the form after successful submission
@@ -352,7 +380,14 @@ export default function AddInstitution({ onClose }) {
 
         } catch (error) {
             console.error("Error adding institution:", error);
-            alert(error.message || "Failed to add institution. Please try again.");
+            // Show more specific error messages
+            if (error.message.includes("Invalid file type")) {
+                alert("Upload error: " + error.message);
+            } else if (error.message.includes("File size too large")) {
+                alert("Upload error: " + error.message);
+            } else {
+                alert(error.message || "Failed to add institution. Please try again.");
+            }
         }
     };
 

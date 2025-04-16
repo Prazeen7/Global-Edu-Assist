@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useEffect } from 'react';  
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -11,6 +12,11 @@ import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
 import { NavLink, useNavigate } from "react-router-dom";
 import axios from 'axios';
+import CircularProgress from '@mui/material/CircularProgress';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
 import '../Institutions/institutions.css'
 
 // Styled Components
@@ -48,6 +54,10 @@ const PrimaryButton = styled(Button)(({ theme }) => ({
   '&:hover': {
     backgroundColor: '#3a39c1',
   },
+  '&.Mui-disabled': {
+    backgroundColor: '#a5a4f3',
+    color: '#ffffff',
+  },
 }));
 
 export default function Signup() {
@@ -61,9 +71,28 @@ export default function Signup() {
   const [nameErrorMessage, setNameErrorMessage] = React.useState('');
   const [lastNameError, setLastNameError] = React.useState(false);
   const [lastNameErrorMessage, setLastNameErrorMessage] = React.useState('');
-  const [showSuccessAlert, setShowSuccessAlert] = React.useState(false);
+  const [alertMessage, setAlertMessage] = React.useState('');
+  const [alertSeverity, setAlertSeverity] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
+
+  // Auto-dismiss alert after 5 seconds
+  useEffect(() => {
+    if (alertMessage) {
+      const timer = setTimeout(() => {
+        setAlertMessage('');
+        setAlertSeverity(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [alertMessage]);
+
+  // Toggle password visibility
+  const handleClickShowPassword = () => setShowPassword(!showPassword);
+  const handleClickShowConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword);
 
   const validateInputs = () => {
     const email = document.getElementById('email');
@@ -74,58 +103,55 @@ export default function Signup() {
 
     let isValid = true;
 
-    // email validation
+    // Reset all errors
+    setEmailError(false);
+    setEmailErrorMessage('');
+    setPasswordError(false);
+    setPasswordErrorMessage('');
+    setConfirmPasswordError(false);
+    setConfirmPasswordErrorMessage('');
+    setNameError(false);
+    setNameErrorMessage('');
+    setLastNameError(false);
+    setLastNameErrorMessage('');
+
+    // First Name validation
+    if (!firstName.value || firstName.value.trim().length < 1) {
+      setNameError(true);
+      setNameErrorMessage('First name is required.');
+      isValid = false;
+    }
+
+    // Last Name validation
+    if (!lastName.value || lastName.value.trim().length < 1) {
+      setLastNameError(true);
+      setLastNameErrorMessage('Last name is required.');
+      isValid = false;
+    }
+
+    // Email validation
     if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
       setEmailError(true);
       setEmailErrorMessage('Please enter a valid email address.');
       isValid = false;
-    } else {
-      setEmailError(false);
-      setEmailErrorMessage('');
     }
 
     // Password validation
-    if (!password.value || password.value.length < 6) {
+    if (!password.value || password.value.length < 8) {
       setPasswordError(true);
-      setPasswordErrorMessage('Password must be at least 6 characters long.');
+      setPasswordErrorMessage('Password must be at least 8 characters long.');
       isValid = false;
-    } else {
-      setPasswordError(false);
-      setPasswordErrorMessage('');
+    } else if (!/(?=.*[A-Z])(?=.*[!@#$%^&*])/.test(password.value)) {
+      setPasswordError(true);
+      setPasswordErrorMessage('Password must contain at least one uppercase letter and one special character.');
+      isValid = false;
     }
 
     // Confirm Password validation
-    if (!confirmPassword.value || confirmPassword.value.length < 6) {
-      setConfirmPasswordError(true);
-      setConfirmPasswordErrorMessage('Password must be at least 6 characters long.');
-      isValid = false;
-    } else if (confirmPassword.value !== password.value) {
+    if (password.value !== confirmPassword.value) {
       setConfirmPasswordError(true);
       setConfirmPasswordErrorMessage('Passwords do not match.');
       isValid = false;
-    } else {
-      setConfirmPasswordError(false);
-      setConfirmPasswordErrorMessage('');
-    }
-
-    // Name validation
-    if (!firstName.value || firstName.value.length < 1) {
-      setNameError(true);
-      setNameErrorMessage('First name is required.');
-      isValid = false;
-    } else {
-      setNameError(false);
-      setNameErrorMessage('');
-    }
-
-    // Last Name validation
-    if (!lastName.value || lastName.value.length < 1) {
-      setLastNameError(true);
-      setLastNameErrorMessage('Last name is required.');
-      isValid = false;
-    } else {
-      setLastNameError(false);
-      setLastNameErrorMessage('');
     }
 
     return isValid;
@@ -133,16 +159,16 @@ export default function Signup() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-
-    // handling invalid input
+  
+    // Validate inputs
     const isValid = validateInputs();
     if (!isValid) {
       return;
     }
-
+  
     const form = event.currentTarget;
     const formData = new FormData(form);
-
+  
     const data = {
       firstName: formData.get('firstName'),
       lastName: formData.get('lastName'),
@@ -150,29 +176,42 @@ export default function Signup() {
       password: formData.get('password'),
     };
 
-    console.log("Formatted Data:", data);
-
+    setIsLoading(true);
+  
     axios
       .post('http://localhost:3001/api/registerUser', data)
       .then((result) => {
-        console.log(result);
-        setShowSuccessAlert(true); 
-        setEmailError(false); 
-        setTimeout(() => {
-          navigate('/login'); 
-        }, 2000);
+        setIsLoading(false);
+        // Navigate to verify-email page with the email
+        navigate('/verify-email', { 
+          state: { 
+            email: data.email,
+            message: "Registration successful! Please verify your email."
+          } 
+        });
       })
       .catch((err) => {
-        console.error('Error during registration:', err); 
-        if (err.response && err.response.data && err.response.data.error) {
-          if (err.response.data.error === "Email is already taken") {
+        setIsLoading(false);
+        console.error('Error during registration:', err);
+        
+        let errorMessage = 'An error occurred during registration. Please try again.';
+        
+        if (err.response?.data?.error) {
+          errorMessage = err.response.data.error;
+          
+          if (err.response.data.error === "Email is already registered") {
             setEmailError(true);
-            setEmailErrorMessage("Email is already taken.");
+            setEmailErrorMessage("Email is already registered.");
+          } else if (err.response.data.error.includes("Password must be")) {
+            setPasswordError(true);
+            setPasswordErrorMessage(err.response.data.error);
           }
         }
+        
+        setAlertMessage(errorMessage);
+        setAlertSeverity('error');
       });
   };
-
 
   return (
     <>
@@ -183,10 +222,10 @@ export default function Signup() {
             Sign up
           </Typography>
 
-          {/* Success Alert */}
-          {showSuccessAlert && (
+          {/* Alert Message */}
+          {alertMessage && (
             <Stack sx={{ width: '100%' }} spacing={2}>
-              <Alert severity="success">Signed up Successfully</Alert>
+              <Alert severity={alertSeverity}>{alertMessage}</Alert>
             </Stack>
           )}
 
@@ -220,7 +259,7 @@ export default function Signup() {
                 color={lastNameError ? 'error' : 'primary'}
               />
             </FormControl>
-            
+
             {/* Email */}
             <FormControl sx={{ textAlign: 'left' }}>
               <TextField
@@ -244,13 +283,26 @@ export default function Signup() {
                 fullWidth
                 name="password"
                 placeholder="Password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 id="password"
                 autoComplete="new-password"
                 variant="outlined"
                 error={passwordError}
                 helperText={passwordErrorMessage}
                 color={passwordError ? 'error' : 'primary'}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleClickShowPassword}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </FormControl>
 
@@ -261,18 +313,40 @@ export default function Signup() {
                 fullWidth
                 name="confirmPassword"
                 placeholder="Confirm Password"
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 id="confirmPassword"
                 autoComplete="confirmPassword"
                 variant="outlined"
                 error={confirmPasswordError}
                 helperText={confirmPasswordErrorMessage}
                 color={confirmPasswordError ? 'error' : 'primary'}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle confirm password visibility"
+                        onClick={handleClickShowConfirmPassword}
+                        edge="end"
+                      >
+                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </FormControl>
 
-            <PrimaryButton type="submit" fullWidth variant="contained">
-              Sign up
+            <PrimaryButton 
+              type="submit" 
+              fullWidth 
+              variant="contained"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                'Sign up'
+              )}
             </PrimaryButton>
           </Box>
 

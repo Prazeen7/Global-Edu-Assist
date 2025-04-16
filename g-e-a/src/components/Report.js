@@ -1,4 +1,3 @@
-// Report.js
 export const generateReport = (data) => {
     const {
         englishClassCost,

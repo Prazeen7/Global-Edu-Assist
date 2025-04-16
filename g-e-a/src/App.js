@@ -22,10 +22,13 @@ import AdminDocuments from './Pages/Admin/Documents';
 import AdminInstitutions from './Pages/Admin/Institutions';
 import AdminLandingPage from './Pages/Admin/LandingPage';
 import AdminSetting from './Pages/Admin/Settings';
+import AdminInstitutionsPage from './Pages/Admin/InstitutionPage';
 import { AuthContext } from "./Context/context";
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProctectedRoute/ProtectedRoute';
 import AuthRoute from './components/ProctectedRoute/AuthRoute';
+import Verify from './components/verify';
+import { validateToken, isTokenExpired } from './utils/utils';
 
 function App() {
     const [LoggedIn, setLoggedIn] = useState(false);
@@ -39,9 +42,20 @@ function App() {
         const userType = localStorage.getItem('userType');
 
         if (token) {
-            setLoggedIn(true);
-            setUserAvatar(userAvatar || '');
-            setUserType(userType || 'u');
+            const { isValid } = validateToken(token);
+            const expired = isTokenExpired(token);
+            
+            if (isValid && !expired) {
+                setLoggedIn(true);
+                setUserAvatar(userAvatar || '');
+                setUserType(userType || 'u');
+            } else {
+                // Clear invalid/expired token
+                localStorage.removeItem('token');
+                localStorage.removeItem('userAvatar');
+                localStorage.removeItem('userType');
+                setLoggedIn(false);
+            }
         }
         setIsLoading(false); 
     }, []);
@@ -151,6 +165,15 @@ function App() {
             ),
         },
         {
+            path: "/verify-email",
+            element: (
+                <AuthRoute>
+                    <Navbar />
+                    <Verify />
+                </AuthRoute>
+            ),
+        },
+        {
             path: "/institutionPage/:id",
             element: (
                 <>
@@ -202,7 +225,7 @@ function App() {
                 },
                 {
                     path: "institutionPage/:id",
-                    element: <InstitutionPage />,
+                    element: <AdminInstitutionsPage />,
                 },
             ],
         },
