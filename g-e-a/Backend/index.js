@@ -1,14 +1,14 @@
 const express = require("express");
 const cors = require("cors");
-const path = require("path"); // Import the path module
+const path = require("path");
 const connectDB = require("./config/db");
-
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 const institutionRoutes = require("./routes/institutionRoutes");
 const programRoutes = require("./routes/programRoutes");
 const agentRoutes = require("./routes/agentRoutes");
+const { uploadSingle } = require("./config/multerConfig"); 
 
 const app = express();
 app.use(express.json());
@@ -23,6 +23,18 @@ app.use(cors(corsOptions));
 
 // Serve static files from the "uploads" folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Use uploadSingle for single file uploads
+app.post("/api/upload", uploadSingle, (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+    }
+    
+    res.status(200).json({ 
+        message: "File uploaded successfully",
+        filename: req.file.filename 
+    });
+});
 
 // Connect to MongoDB
 connectDB();
