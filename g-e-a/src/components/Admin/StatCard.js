@@ -3,8 +3,8 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 
-function StatCard({ title, value, change, icon }) {
-    const isPositive = change > 0;
+function StatCard({ title, value, changeData, icon }) {
+    const isPositive = changeData.change >= 0;
 
     return (
         <Card>
@@ -23,7 +23,7 @@ function StatCard({ title, value, change, icon }) {
                             sx={{ display: "flex", alignItems: "center" }}
                         >
                             {isPositive ? "+" : ""}
-                            {change} from last month
+                            {changeData.change}% from last week
                         </Typography>
                     </Box>
                     <Box sx={{ color: "primary.main" }}>{icon}</Box>

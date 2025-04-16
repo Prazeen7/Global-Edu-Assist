@@ -8,35 +8,39 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import PageHeader from "../../components/Admin/PageHeader";
 import StatCard from "../../components/Admin/StatCard";
 import OverviewChart from "../../components/Admin/OverviewChart";
-import RecentActivity from "../../components/Admin/RecentActivity";
 import Typography from "@mui/material/Typography";
 
 function Dashboard() {
-    // State variables for current data
-    const [totalInstitutions, setTotalInstitutions] = useState(0);
-    const [totalAgents, setTotalAgents] = useState(0);
-    const [totalStudents, setTotalStudents] = useState(0);
+    const [institutions, setInstitutions] = useState([]);
+    const [agents, setAgents] = useState([]);
+    const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Simulated previous month's data
-    const prevMonthInstitutions = 120; 
-    const prevMonthAgents = 40; 
-    const prevMonthStudents = 500; 
+    // Utility to handle createdAt formats
+    const getDateFromCreatedAt = (createdAt) => {
+        if (!createdAt) return null;
+        if (typeof createdAt === 'string') {
+            return new Date(createdAt);
+        } else if (createdAt && createdAt.$date) {
+            return new Date(createdAt.$date);
+        }
+        return null;
+    };
 
-    // Fetch current data from the backend
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch current data
-                const institutionsResponse = await axios.get("http://localhost:3001/api/institutions");
-                const agentsResponse = await axios.get("http://localhost:3001/api/agents");
-                const studentsResponse = await axios.get("http://localhost:3001/api/users");
+                const [institutionsResponse, agentsResponse, usersResponse] = await Promise.all([
+                    axios.get("http://localhost:3001/api/institutions"),
+                    axios.get("http://localhost:3001/api/agents"),
+                    axios.get("http://localhost:3001/api/users"),
+                ]);
 
-                // Set current data
-                setTotalInstitutions(institutionsResponse.data.length);
-                setTotalAgents(Object.keys(agentsResponse.data).length);
-                setTotalStudents(studentsResponse.data.length);
+                setInstitutions(Array.isArray(institutionsResponse?.data) ? institutionsResponse.data : []);
+                setAgents(Array.isArray(agentsResponse?.data) ? agentsResponse.data : []);
+                // Filter students by user === 'u'
+                setStudents(Array.isArray(usersResponse?.data) ? usersResponse.data.filter(user => user.user === 'u') : []);
 
                 setLoading(false);
             } catch (error) {
@@ -49,63 +53,98 @@ function Dashboard() {
         fetchData();
     }, []);
 
-    // Calculate the change from last month
-    const calculateChange = (current, previous) => {
-        if (previous === 0) return 0; // Avoid division by zero
-        return Math.round(((current - previous) / previous) * 100);
+    const getChangeData = (currentData) => {
+        const safeData = Array.isArray(currentData) ? currentData : [];
+        if (safeData.length === 0) return { change: 0 };
+
+        try {
+            const now = new Date();
+            now.setUTCHours(23, 59, 59, 999);
+            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+            const currentWeekCount = safeData.filter(item => {
+                const createdAt = getDateFromCreatedAt(item.createdAt);
+                return createdAt && createdAt >= oneWeekAgo && createdAt <= now;
+            }).length;
+
+            const previousWeekCount = safeData.filter(item => {
+                const createdAt = getDateFromCreatedAt(item.createdAt);
+                return createdAt && createdAt >= twoWeeksAgo && createdAt < oneWeekAgo;
+            }).length;
+
+            const change = previousWeekCount === 0
+                ? currentWeekCount > 0 ? 100 : 0
+                : Math.round(((currentWeekCount - previousWeekCount) / previousWeekCount) * 100);
+
+            return { change };
+        } catch (error) {
+            console.error("Error calculating change data:", error);
+            return { change: 0 };
+        }
     };
 
     if (loading) {
-        return <Typography>Loading...</Typography>;
+        return (
+            <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+                <Typography variant="h6">Loading dashboard data...</Typography>
+            </Box>
+        );
     }
 
     if (error) {
-        return <Typography color="error">{error}</Typography>;
+        return (
+            <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+                <Typography color="error" variant="h6">{error}</Typography>
+            </Box>
+        );
     }
 
     return (
         <Box sx={{ p: 3 }}>
-            <PageHeader title="Dashboard" subtitle="Overview of your educational assistance platform" />
+            <PageHeader
+                title="Dashboard"
+                subtitle={`Overview as of ${new Date().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                })}`}
+            />
 
             <Grid container spacing={3} sx={{ mt: 1 }}>
-                {/* Total Institutions */}
                 <Grid item xs={12} sm={6} md={4}>
                     <StatCard
                         title="Total Institutions"
-                        value={totalInstitutions}
-                        change={calculateChange(totalInstitutions, prevMonthInstitutions)}
-                        icon={<BusinessIcon />}
+                        value={institutions.length}
+                        changeData={getChangeData(institutions)}
+                        icon={<BusinessIcon fontSize="small" />}
                     />
                 </Grid>
 
-                {/* Total Agents */}
                 <Grid item xs={12} sm={6} md={4}>
                     <StatCard
                         title="Total Agents"
-                        value={totalAgents}
-                        change={calculateChange(totalAgents, prevMonthAgents)}
-                        icon={<PeopleIcon />}
+                        value={agents.length}
+                        changeData={getChangeData(agents)}
+                        icon={<PeopleIcon fontSize="small" />}
                     />
                 </Grid>
 
-                {/* Total Students */}
                 <Grid item xs={12} sm={6} md={4}>
                     <StatCard
                         title="Total Students"
-                        value={totalStudents}
-                        change={calculateChange(totalStudents, prevMonthStudents)}
-                        icon={<DescriptionIcon />}
+                        value={students.length}
+                        changeData={getChangeData(students)}
+                        icon={<DescriptionIcon fontSize="small" />}
                     />
                 </Grid>
 
-                {/* Overview Chart */}
-                <Grid item xs={12} md={8}>
-                    <OverviewChart />
-                </Grid>
-
-                {/* Recent Activity */}
-                <Grid item xs={12} md={4}>
-                    <RecentActivity />
+                <Grid item xs={12}>
+                    <OverviewChart
+                        institutions={institutions}
+                        agents={agents}
+                        students={students}
+                    />
                 </Grid>
             </Grid>
         </Box>

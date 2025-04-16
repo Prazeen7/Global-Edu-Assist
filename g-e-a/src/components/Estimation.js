@@ -152,6 +152,22 @@ export default function EstimateCostsTab() {
         medicalProvider,
     });
 
+    // Helper function for handling number inputs
+    const handleNumberChange = (setter) => (e) => {
+        const value = e.target.value;
+        if (value === "") {
+            setter("");
+        } else {
+            const numValue = Number(value);
+            if (!isNaN(numValue)) {
+                setter(numValue);
+            }
+        }
+    };
+
+    // Function to disable scroll behavior
+    const disableScroll = (e) => e.target.blur();
+
     // Update refs when state changes
     useEffect(() => {
         formRefs.current = {
@@ -204,10 +220,14 @@ export default function EstimateCostsTab() {
     // Calculate costs
     const calculateCosts = () => {
         const newErrors = {};
+        
+        const loanAmt = loanAmount === "" ? 0 : loanAmount;
+        const disbAmt = disbursementAmount === "" ? 0 : disbursementAmount;
+        const tuitFee = tuitionFee === "" ? 0 : tuitionFee;
 
-        if (loanAmount < 0) newErrors.loanAmount = "Loan amount cannot be negative";
-        if (disbursementAmount < 0) newErrors.disbursementAmount = "Disbursement amount cannot be negative";
-        if (tuitionFee < 0) newErrors.tuitionFee = "Tuition fee cannot be negative";
+        if (loanAmt < 0) newErrors.loanAmount = "Loan amount cannot be negative";
+        if (disbAmt < 0) newErrors.disbursementAmount = "Disbursement amount cannot be negative";
+        if (tuitFee < 0) newErrors.tuitionFee = "Tuition fee cannot be negative";
 
         setErrors(newErrors);
 
@@ -444,8 +464,9 @@ export default function EstimateCostsTab() {
                                         <TextField
                                             id="class-cost"
                                             type="number"
-                                            value={englishClassCost}
-                                            onChange={(e) => setEnglishClassCost(Number(e.target.value))}
+                                            value={englishClassCost === "" ? "" : englishClassCost}
+                                            onChange={handleNumberChange(setEnglishClassCost)}
+                                            onWheel={disableScroll}
                                             label="Average Class Cost (NPR)"
                                             InputProps={{
                                                 startAdornment: (
@@ -533,7 +554,7 @@ export default function EstimateCostsTab() {
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <Typography variant="subtitle1">Subtotal</Typography>
                                             <Typography variant="h6" color="primary" fontWeight="bold">
-                                                NPR {(englishClassCost + getExamFee()).toLocaleString()}
+                                                NPR {(englishClassCost === "" ? 0 : englishClassCost + getExamFee()).toLocaleString()}
                                             </Typography>
                                         </Box>
                                     </Paper>
@@ -584,8 +605,9 @@ export default function EstimateCostsTab() {
                                 <TextField
                                     id="application-cost"
                                     type="number"
-                                    value={applicationCost}
-                                    onChange={(e) => setApplicationCost(Number(e.target.value))}
+                                    value={applicationCost === "" ? "" : applicationCost}
+                                    onChange={handleNumberChange(setApplicationCost)}
+                                    onWheel={disableScroll}
                                     label="Application Cost (NPR)"
                                     InputProps={{
                                         startAdornment: (
@@ -601,7 +623,7 @@ export default function EstimateCostsTab() {
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <Typography variant="subtitle1">Subtotal</Typography>
                                     <Typography variant="h6" color="secondary" fontWeight="bold">
-                                        NPR {applicationCost.toLocaleString()}
+                                        NPR {(applicationCost === "" ? 0 : applicationCost).toLocaleString()}
                                     </Typography>
                                 </Box>
                             </Paper>
@@ -657,18 +679,9 @@ export default function EstimateCostsTab() {
                                             <TextField
                                                 id="loan-amount"
                                                 type="number"
-                                                value={loanAmount === 0 ? "0" : loanAmount}
-                                                onChange={(e) => {
-                                                    const value = e.target.value;
-
-                                                    if (value === "") {
-                                                        setLoanAmount(0);
-                                                    } else {
-
-                                                        setLoanAmount(parseFloat(value));
-                                                    }
-                                                }}
-                                                onWheel={(e) => e.target.blur()}
+                                                value={loanAmount === "" ? "" : loanAmount}
+                                                onChange={handleNumberChange(setLoanAmount)}
+                                                onWheel={disableScroll}
                                                 label="Bank Loan Amount (NPR)"
                                                 error={!!errors.loanAmount}
                                                 helperText={errors.loanAmount}
@@ -687,8 +700,9 @@ export default function EstimateCostsTab() {
                                             <TextField
                                                 id="processing-rate"
                                                 type="number"
-                                                value={bankProcessingRate}
-                                                onChange={(e) => setBankProcessingRate(Number(e.target.value))}
+                                                value={bankProcessingRate === "" ? "" : bankProcessingRate}
+                                                onChange={handleNumberChange(setBankProcessingRate)}
+                                                onWheel={disableScroll}
                                                 label="Bank Processing Fee (%)"
                                                 inputProps={{ step: "0.01" }}
                                                 InputProps={{
@@ -706,8 +720,9 @@ export default function EstimateCostsTab() {
                                             <TextField
                                                 id="disbursement-amount"
                                                 type="number"
-                                                value={disbursementAmount}
-                                                onChange={(e) => setDisbursementAmount(Number(e.target.value))}
+                                                value={disbursementAmount === "" ? "" : disbursementAmount}
+                                                onChange={handleNumberChange(setDisbursementAmount)}
+                                                onWheel={disableScroll}
                                                 label="Disbursement Amount (NPR)"
                                                 error={!!errors.disbursementAmount}
                                                 helperText={errors.disbursementAmount}
@@ -753,8 +768,9 @@ export default function EstimateCostsTab() {
                                             <TextField
                                                 id="translation-pages"
                                                 type="number"
-                                                value={translationPages}
-                                                onChange={(e) => setTranslationPages(Number(e.target.value))}
+                                                value={translationPages === "" ? "" : translationPages}
+                                                onChange={handleNumberChange(setTranslationPages)}
+                                                onWheel={disableScroll}
                                                 label="Translation Pages"
                                                 error={!!errors.translationPages}
                                                 helperText={errors.translationPages || "Cost per page: NPR 400"}
@@ -773,8 +789,9 @@ export default function EstimateCostsTab() {
                                             <TextField
                                                 id="notary-pages"
                                                 type="number"
-                                                value={notaryPages}
-                                                onChange={(e) => setNotaryPages(Number(e.target.value))}
+                                                value={notaryPages === "" ? "" : notaryPages}
+                                                onChange={handleNumberChange(setNotaryPages)}
+                                                onWheel={disableScroll}
                                                 label="Notary Pages"
                                                 error={!!errors.notaryPages}
                                                 helperText={errors.notaryPages || "Cost per page: NPR 10"}
@@ -942,8 +959,9 @@ export default function EstimateCostsTab() {
                                             <TextField
                                                 id="tuition-fee"
                                                 type="number"
-                                                value={tuitionFee}
-                                                onChange={(e) => setTuitionFee(Number(e.target.value))}
+                                                value={tuitionFee === "" ? "" : tuitionFee}
+                                                onChange={handleNumberChange(setTuitionFee)}
+                                                onWheel={disableScroll}
                                                 label="Tuition Fee Amount (NPR)"
                                                 error={!!errors.tuitionFee}
                                                 helperText={errors.tuitionFee}
@@ -973,8 +991,9 @@ export default function EstimateCostsTab() {
                                             <TextField
                                                 id="payment-company-fee"
                                                 type="number"
-                                                value={paymentCompanyFee}
-                                                onChange={(e) => setPaymentCompanyFee(Number(e.target.value))}
+                                                value={paymentCompanyFee === "" ? "" : paymentCompanyFee}
+                                                onChange={handleNumberChange(setPaymentCompanyFee)}
+                                                onWheel={disableScroll}
                                                 label="Payment Company Fees (NPR)"
                                                 error={!!errors.paymentCompanyFee}
                                                 helperText={errors.paymentCompanyFee}
@@ -1000,8 +1019,9 @@ export default function EstimateCostsTab() {
                                     <TextField
                                         id="health-care"
                                         type="number"
-                                        value={healthCareCost}
-                                        onChange={(e) => setHealthCareCost(Number(e.target.value))}
+                                        value={healthCareCost === "" ? "" : healthCareCost}
+                                        onChange={handleNumberChange(setHealthCareCost)}
+                                        onWheel={disableScroll}
                                         label="Health Care Cost (AUD)"
                                         InputProps={{
                                             startAdornment: (
@@ -1016,7 +1036,7 @@ export default function EstimateCostsTab() {
                                     </Typography>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
                                         <Typography variant="body2">Equivalent in NPR</Typography>
-                                        <Typography variant="body2" fontWeight="medium">NPR {(healthCareCost * 130).toLocaleString()}</Typography>
+                                        <Typography variant="body2" fontWeight="medium">NPR {(healthCareCost === "" ? 0 : healthCareCost * 130).toLocaleString()}</Typography>
                                     </Box>
                                 </FormControl>
                             </Paper>
@@ -1103,7 +1123,7 @@ export default function EstimateCostsTab() {
                                     </Paper>
                                 </Grid>
                                 <Grid item xs={12} md={6}>
-                                    <Paper sx={{ p: 3, bgcolor: 'rgba(244, 67, 54, 0.05)', minHeight: '200px' }}> {/* Fixed height */}
+                                    <Paper sx={{ p: 3, bgcolor: 'rgba(244, 67, 54, 0.05)', minHeight: '200px' }}>
                                         <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', mb: 2, color: 'error.main' }}>
                                             <FileCopy fontSize="small" sx={{ mr: 1 }} />
                                             Biometric
@@ -1359,7 +1379,7 @@ export default function EstimateCostsTab() {
                                             </Box>
                                         </TableCell>
                                         <TableCell>Class Cost</TableCell>
-                                        <TableCell align="right">{englishClassCost.toLocaleString()}</TableCell>
+                                        <TableCell align="right">{(englishClassCost === "" ? 0 : englishClassCost).toLocaleString()}</TableCell>
                                     </TableRow>
                                     <TableRow sx={{ bgcolor: 'rgba(79, 70, 229, 0.05)' }}>
                                         <TableCell>Exam Fee</TableCell>
@@ -1375,7 +1395,7 @@ export default function EstimateCostsTab() {
                                             </Box>
                                         </TableCell>
                                         <TableCell>Application Cost</TableCell>
-                                        <TableCell align="right">{applicationCost.toLocaleString()}</TableCell>
+                                        <TableCell align="right">{(applicationCost === "" ? 0 : applicationCost).toLocaleString()}</TableCell>
                                     </TableRow>
 
                                     {/* GS Stage */}
@@ -1386,15 +1406,15 @@ export default function EstimateCostsTab() {
                                                 GS Stage
                                             </Box>
                                         </TableCell>
-                                        <TableCell>Bank Processing Fee ({bankProcessingRate}%)</TableCell>
+                                        <TableCell>Bank Processing Fee ({bankProcessingRate === "" ? 0 : bankProcessingRate}%)</TableCell>
                                         <TableCell align="right">{getBankProcessingFee().toLocaleString()}</TableCell>
                                     </TableRow>
                                     <TableRow sx={{ bgcolor: 'rgba(33, 150, 243, 0.05)' }}>
-                                        <TableCell>Translation ({translationPages} pages)</TableCell>
+                                        <TableCell>Translation ({translationPages === "" ? 0 : translationPages} pages)</TableCell>
                                         <TableCell align="right">{getTranslationCost().toLocaleString()}</TableCell>
                                     </TableRow>
                                     <TableRow sx={{ bgcolor: 'rgba(33, 150, 243, 0.05)' }}>
-                                        <TableCell>Notary ({notaryPages} pages)</TableCell>
+                                        <TableCell>Notary ({notaryPages === "" ? 0 : notaryPages} pages)</TableCell>
                                         <TableCell align="right">{getNotaryCost().toLocaleString()}</TableCell>
                                     </TableRow>
                                     <TableRow sx={{ bgcolor: 'rgba(33, 150, 243, 0.05)' }}>
@@ -1422,7 +1442,7 @@ export default function EstimateCostsTab() {
                                                 </Typography>
                                             )}
                                         </TableCell>
-                                        <TableCell align="right">{tuitionFee.toLocaleString()}</TableCell>
+                                        <TableCell align="right">{(tuitionFee === "" ? 0 : tuitionFee).toLocaleString()}</TableCell>
                                     </TableRow>
                                     <TableRow sx={{ bgcolor: 'rgba(0, 150, 136, 0.05)' }}>
                                         <TableCell>
@@ -1437,11 +1457,11 @@ export default function EstimateCostsTab() {
                                     </TableRow>
                                     <TableRow sx={{ bgcolor: 'rgba(0, 150, 136, 0.05)' }}>
                                         <TableCell>Payment Company Fee</TableCell>
-                                        <TableCell align="right">{paymentCompanyFee.toLocaleString()}</TableCell>
+                                        <TableCell align="right">{(paymentCompanyFee === "" ? 0 : paymentCompanyFee).toLocaleString()}</TableCell>
                                     </TableRow>
                                     <TableRow sx={{ bgcolor: 'rgba(0, 150, 136, 0.05)' }}>
                                         <TableCell>Health Care</TableCell>
-                                        <TableCell align="right">{(healthCareCost * 130).toLocaleString()}</TableCell>
+                                        <TableCell align="right">{(healthCareCost === "" ? 0 : healthCareCost * 130).toLocaleString()}</TableCell>
                                     </TableRow>
 
                                     {/* Visa Stage */}
@@ -1496,7 +1516,7 @@ export default function EstimateCostsTab() {
                                     <Grid item xs={12} md={4}>
                                         <Paper sx={{ p: 2, border: '1px solid rgba(33, 150, 243, 0.2)' }}>
                                             <Typography variant="caption" color="primary">Disbursement Amount</Typography>
-                                            <Typography variant="subtitle1" fontWeight="bold">NPR {disbursementAmount.toLocaleString()}</Typography>
+                                            <Typography variant="subtitle1" fontWeight="bold">NPR {(disbursementAmount === "" ? 0 : disbursementAmount).toLocaleString()}</Typography>
                                         </Paper>
                                     </Grid>
                                     <Grid item xs={12} md={4}>

@@ -58,14 +58,13 @@ const keyPoints = [
 export default function LandingPage() {
     const theme = useTheme();
     const brandColor = "#4f46e5";
-    const [currentPage, setCurrentPage] = useState(1); // Default to page 1
 
     useEffect(() => {
         window.scrollTo({
             top: 0,
             behavior: "smooth",
         });
-    }, [currentPage]);
+    }, []);
 
     return (
         <Box component="main">
@@ -164,7 +163,7 @@ export default function LandingPage() {
                             <Grid key={index} item xs={12} sm={6} md={4}>
                                 <Card
                                     sx={{
-                                        height: 400, // fixed overall card height
+                                        height: 400, 
                                         display: 'flex',
                                         flexDirection: 'column',
                                         transition: 'transform 0.3s, box-shadow 0.3s',

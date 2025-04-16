@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react"
+import { useParams, useLocation } from "react-router-dom"
 import {
   Tabs,
   Tab,
@@ -27,12 +27,13 @@ import {
   TableHead,
   TableRow,
   Grid,
-} from "@mui/material";
-import { ChevronLeft, ChevronRight, ExpandMore, Description } from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import axios from "axios";
-import Estimation from "../../components/Estimation";
-import './institutions.css'
+} from "@mui/material"
+import { ChevronLeft, ChevronRight, ExpandMore, Description } from "@mui/icons-material"
+import { styled } from "@mui/material/styles"
+import axios from "axios"
+import Estimation from "../../components/Estimation"
+import "./institutions.css"
+import Loading from "../../components/Loading"
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   margin: "12px 0",
@@ -41,7 +42,7 @@ const StyledAccordion = styled(Accordion)(({ theme }) => ({
   boxShadow: "none",
   "&:before": { display: "none" },
   "&.Mui-expanded": { margin: "12px 0" },
-}));
+}))
 
 const StyledTableHeader = styled(TableRow)(({ theme }) => ({
   "& th": {
@@ -51,20 +52,36 @@ const StyledTableHeader = styled(TableRow)(({ theme }) => ({
     fontSize: "0.875rem",
     borderBottom: `2px solid #e2e8f0`,
   },
-}));
+}))
+
+// Update the AgentCard styled component to have fixed width
+const AgentCard = styled(Card)(({ theme }) => ({
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "space-between",
+  borderRadius: "8px",
+  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+  transition: "transform 0.2s, box-shadow 0.2s",
+  "&:hover": {
+    transform: "scale(1.02)",
+    boxShadow: "0 10px 15px rgba(0, 0, 0, 0.1)",
+  },
+}))
 
 export default function InstitutionPage() {
-  const { id } = useParams();
-  const location = useLocation();
-  const [institution, setInstitution] = useState(location.state || null);
-  const [tabIndex, setTabIndex] = useState(0);
-  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-  const [agentScrollIndex, setAgentScrollIndex] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [documentCategories, setDocumentCategories] = useState([]); // State for fetched documents
-  const [allAgents, setAllAgents] = useState([]); // State for all agents from the API
-  const agentsRef = useRef(null);
-  const bannerIntervalRef = useRef(null);
+  const { id } = useParams()
+  const location = useLocation()
+  const [institution, setInstitution] = useState(location.state || null)
+  const [tabIndex, setTabIndex] = useState(0)
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
+  const [agentScrollIndex, setAgentScrollIndex] = useState(0)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [documentCategories, setDocumentCategories] = useState([])
+  const [allAgents, setAllAgents] = useState([])
+  const agentsRef = useRef(null)
+  const bannerIntervalRef = useRef(null)
 
   // Fetch institution data
   useEffect(() => {
@@ -72,17 +89,17 @@ export default function InstitutionPage() {
       axios
         .get(`http://localhost:3001/api/institutions/${id}`)
         .then((response) => {
-          setInstitution(response.data);
+          setInstitution(response.data)
         })
         .catch((error) => {
-          console.error("Error fetching institution:", error);
-        });
+          console.error("Error fetching institution:", error)
+        })
     }
     window.scrollTo({
       top: 0,
       behavior: "smooth",
-    });
-  }, [id, location.state]);
+    })
+  }, [id, location.state])
 
   // Fetch documents from the API
   useEffect(() => {
@@ -96,102 +113,107 @@ export default function InstitutionPage() {
             source: category.src[index],
             additional: category.info[index],
           })),
-        }));
-        setDocumentCategories(formattedData);
+        }))
+        setDocumentCategories(formattedData)
       })
       .catch((error) => {
-        console.error("Error fetching documents:", error);
-      });
-  }, []);
+        console.error("Error fetching documents:", error)
+      })
+  }, [])
 
   // Fetch all agents from the API
   useEffect(() => {
     axios
       .get("http://localhost:3001/api/agents")
       .then((response) => {
-        setAllAgents(response.data);
+        setAllAgents(response.data)
       })
       .catch((error) => {
-        console.error("Error fetching agents:", error);
-      });
-  }, []);
+        console.error("Error fetching agents:", error)
+      })
+  }, [])
 
-  const matchedAgents = institution?.agents?.map((agentName) => {
-    const agentData = allAgents.find((agent) => agent[agentName]);
-    if (!agentData) return null;
-    return {
-      name: agentName,
-      ...agentData[agentName], // Includes head_office and other_locations
-    };
-  }).filter(agent => agent !== null);
+  const matchedAgents = institution?.agents
+    ?.map((agentName) => {
+      const agentData = allAgents.find((agent) => agent[agentName])
+      if (!agentData) return null
+      return {
+        name: agentName,
+        ...agentData[agentName],
+      }
+    })
+    .filter((agent) => agent !== null)
 
   // Auto-play banner
   const startBannerInterval = () => {
     bannerIntervalRef.current = setInterval(() => {
-      setCurrentBannerIndex((prev) => (prev + 1) % (institution?.bannerImages?.length || 1));
-    }, 5000);
-  };
+      setCurrentBannerIndex((prev) => (prev + 1) % (institution?.bannerImages?.length || 1))
+    }, 5000)
+  }
 
   useEffect(() => {
-    startBannerInterval();
-    return () => clearInterval(bannerIntervalRef.current);
-  }, [institution]);
+    startBannerInterval()
+    return () => clearInterval(bannerIntervalRef.current)
+  }, [institution])
 
   // Handle banner navigation
   const handleBannerNavigation = (direction) => {
-    clearInterval(bannerIntervalRef.current);
+    clearInterval(bannerIntervalRef.current)
     if (direction === "left") {
       setCurrentBannerIndex(
-        (prev) => (prev - 1 + (institution?.bannerImages?.length || 1)) % (institution?.bannerImages?.length || 1)
-      );
+        (prev) => (prev - 1 + (institution?.bannerImages?.length || 1)) % (institution?.bannerImages?.length || 1),
+      )
     } else {
-      setCurrentBannerIndex((prev) => (prev + 1) % (institution?.bannerImages?.length || 1));
+      setCurrentBannerIndex((prev) => (prev + 1) % (institution?.bannerImages?.length || 1))
     }
-    startBannerInterval();
-  };
+    startBannerInterval()
+  }
 
   // Handle agent navigation
   const handleAgentScroll = (direction) => {
-    const cardWidth = 300;
-    const gap = 24;
-    const scrollAmount = (cardWidth + gap) * 3 * (direction === "left" ? -1 : 1);
+    // Determine how many cards to show based on screen size
+    let visibleCards = 3 // Default for desktop
 
-    if (agentsRef.current) {
-      agentsRef.current.scrollBy({
-        left: scrollAmount,
-        behavior: "smooth",
-      });
+    if (window.innerWidth < 600) {
+      visibleCards = 1 // Mobile: show 1 card
+    } else if (window.innerWidth < 960) {
+      visibleCards = 2 // Tablet: show 2 cards
     }
 
+    // Update the agent scroll index
     setAgentScrollIndex((prev) => {
-      const newIndex = prev + (direction === "left" ? -3 : 3);
-      return Math.max(0, Math.min(newIndex, (matchedAgents?.length || 0) - 3));
-    });
-  };
+      const newIndex = prev + (direction === "left" ? -1 : 1)
+      return Math.max(0, Math.min(newIndex, (matchedAgents?.length || 0) - visibleCards))
+    })
+  }
 
   const extractMonths = (intakes) => {
-    if (!intakes) return "N/A"; // Handle missing data
+    if (!intakes) return []
     const months = intakes
-      .split(",") // Split by comma
-      .map((intake) => intake.trim().split(" ")[0]) // Extract the month
-      .filter((month, index, self) => self.indexOf(month) === index); // Remove duplicates
-    return months.join(", "); // Join with commas
-  };
+      .split(",")
+      .map((intake) => intake.trim().split(" ")[0])
+      .filter((month, index, self) => self.indexOf(month) === index)
+    return months
+  }
 
   // Filter programs based on search query
   const filteredPrograms = institution?.programs?.filter((program) =>
-    program.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    program.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  )
 
   // Render loading state if data is not available
   if (!institution) {
-    return <Typography>Loading...</Typography>;
+    return <Loading />
   }
 
   // Structured Content Data
   const tabContent = [
     // Overview Tab
-    <Paper elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+    <Paper
+      key="overview"
+      elevation={3}
+      sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+    >
       <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
         About {institution.institutionName}
       </Typography>
@@ -201,7 +223,11 @@ export default function InstitutionPage() {
     </Paper>,
 
     // Locations Tab
-    <Paper elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+    <Paper
+      key="locations"
+      elevation={3}
+      sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+    >
       <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
         Campuses
       </Typography>
@@ -234,7 +260,11 @@ export default function InstitutionPage() {
     </Paper>,
 
     // Programs Tab
-    <Paper elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+    <Paper
+      key="programs"
+      elevation={3}
+      sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+    >
       <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
         Programs Offered
       </Typography>
@@ -331,37 +361,47 @@ export default function InstitutionPage() {
     </Paper>,
 
     // Intakes Tab
-    <Paper elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+    <Paper
+      key="intakes"
+      elevation={3}
+      sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+    >
       <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
         Intakes
       </Typography>
       <Grid container spacing={3}>
-        {institution.programs?.map((program, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <Card
-              sx={{
-                borderRadius: 2,
-                boxShadow: 3,
-                transition: "transform 0.2s, boxShadow 0.2s",
-                "&:hover": {
-                  transform: "scale(1)",
-                  boxShadow: 6,
-                },
-              }}
-            >
-              <CardContent sx={{ p: 2 }}>
-                <Typography variant="body1" sx={{ fontWeight: "medium", textAlign: "center" }}>
-                  {extractMonths(program.intakes)}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+        {Array.from(new Set(institution.programs?.flatMap((program) => extractMonths(program.intakes)))).map(
+          (month, index) => (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Card
+                sx={{
+                  borderRadius: 2,
+                  boxShadow: 3,
+                  transition: "transform 0.2s, boxShadow 0.2s",
+                  "&:hover": {
+                    transform: "scale(1.02)",
+                    boxShadow: 6,
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 2, textAlign: "center" }}>
+                  <Typography variant="body1" sx={{ fontWeight: "medium", textAlign: "center" }}>
+                    {month}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ),
+        )}
       </Grid>
     </Paper>,
 
     // Scholarships Tab
-    <Paper elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+    <Paper
+      key="scholarships"
+      elevation={3}
+      sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+    >
       <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
         Scholarships
       </Typography>
@@ -413,7 +453,11 @@ export default function InstitutionPage() {
     </Paper>,
 
     // Entry Requirements Tab
-    <Paper elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+    <Paper
+      key="entryRequirements"
+      elevation={3}
+      sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+    >
       <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
         Entry Requirements
       </Typography>
@@ -484,12 +528,16 @@ export default function InstitutionPage() {
     </Paper>,
 
     // Estimate Cost Tab
-    <Paper elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+    <Paper
+      key="estimateCost"
+      elevation={3}
+      sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+    >
       <Estimation />
     </Paper>,
 
     // Documents Tab
-    <div style={{ backgroundColor: "#f8fafc", minHeight: "100vh", padding: "40px 24px" }}>
+    <div key="documents" style={{ backgroundColor: "#f8fafc", minHeight: "100vh", padding: "40px 24px" }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <Typography
           variant="h4"
@@ -603,9 +651,7 @@ export default function InstitutionPage() {
                 </AccordionDetails>
               </StyledAccordion>
 
-              {index < documentCategories.length - 1 && (
-                <Divider sx={{ my: 1, borderColor: "#e2e8f0" }} />
-              )}
+              {index < documentCategories.length - 1 && <Divider sx={{ my: 1, borderColor: "#e2e8f0" }} />}
             </React.Fragment>
           ))}
 
@@ -666,7 +712,7 @@ export default function InstitutionPage() {
         </div>
       </div>
     </div>,
-  ];
+  ]
 
   return (
     <Box sx={{ minHeight: "100vh", backgroundColor: "background.default" }}>
@@ -798,146 +844,165 @@ export default function InstitutionPage() {
         <Box sx={{ mb: 4 }}>{tabContent[tabIndex]}</Box>
 
         {/* Agents Section */}
-        <Box sx={{ mt: 6, userSelect: "text" }}>
-          <Typography variant="h5" fontWeight="bold" mb={4}>
+        <Box sx={{ mt: 6, mb: 4, userSelect: "text" }}>
+          <Typography variant="h5" fontWeight="bold" mb={4} textAlign="center">
             Authorized Agents
           </Typography>
-          <Box sx={{ position: "relative" }}>
-            {/* Left Scroll Button */}
-            <IconButton
-              onClick={() => handleAgentScroll("left")}
-              disabled={agentScrollIndex === 0}
-              sx={{
-                position: "absolute",
-                left: 10,
-                top: "50%",
-                transform: "translateY(-50%)",
-                zIndex: 10,
-                backgroundColor: "#4f46e5",
-                color: "white",
-                "&:hover": { backgroundColor: "#4338ca" },
-                "&:disabled": { opacity: 0.5 },
-                display: { xs: "none", sm: "inline-flex" },
-              }}
-            >
-              <ChevronLeft />
-            </IconButton>
 
-            {/* Agents Cards Container */}
-            <Box
-              ref={agentsRef}
-              sx={{
-                display: "flex",
-                gap: 3,
-                overflowX: "auto",
-                scrollBehavior: "smooth",
-                px: 2,
-                width: "100%",
-                mx: "auto",
-                "&::-webkit-scrollbar": { display: "none" },
-              }}
-            >
-              {matchedAgents?.map((agent, index) => (
-                <Card
-                  key={index}
+          {/* Mobile-optimized agent cards */}
+          <Box
+            sx={{
+              position: "relative",
+              width: "100%",
+              mx: "auto",
+              px: { xs: 2, sm: 4 }, // Padding for mobile and tablet
+            }}
+          >
+            {/* Navigation buttons - positioned closer to content */}
+            {matchedAgents?.length > 1 && (
+              <>
+                <IconButton
+                  onClick={() => handleAgentScroll("left")}
+                  disabled={agentScrollIndex === 0}
                   sx={{
-                    minWidth: 280,
-                    width: 280,
-                    height: 400,
-                    flexShrink: 0,
-                    borderRadius: 2,
-                    boxShadow: 3,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    transition: "transform 0.2s, boxShadow 0.2s",
-                    "&:hover": {
-                      transform: "scale(1.02)",
-                      boxShadow: 6,
-                    },
+                    position: "absolute",
+                    left: { xs: -8, sm: -16 },
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    zIndex: 10,
+                    backgroundColor: "rgba(79, 70, 229, 0.9)",
+                    color: "white",
+                    "&:hover": { backgroundColor: "#4338ca" },
+                    "&:disabled": { opacity: 0.5 },
+                    boxShadow: 2,
+                    width: { xs: 36, sm: 40 },
+                    height: { xs: 36, sm: 40 },
                   }}
                 >
-                  <CardContent sx={{ textAlign: "center", flexGrow: 1, py: 2, overflow: "auto" }}>
-                    <Avatar
-                      src={agent?.head_office?.avatar}
-                      sx={{
-                        width: 80,
-                        height: 80,
-                        mx: "auto",
-                        mb: 2,
-                        "& img": {
-                          objectFit: "cover",
-                        },
-                      }}
-                    />
-                    <Typography variant="body1" gutterBottom sx={{ fontWeight: "bold" }}>
-                      {agent?.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      📍 {agent?.head_office?.location}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      📞 {agent?.head_office?.tel}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      ✉️ {agent?.head_office?.email}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      🌐{" "}
-                      <a
-                        href={agent?.head_office?.web}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: "#4f46e5", textDecoration: "none" }}
-                      >
-                        Visit Website
-                      </a>
-                    </Typography>
-                  </CardContent>
-                  <Box sx={{ p: 2, flexShrink: 0 }}>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      sx={{
-                        backgroundColor: "#4f46e5",
-                        borderRadius: 2,
-                        py: 1,
-                        fontWeight: "bold",
-                        "&:hover": {
-                          backgroundColor: "#4338ca",
-                          transform: "scale(1.02)",
-                        },
-                      }}
-                    >
-                      Contact Agent
-                    </Button>
-                  </Box>
-                </Card>
-              ))}
-            </Box>
+                  <ChevronLeft />
+                </IconButton>
 
-            {/* Right Scroll Button */}
-            <IconButton
-              onClick={() => handleAgentScroll("right")}
-              disabled={agentScrollIndex >= (matchedAgents?.length || 0) - 3}
+                <IconButton
+                  onClick={() => handleAgentScroll("right")}
+                  disabled={
+                    agentScrollIndex >=
+                    (matchedAgents?.length || 0) - (window.innerWidth < 600 ? 1 : window.innerWidth < 960 ? 2 : 3)
+                  }
+                  sx={{
+                    position: "absolute",
+                    right: { xs: -8, sm: -16 },
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    zIndex: 10,
+                    backgroundColor: "rgba(79, 70, 229, 0.9)",
+                    color: "white",
+                    "&:hover": { backgroundColor: "#4338ca" },
+                    "&:disabled": { opacity: 0.5 },
+                    boxShadow: 2,
+                    width: { xs: 36, sm: 40 },
+                    height: { xs: 36, sm: 40 },
+                  }}
+                >
+                  <ChevronRight />
+                </IconButton>
+              </>
+            )}
+
+            {/* Agent cards container with fixed width and height */}
+            <Box
               sx={{
-                position: "absolute",
-                right: 10,
-                top: "50%",
-                transform: "translateY(-50%)",
-                zIndex: 10,
-                backgroundColor: "#4f46e5",
-                color: "white",
-                "&:hover": { backgroundColor: "#4338ca" },
-                "&:disabled": { opacity: 0.5 },
-                display: { xs: "none", sm: "inline-flex" },
+                display: "flex",
+                justifyContent: "center",
+                gap: 3,
+                overflow: "visible",
               }}
             >
-              <ChevronRight />
-            </IconButton>
+              {/* Show one card on mobile, two on tablet, three on desktop */}
+              {matchedAgents
+                ?.slice(
+                  agentScrollIndex,
+                  agentScrollIndex + (window.innerWidth < 600 ? 1 : window.innerWidth < 960 ? 2 : 3),
+                )
+                .map((agent, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      width: { xs: "100%", sm: "300px" },
+                      height: "400px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <AgentCard>
+                      <CardContent
+                        sx={{ textAlign: "center", flexGrow: 1, py: 2, display: "flex", flexDirection: "column" }}
+                      >
+                        <Avatar
+                          src={agent?.head_office?.avatar}
+                          sx={{
+                            width: 80,
+                            height: 80,
+                            mx: "auto",
+                            mb: 2,
+                            "& img": {
+                              objectFit: "cover",
+                            },
+                          }}
+                        />
+                        <Box
+                          sx={{ height: 50, display: "flex", alignItems: "center", justifyContent: "center", mb: 1 }}
+                        >
+                          <Typography variant="body1" gutterBottom sx={{ fontWeight: "bold" }}>
+                            {agent?.name}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ flexGrow: 1 }}>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            📍 {agent?.head_office?.location}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            📞 {agent?.head_office?.tel}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            ✉️ {agent?.head_office?.email}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            🌐{" "}
+                            <a
+                              href={agent?.head_office?.web}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: "#4f46e5", textDecoration: "none" }}
+                            >
+                              Visit Website
+                            </a>
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                      <Box sx={{ p: 2, flexShrink: 0 }}>
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          sx={{
+                            backgroundColor: "#4f46e5",
+                            borderRadius: 2,
+                            py: 1,
+                            fontWeight: "bold",
+                            "&:hover": {
+                              backgroundColor: "#4338ca",
+                              transform: "scale(1.02)",
+                            },
+                          }}
+                        >
+                          CONTACT AGENT
+                        </Button>
+                      </Box>
+                    </AgentCard>
+                  </Box>
+                ))}
+            </Box>
           </Box>
         </Box>
       </Container>
     </Box>
-  );
+  )
 }

@@ -22,16 +22,26 @@ import {
     ExpandLess as ExpandLessIcon,
 } from "@mui/icons-material";
 
-function ProgramCard({ program }) {
+function ProgramCard({ program, institutionData }) {
     const [isIntakesOpen, setIsIntakesOpen] = useState(false);
 
-    // Show first 2 intakes by default
+    // Show first 2 intakes by default 
     const visibleIntakes = program.intakes.slice(0, 2);
     const hiddenIntakes = program.intakes.slice(2);
     const hasMoreIntakes = hiddenIntakes.length > 0;
 
     // Access language_requirements from the program object
-    const languageRequirements = program.language_requirement || {};
+    const languageRequirements = {
+        IELTS: program.ielts,
+        TOEFL: program.toefl,
+        PTE: program.pte,
+    };
+
+    // Avatar
+    const baseImageUrl = "http://localhost:3001/uploads/"; 
+    const avatarImage = institutionData?.profilePicture
+        ? `${baseImageUrl}${institutionData.profilePicture}`
+        : null;
 
     return (
         <Card
@@ -49,12 +59,13 @@ function ProgramCard({ program }) {
         >
             <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 2, pb: 1 }}>
                 {/* Header with Avatar and Program Name */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
                     <Avatar
                         sx={{ width: 56, height: 56, bgcolor: "#4f46e5" }}
                         alt={program.institution}
+                        src={avatarImage} 
                     >
-                        {program.institution[0]}
+                        {!avatarImage && program.institution[0]} 
                     </Avatar>
                     <Box>
                         <Typography variant="h6" fontWeight="bold">
@@ -73,25 +84,19 @@ function ProgramCard({ program }) {
                     {/* Campus */}
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                         <LocationIcon sx={{ fontSize: 18, color: "#4f46e5" }} />
-                        <Typography variant="body2">
-                            {program.campus}
-                        </Typography>
+                        <Typography variant="body2">{program.campus}</Typography>
                     </Box>
 
                     {/* Level */}
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                         <SchoolIcon sx={{ fontSize: 18, color: "#4f46e5" }} />
-                        <Typography variant="body2">
-                            {program.level}
-                        </Typography>
+                        <Typography variant="body2">{program.level}</Typography>
                     </Box>
 
                     {/* Duration */}
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                         <TimeIcon sx={{ fontSize: 18, color: "#4f46e5" }} />
-                        <Typography variant="body2">
-                            {program.duration}
-                        </Typography>
+                        <Typography variant="body2">{program.duration}</Typography>
                     </Box>
                 </Box>
 
@@ -145,7 +150,7 @@ function ProgramCard({ program }) {
                                                 cursor: "pointer",
                                                 "&:hover": {
                                                     backgroundColor: "rgba(224, 231, 255, 0.5)",
-                                                }
+                                                },
                                             }}
                                         />
                                     )}
@@ -182,7 +187,6 @@ function ProgramCard({ program }) {
                                         alignItems: "center",
                                     }}
                                 >
-                                    {/* IELTS Chip */}
                                     {languageRequirements.IELTS && (
                                         <Chip
                                             label={`IELTS: ${languageRequirements.IELTS}`}
@@ -194,7 +198,6 @@ function ProgramCard({ program }) {
                                             }}
                                         />
                                     )}
-                                    {/* TOEFL Chip */}
                                     {languageRequirements.TOEFL && (
                                         <Chip
                                             label={`TOEFL: ${languageRequirements.TOEFL}`}
@@ -206,7 +209,6 @@ function ProgramCard({ program }) {
                                             }}
                                         />
                                     )}
-                                    {/* PTE Chip */}
                                     {languageRequirements.PTE && (
                                         <Chip
                                             label={`PTE: ${languageRequirements.PTE}`}
@@ -226,7 +228,13 @@ function ProgramCard({ program }) {
                                 <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
                                     GPA Requirement:
                                 </Typography>
-                                <Typography variant="body2">{program.gpa.toFixed(1)}</Typography>
+                                <Typography variant="body2">
+                                    {program.level.toLowerCase() === "undergraduate"
+                                        ? institutionData?.entryRequirements?.undergraduate?.GPA || "Not specified"
+                                        : program.level.toLowerCase() === "postgraduate"
+                                        ? institutionData?.entryRequirements?.postgraduate?.GPA || "Not specified"
+                                        : "Not specified"}
+                                </Typography>
                             </Box>
                         </Stack>
                     </Grid>
@@ -240,7 +248,7 @@ function ProgramCard({ program }) {
                                     Tuition Fees:
                                 </Typography>
                                 <Typography variant="body2" fontWeight="medium">
-                                    {program.fees.toLocaleString()} per year
+                                    {parseInt(program.fees.replace("$", "")).toLocaleString()} per year
                                 </Typography>
                             </Box>
 
@@ -250,7 +258,7 @@ function ProgramCard({ program }) {
                                     Application Fees:
                                 </Typography>
                                 <Typography variant="body2">
-                                    {program.applicationFees ? `$${program.applicationFees.toLocaleString()}` : "N/A"}
+                                    {institutionData?.applicationFee ? `$${institutionData.applicationFee}` : "N/A"}
                                 </Typography>
                             </Box>
 
@@ -260,21 +268,22 @@ function ProgramCard({ program }) {
                                     Funds Required:
                                 </Typography>
                                 <Typography variant="body2">
-                                    {program.requiredFunds ? `$${program.requiredFunds.toLocaleString()}` : "N/A"}
+                                    {program.requiredFunds ? `$${parseInt(program.requiredFunds).toLocaleString()}` : "N/A"}
                                 </Typography>
                             </Box>
                         </Stack>
                     </Grid>
                 </Grid>
             </CardContent>
-
+            
+            {/* Learn More */}
             <Box sx={{ mt: "auto", px: 2, pb: 2 }}>
                 <Divider sx={{ mb: 2 }} />
                 <Button
                     fullWidth
                     variant="contained"
                     endIcon={<ArrowIcon />}
-                    href={program.url}  
+                    href={program.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{

@@ -15,16 +15,16 @@ import {
   Link,
   IconButton,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Visibility, VisibilityOff } from '@mui/icons-material'; // Import icons for show/hide password
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import ForgotPassword from './ForgotPassword';
 import { NavLink, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
 import { AuthContext } from "../../Context/context";
 import '../Institutions/institutions.css'
 
-// Styled Components
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
@@ -59,9 +59,12 @@ const PrimaryButton = styled(Button)(({ theme }) => ({
   '&:hover': {
     backgroundColor: '#3a39c1',
   },
+  '&.Mui-disabled': {
+    backgroundColor: '#a5a4f3',
+    color: '#ffffff',
+  },
 }));
 
-// Main Component
 export default function Login() {
   const [emailError, setEmailError] = React.useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
@@ -70,30 +73,51 @@ export default function Login() {
   const [open, setOpen] = React.useState(false);
   const [alertMessage, setAlertMessage] = React.useState('');
   const [alertSeverity, setAlertSeverity] = React.useState(null);
-  const [showPassword, setShowPassword] = React.useState(false); // State for show/hide password
-  const [rememberMe, setRememberMe] = React.useState(false); // State for Remember Me
-  const [email, setEmail] = React.useState(''); // State for email
-  const [password, setPassword] = React.useState(''); // State for password
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [rememberMe, setRememberMe] = React.useState(false);
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleForgotPasswordOpen = () => setOpen(true);
   const handleForgotPasswordClose = () => setOpen(false);
 
   const navigate = useNavigate();
+  const { setLoggedIn, setUserAvatar, setUserType } = useContext(AuthContext);
 
-  const { setLoggedIn } = useContext(AuthContext);
-  const { setUserAvatar } = useContext(AuthContext);
-  const { setUserType } = useContext(AuthContext);
-
-  // Load saved email and password from localStorage when component mounts
   useEffect(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userType');
+    localStorage.removeItem('userAvatar');
+
     const savedEmail = localStorage.getItem('rememberedEmail');
-    const savedPassword = localStorage.getItem('rememberedPassword');
-    if (savedEmail && savedPassword) {
+    if (savedEmail) {
       setEmail(savedEmail);
-      setPassword(savedPassword);
       setRememberMe(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (alertMessage) {
+      const timer = setTimeout(() => {
+        setAlertMessage('');
+        setAlertSeverity(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [alertMessage]);
+
+  useEffect(() => {
+    if (emailError || passwordError) {
+      const timer = setTimeout(() => {
+        setEmailError(false);
+        setEmailErrorMessage('');
+        setPasswordError(false);
+        setPasswordErrorMessage('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [emailError, passwordError]);
 
   const validateInputs = (email, password) => {
     let isValid = true;
@@ -107,9 +131,9 @@ export default function Login() {
       setEmailErrorMessage('');
     }
 
-    if (!password || password.length < 6) {
+    if (!password || password.length < 8) {
       setPasswordError(true);
-      setPasswordErrorMessage('Password must be at least 6 characters long.');
+      setPasswordErrorMessage('Password must be at least 8 characters long.');
       isValid = false;
     } else {
       setPasswordError(false);
@@ -119,54 +143,75 @@ export default function Login() {
     return isValid;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const email = data.get('email');
     const password = data.get('password');
 
-    if (!validateInputs(email, password)) return;
+    if (!validateInputs(email, password)) {
+      setIsLoading(false);
+      return;
+    }
 
-    axios
-      .post('http://localhost:3001/api/login', { email, password })
-      .then((result) => {
-        if (result.data.message === 'Success') {
-          // Store the token in local storage
-          localStorage.setItem('token', result.data.auth);
-          localStorage.setItem('userAvatar', result.data.firstName); // Store UserAvatar
-          localStorage.setItem('userType', result.data.user); // Store UserType
+    setIsLoading(true);
 
-          // Save email and password if "Remember Me" is checked
-          if (rememberMe) {
-            localStorage.setItem('rememberedEmail', email);
-            localStorage.setItem('rememberedPassword', password);
-          } else {
-            localStorage.removeItem('rememberedEmail');
-            localStorage.removeItem('rememberedPassword');
-          }
+    try {
+      const result = await axios.post('/login', { email, password });
+      setIsLoading(false);
+      console.log('Login response:', result.data);
 
-          // Update the authentication context
-          setLoggedIn(true);
-          setUserAvatar(result.data.firstName);
-          setUserType(result.data.user);
+      if (result.data.message === 'Success') {
+        const newToken = result.data.auth;
+        localStorage.setItem('token', newToken);
+        localStorage.setItem('userAvatar', result.data.firstName);
+        localStorage.setItem('userType', result.data.user);
+        console.log('Stored token:', newToken);
 
-          // Show success message
-          setAlertMessage('Logged in successfully.');
-          setAlertSeverity('success');
-
-          // Redirect to the home page
-          navigate('/');
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', email);
         } else {
-          // Handle login failure
-          setAlertMessage(result.data.message || 'Login failed.');
-          setAlertSeverity('error');
+          localStorage.removeItem('rememberedEmail');
         }
-      })
-      .catch((err) => {
-        console.error(err);
-        setAlertMessage('An error occurred. Please try again later.');
+
+        setLoggedIn(true);
+        setUserAvatar(result.data.firstName);
+        setUserType(result.data.user);
+
+        setAlertMessage('Logged in successfully.');
+        setAlertSeverity('success');
+
+        navigate('/');
+      } else if (result.data.requiresVerification) {
+        console.log('Redirecting to OTP verification:', email);
+        navigate('/verify-email', {
+          state: {
+            email,
+            message: 'Please verify your email with the OTP sent to your inbox.'
+          }
+        });
+      } else {
+        console.log('Login failed:', result.data.message);
+        setAlertMessage(`Login failed: ${result.data.message || 'Please try again.'}`);
         setAlertSeverity('error');
-      });
+      }
+    } catch (err) {
+      setIsLoading(false);
+      console.error('Login error:', err.response?.data || err.message);
+      const errorMessage = err.response?.data?.message || 'An error occurred. Please try again later.';
+      setAlertMessage(`Error: ${errorMessage}`);
+      setAlertSeverity('error');
+
+      if (err.response?.data?.requiresVerification) {
+        console.log('Redirecting to OTP due to error:', email);
+        navigate('/verify-email', {
+          state: {
+            email,
+            message: 'Please verify your email with the OTP sent to your inbox.'
+          }
+        });
+      }
+    }
   };
 
   const handleForgotPasswordClick = (event) => {
@@ -188,7 +233,6 @@ export default function Login() {
             Login
           </Typography>
 
-          {/* Alert Message */}
           {alertMessage && (
             <Stack sx={{ width: '100%' }} spacing={2}>
               <Alert severity={alertSeverity}>{alertMessage}</Alert>
@@ -220,7 +264,7 @@ export default function Login() {
               <TextField
                 id="password"
                 name="password"
-                type={showPassword ? 'text' : 'password'} // Toggle password visibility
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Password"
                 autoComplete="current-password"
                 error={passwordError}
@@ -256,8 +300,17 @@ export default function Login() {
               }
               label="Remember me"
             />
-            <PrimaryButton type="submit" fullWidth variant="contained">
-              Login
+            <PrimaryButton
+              type="submit"
+              fullWidth
+              variant="contained"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                'Login'
+              )}
             </PrimaryButton>
             <Link
               component="button"
@@ -269,7 +322,7 @@ export default function Login() {
             </Link>
           </Box>
           <Typography textAlign="center">
-            Don&apos;t have an account?{' '}
+            Don't have an account?{' '}
             <NavLink
               to="/signup"
               variant="body2"
@@ -285,7 +338,6 @@ export default function Login() {
         </Card>
       </SignInContainer>
 
-      {/* Forgot Password Modal */}
       <ForgotPassword open={open} handleClose={handleForgotPasswordClose} />
     </>
   );

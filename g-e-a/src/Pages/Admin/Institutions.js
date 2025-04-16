@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import {
     Box,
     Paper,
@@ -22,10 +21,12 @@ import {
     FormControl,
     InputLabel,
     Menu,
+    Button,
 } from "@mui/material";
 import { Add, Search, FilterList, MoreVert, ArrowBack } from "@mui/icons-material";
 import PageHeader from "../../components/Admin/PageHeader";
 import AddInstitution from "../../components/Admin/AddInstitutions";
+import AdminInstitutionsPage from "./InstitutionPage";
 
 function AdminInstitutions() {
     const [institutions, setInstitutions] = useState([]);
@@ -37,7 +38,7 @@ function AdminInstitutions() {
     const [actionMenuAnchorEl, setActionMenuAnchorEl] = useState(null);
     const [selectedInstitution, setSelectedInstitution] = useState(null);
     const [showAddInstitution, setShowAddInstitution] = useState(false);
-    const navigate = useNavigate();
+    const [showInstitutionDetails, setShowInstitutionDetails] = useState(false);
 
     useEffect(() => {
         fetchInstitutions();
@@ -73,12 +74,15 @@ function AdminInstitutions() {
 
     const handleActionClose = (action) => {
         if (action === "View details" && selectedInstitution) {
-            navigate(`/admin/institutionPage/${selectedInstitution._id}`, {
-                state: selectedInstitution,
-            });
+            setShowInstitutionDetails(true);
+        } else if (action === "Edit") {
+            // Handle edit action
+        } else if (action === "Manage programs") {
+            // Handle manage programs action
+        } else if (action === "Toggle status") {
+            // Handle toggle status action
         }
         setActionMenuAnchorEl(null);
-        setSelectedInstitution(null);
     };
 
     const handleAddInstitutionClick = () => {
@@ -87,7 +91,8 @@ function AdminInstitutions() {
 
     const handleBackToInstitutions = () => {
         setShowAddInstitution(false);
-        fetchInstitutions(); // Refresh the list after adding a new institution
+        setShowInstitutionDetails(false);
+        fetchInstitutions();
     };
 
     const getStatusColor = (status) => {
@@ -112,6 +117,10 @@ function AdminInstitutions() {
         <Box sx={{ p: 3 }}>
             {showAddInstitution ? (
                 <AddInstitution onClose={handleBackToInstitutions} />
+            ) : showInstitutionDetails ? (
+                <>
+                    <AdminInstitutionsPage institution={selectedInstitution} onClose={handleBackToInstitutions} />
+                </>
             ) : (
                 <>
                     <PageHeader

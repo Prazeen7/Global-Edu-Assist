@@ -46,7 +46,7 @@ function DashboardLayout() {
             <Box sx={{ display: "flex", minHeight: "100vh" }}>
                 <Sidebar />
                 <Main open={isOpen} isMobile={isMobile}>
-                    <Outlet /> {/* Render nested routes here */}
+                    <Outlet /> 
                 </Main>
             </Box>
         </SidebarContext.Provider>

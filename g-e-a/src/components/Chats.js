@@ -48,9 +48,9 @@ export default function Chats() {
                             overflow: 'visible',
                             filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
                             mt: 1.5,
-                            width: 300, // Adjust width to match chatbox-like feel
-                            borderRadius: 2, // Round the edges for a modern chat look
-                            backgroundColor: '#f4f4f4', // Lighter background for a clean look
+                            width: 300, 
+                            borderRadius: 2,
+                            backgroundColor: '#f4f4f4', 
                             '& .MuiAvatar-root': {
                                 width: 32,
                                 height: 32,
