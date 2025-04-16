@@ -1,88 +1,221 @@
-const AdminModel = require("../models/admin"); 
+const AdminModel = require("../models/admin");
 const UserModel = require("../models/user");
-const nodemailer = require("nodemailer");
 const Jwt = require("jsonwebtoken");
-const generatePassword = require("../utils/generatePassword");
+const bcrypt = require("bcrypt");
+const otpGenerator = require("otp-generator");
+const { sendVerificationEmail, sendPasswordResetEmail } = require("../services/emailService");
 
 // Load environment variables
 require("dotenv").config();
 const JWT_SECRET = process.env.JWT_SECRET;
+const SALT_ROUNDS = 10;
 
-// Nodemailer transporter configuration
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-});
+// Generate OTP
+const generateOTP = () => {
+    return otpGenerator.generate(6, {
+        digits: true,
+        lowerCaseAlphabets: false,
+        upperCaseAlphabets: false,
+        specialChars: false
+    });
+};
 
-// Login logic
+// User Login logic
 const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Check if the user is an admin
-        let existingUser = await AdminModel.findOne({ email });
+        const existingUser = await UserModel.findOne({ email });
         if (!existingUser) {
-            // If not an admin, check if it's a regular user
-            existingUser = await UserModel.findOne({ email });
-            if (!existingUser) {
-                return res.status(400).json({ message: "Please sign up first" });
-            }
+            return res.status(400).json({ message: "Please sign up first" });
         }
 
-        // Directly compare plain text passwords
-        if (password !== existingUser.password) {
+        // Compare hashed password with bcrypt
+        const isPasswordValid = await bcrypt.compare(password, existingUser.password);
+        if (!isPasswordValid) {
             return res.status(400).json({ message: "Password is incorrect" });
         }
 
-        Jwt.sign({ userId: existingUser._id }, JWT_SECRET, (err, token) => {
-            if (err) {
-                return res.status(500).json({ message: "Something went wrong" });
+        // Check if user is verified (OTP verified)
+        if (!existingUser.isVerified) {
+            // Generate new OTP if none exists or it's expired
+            if (!existingUser.otp || existingUser.otpExpiry < new Date()) {
+                const otp = generateOTP();
+                const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+                existingUser.otp = otp;
+                existingUser.otpExpiry = otpExpiry;
+                await existingUser.save();
+
+                await sendVerificationEmail(email, otp);
             }
-            res.json({
-                message: "Success",
-                firstName: existingUser.firstName,
-                user: existingUser.user, 
-                auth: token,
+
+            return res.status(401).json({
+                message: "Email not verified",
+                requiresVerification: true,
+                email: email
             });
+        }
+
+        // If user is verified, generate JWT token
+        const token = Jwt.sign({ userId: existingUser._id, name: existingUser.firstName, userType: existingUser.user }, JWT_SECRET, { expiresIn: '1h' });
+
+        res.json({
+            message: "Success",
+            auth: token,
+            firstName: existingUser.firstName,
+            user: existingUser.user
         });
     } catch (err) {
         res.status(500).json({ message: "Server error", error: err.message });
     }
 };
 
-// Forgot password logic
+// Admin Login logic
+const adminLogin = async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        // Validate input
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required' });
+        }
+
+        const admin = await AdminModel.findOne({ email });
+        if (!admin) {
+            return res.status(400).json({ message: 'Invalid email or password' });
+        }
+
+        // Compare hashed password with bcrypt
+        const isPasswordValid = await bcrypt.compare(password, admin.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: 'Invalid email or password' });
+        }
+
+        // Generate JWT token for admin
+        const token = Jwt.sign(
+            { userId: admin._id, name: admin.firstName, userType: 'admin' },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.json({
+            message: 'Success',
+            auth: token,
+            firstName: admin.firstName,
+            user: 'admin',
+        });
+    } catch (err) {
+        console.error('Admin login error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Forgot password - Send OTP
 const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     try {
+        // Check if the email belongs to an admin
+        const admin = await AdminModel.findOne({ email });
+        if (admin) {
+            return res.status(400).json({
+                message: "Admin password reset not allowed through this portal"
+            });
+        }
+
+        // Proceed with user lookup
         const user = await UserModel.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: "Email not found" });
         }
 
-        const newPassword = generatePassword();
-        user.password = newPassword; 
+        // Generate OTP and set expiration (10 minutes from now)
+        const otp = generateOTP();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+        user.otp = otp;
+        user.otpExpiry = otpExpiry;
         await user.save();
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: "Your New Password",
-            text: `Your new password is: ${newPassword}`,
-        };
+        // Send OTP via email
+        await sendPasswordResetEmail(email, otp);
 
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                return res.status(500).json({ message: "Failed to send email" });
-            }
-            res.status(200).json({ message: "Email sent successfully" });
+        res.status(200).json({
+            message: "OTP sent to your email",
+            email: email
         });
     } catch (err) {
         res.status(500).json({ message: "Server error", error: err.message });
     }
 };
 
-module.exports = { login, forgotPassword };
+// Verify OTP (used for both verification and password reset)
+const verifyOTP = async (req, res) => {
+    const { email, otp } = req.body;
+
+    try {
+        const user = await UserModel.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: "Invalid request" });
+        }
+
+        // Check if OTP matches and isn't expired
+        if (user.otp !== otp || user.otpExpiry < new Date()) {
+            return res.status(400).json({ message: "Invalid or expired OTP" });
+        }
+
+        // OTP is valid - mark it as used
+        user.otp = null;
+        user.otpExpiry = null;
+
+        // Only mark as verified if this is for account verification
+        if (!user.isVerified) {
+            user.isVerified = true;
+        }
+
+        await user.save();
+
+        // Generate JWT token
+        const token = Jwt.sign({ userId: user._id, userType: user.user }, JWT_SECRET, { expiresIn: '1h' });
+
+        res.status(200).json({
+            message: "OTP verified successfully",
+            auth: token,
+            firstName: user.firstName,
+            user: user.user,
+            email: email
+        });
+    } catch (err) {
+        res.status(500).json({ message: "Server error", error: err.message });
+    }
+};
+
+// Reset password
+const resetPassword = async (req, res) => {
+    const { email, newPassword } = req.body;
+
+    try {
+        const user = await UserModel.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: "Invalid request" });
+        }
+
+        // Hash the new password before saving
+        const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ message: "Password reset successfully" });
+    } catch (err) {
+        res.status(500).json({ message: "Server error", error: err.message });
+    }
+};
+
+module.exports = {
+    login,
+    adminLogin,
+    forgotPassword,
+    verifyOTP,
+    resetPassword
+};

@@ -1,0 +1,123 @@
+
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                        STUDY ABROAD COST ESTIMATION REPORT                      ║
+║                                                                                 ║
+║                               Generated: April 13, 2025                         ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+SUMMARY OF ESTIMATED COSTS
+────────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────┬────────────────────┬──────────────────────────────┐
+│ Category            │ Amount (NPR)      │ Percentage of Total         │
+├─────────────────────────┼────────────────────┼──────────────────────────────┤
+│ English Proficiency │             36,500 │     6.24%                │
+│ Offer Letter        │                  0 │     0.00%                │
+│ GS Stage            │             63,050 │    10.78%                │
+│ COE Stage           │            327,000 │    55.90%                │
+│ Visa Stage          │            158,475 │    27.09%                │
+├─────────────────────────┼────────────────────┼──────────────────────────────┤
+│ TOTAL               │            585,025 │ 100.00%                      │
+└─────────────────────────┴────────────────────┴──────────────────────────────┘
+
+
+DETAILED BREAKDOWN
+────────────────────────────────────────────────────────────────────────────────
+
+1. ENGLISH PROFICIENCY
+────────────────────────────────────────
+
+   English Class Cost:                                NPR 5,000
+   Exam Type:                                         IELTS Paper-based
+   Exam Fee:                                          NPR 31,500
+                                                      ----------------------------------------
+   SUBTOTAL:                                          NPR 36,500
+
+
+2. OFFER LETTER
+────────────────────────────────────────
+
+   Application Cost:                                  NPR 0
+                                                      ----------------------------------------
+   SUBTOTAL:                                          NPR 0
+
+
+3. GS STAGE
+────────────────────────────────────────
+
+   Bank Loan Details:
+   ─────────────────
+   Bank Loan Amount:                                  NPR 6,000,000
+   Bank Processing Fee (0.75%):                     NPR 45,000
+   Disbursement Amount:                               NPR 4,000,000
+   Monthly EMI (8%):                              NPR 38,226.083
+
+   Documentation Costs:
+   ─────────────────
+   Translation (5 pages @ NPR 400/page):           NPR 2,000
+   Notary (5 pages @ NPR 10/page):                   NPR 50
+
+   Engineering Costs:
+   ─────────────────
+   Bank Property Valuation:                           NPR 10,000
+   CA Report:                                         NPR 2,500
+   Property Valuation:                                NPR 1,500
+
+   No Objection Letter (NOC):
+   ─────────────────
+   NOC (1 program):                                NPR 2,000
+                                                      ----------------------------------------
+   SUBTOTAL:                                          NPR 63,050
+
+
+4. COE STAGE
+────────────────────────────────────────
+
+   Tuition Fee Payment:
+   ─────────────────
+   Tuition Fee:                                       NPR 2,000,000 (Covered by loan)
+   Education Tax (3%):                                NPR 60,000 (Covered by loan)
+   Payment Company Fee:                               NPR 2,000
+
+   Health Insurance:
+   ─────────────────
+   Health Care (AUD 2500):                          NPR 325,000
+                                                      ----------------------------------------
+   SUBTOTAL:                                          NPR 327,000 (Excluding tuition fee)
+
+
+5. VISA STAGE
+────────────────────────────────────────
+
+   Visa Fee (AUD 1,610):                              NPR 144,900
+   Biometric:                                         NPR 3,575
+   Medical (Norvic):                                 NPR 10,000
+                                                      ----------------------------------------
+   SUBTOTAL:                                          NPR 158,475
+
+
+════════════════════════════════════════════════════════════════════════════════
+TOTAL ESTIMATED COST:                                 NPR 585,025
+════════════════════════════════════════════════════════════════════════════════
+
+
+LOAN INFORMATION
+────────────────────────────────────────
+
+   Disbursement Amount:                               NPR 4,000,000
+   Interest Rate:                                     8%
+   Loan Term:                                         12 months
+   Monthly EMI:                                       NPR 38,226.083
+   Total Interest Payable:                            NPR -3,541,287
+   Total Amount Payable:                              NPR 458,713
+
+
+Notes:
+- All costs are estimates and may vary based on actual circumstances
+- Exchange rate used: 1 AUD = 90 NPR
+- Tuition fee and education tax are excluded from the total as they are covered by the loan
+- Report generated on April 13, 2025
+- This is not an official document and should be used for planning purposes only
+
+════════════════════════════════════════════════════════════════════════════════
+  
