@@ -1,22 +1,56 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react"
 import {
-    Tabs, Tab, Button, IconButton, Box, Card, CardContent, Avatar,
-    Container, Typography, List, ListItem, ListItemText, Divider,
-    Paper, TextField, Accordion, AccordionSummary, AccordionDetails,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Grid, Fab, Dialog, DialogActions, DialogContent, DialogTitle,
-    Snackbar, Alert
-} from "@mui/material";
+    Tabs,
+    Tab,
+    Button,
+    IconButton,
+    Box,
+    Card,
+    CardContent,
+    Avatar,
+    Container,
+    Typography,
+    List,
+    ListItem,
+    ListItemText,
+    Divider,
+    Paper,
+    TextField,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Grid,
+    Fab,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Snackbar,
+    Alert,
+} from "@mui/material"
 import {
-    ChevronLeft, ChevronRight, ExpandMore, Description,
-    Edit as EditIcon, Add as AddIcon, Delete as DeleteIcon,
-    ArrowBack as ArrowBackIcon, Save as SaveIcon, Cancel as CancelIcon
-} from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import axios from "axios";
-import Estimation from "../../components/Estimation";
-import Loading from "../../components/Loading";
-import { useParams, useLocation } from 'react-router-dom';
+    ChevronLeft,
+    ChevronRight,
+    ExpandMore,
+    Description,
+    Edit as EditIcon,
+    Add as AddIcon,
+    Delete as DeleteIcon,
+    ArrowBack as ArrowBackIcon,
+    Save as SaveIcon,
+    Cancel as CancelIcon,
+} from "@mui/icons-material"
+import { styled } from "@mui/material/styles"
+import axios from "axios"
+import Estimation from "../../components/Estimation"
+import Loading from "../../components/Loading"
+import { useParams, useLocation } from "react-router-dom"
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
     margin: "12px 0",
@@ -25,7 +59,7 @@ const StyledAccordion = styled(Accordion)(({ theme }) => ({
     boxShadow: "none",
     "&:before": { display: "none" },
     "&.Mui-expanded": { margin: "12px 0" },
-}));
+}))
 
 const StyledTableHeader = styled(TableRow)(({ theme }) => ({
     "& th": {
@@ -35,7 +69,7 @@ const StyledTableHeader = styled(TableRow)(({ theme }) => ({
         fontSize: "0.875rem",
         borderBottom: `2px solid #e2e8f0`,
     },
-}));
+}))
 
 const AgentCard = styled(Card)(({ theme }) => ({
     width: "100%",
@@ -50,7 +84,7 @@ const AgentCard = styled(Card)(({ theme }) => ({
         transform: "scale(1.02)",
         boxShadow: "0 10px 15px rgba(0, 0, 0, 0.1)",
     },
-}));
+}))
 
 const AdminFab = styled(Fab)(({ theme }) => ({
     position: "fixed",
@@ -61,36 +95,36 @@ const AdminFab = styled(Fab)(({ theme }) => ({
     "&:hover": {
         backgroundColor: "#4338ca",
     },
-}));
+}))
 
 // Helper function to get image URL
 const getImageUrl = (image) => {
-    if (!image) return '';
-    if (typeof image === 'object' && image.url) return image.url;
-    if (typeof image === 'string') {
-        return image.startsWith('blob:') ? image : `http://localhost:3001/uploads/${image}`;
+    if (!image) return ""
+    if (typeof image === "object" && image.url) return image.url
+    if (typeof image === "string") {
+        return image.startsWith("blob:") ? image : `http://localhost:3001/uploads/${image}`
     }
-    return '';
-};
+    return ""
+}
 
 export default function InstitutionPage({ institution: initialInstitution, onClose }) {
-    const { id } = useParams();
-    const location = useLocation();
-    const [institution, setInstitution] = useState(initialInstitution || null);
-    const [tabIndex, setTabIndex] = useState(0);
-    const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-    const [agentScrollIndex, setAgentScrollIndex] = useState(0);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [documentCategories, setDocumentCategories] = useState([]);
-    const [allAgents, setAllAgents] = useState([]);
-    const agentsRef = useRef(null);
-    const bannerIntervalRef = useRef(null);
+    const { id } = useParams()
+    const location = useLocation()
+    const [institution, setInstitution] = useState(initialInstitution || null)
+    const [tabIndex, setTabIndex] = useState(0)
+    const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
+    const [agentScrollIndex, setAgentScrollIndex] = useState(0)
+    const [searchQuery, setSearchQuery] = useState("")
+    const [documentCategories, setDocumentCategories] = useState([])
+    const [allAgents, setAllAgents] = useState([])
+    const agentsRef = useRef(null)
+    const bannerIntervalRef = useRef(null)
 
     // Admin edit state
-    const [isAdmin, setIsAdmin] = useState(true);
-    const [editMode, setEditMode] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(true)
+    const [editMode, setEditMode] = useState(false)
     const [editedInstitution, setEditedInstitution] = useState(
-        initialInstitution 
+        initialInstitution
             ? JSON.parse(JSON.stringify(initialInstitution))
             : {
                 institutionName: "",
@@ -102,38 +136,39 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                 scholarships: [],
                 entryRequirements: {
                     undergraduate: {},
-                    postgraduate: {}
+                    postgraduate: {},
                 },
-                documents: {}
-            }
-    );
+                documents: {},
+            },
+    )
     const [pendingDeletions, setPendingDeletions] = useState({
         locations: [],
         programs: [],
         scholarships: [],
-        bannerImages: []
-    });
-    const [openDialog, setOpenDialog] = useState(false);
-    const [dialogType, setDialogType] = useState("");
-    const [dialogData, setDialogData] = useState(null);
-    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
-    const [editingProgram, setEditingProgram] = useState(null);
-    const [editingScholarship, setEditingScholarship] = useState(null);
-    const [editingLocation, setEditingLocation] = useState(null);
+        bannerImages: [],
+    })
+    const [openDialog, setOpenDialog] = useState(false)
+    const [dialogType, setDialogType] = useState("")
+    const [dialogData, setDialogData] = useState(null)
+    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" })
+    const [editingProgram, setEditingProgram] = useState(null)
+    const [editingScholarship, setEditingScholarship] = useState(null)
+    const [editingLocation, setEditingLocation] = useState(null)
 
     useEffect(() => {
         if (initialInstitution) {
-            setInstitution(initialInstitution);
-            setEditedInstitution(JSON.parse(JSON.stringify(initialInstitution)));
+            setInstitution(initialInstitution)
+            setEditedInstitution(JSON.parse(JSON.stringify(initialInstitution)))
         }
         window.scrollTo({
             top: 0,
             behavior: "smooth",
-        });
-    }, [initialInstitution]);
+        })
+    }, [initialInstitution])
 
     useEffect(() => {
-        axios.get("http://localhost:3001/api/documents")
+        axios
+            .get("http://localhost:3001/api/documents")
             .then((response) => {
                 const formattedData = response.data.map((category) => ({
                     title: category.document,
@@ -142,204 +177,192 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                         source: category.src[index],
                         additional: category.info[index],
                     })),
-                }));
-                setDocumentCategories(formattedData);
+                }))
+                setDocumentCategories(formattedData)
             })
             .catch((error) => {
-                console.error("Error fetching documents:", error);
-            });
-    }, []);
-
-    useEffect(() => {
-        axios.get("http://localhost:3001/api/agents")
-            .then((response) => {
-                setAllAgents(response.data);
+                console.error("Error fetching documents:", error)
             })
-            .catch((error) => {
-                console.error("Error fetching agents:", error);
-            });
-    }, []);
+    }, [])
 
     const matchedAgents = institution?.agents
         ?.map((agentName) => {
-            const agentData = allAgents.find((agent) => agent[agentName]);
-            if (!agentData) return null;
+            const agentData = allAgents.find((agent) => agent[agentName])
+            if (!agentData) return null
             return {
                 name: agentName,
                 ...agentData[agentName],
-            };
+            }
         })
-        .filter((agent) => agent !== null);
+        .filter((agent) => agent !== null)
 
     const startBannerInterval = () => {
         bannerIntervalRef.current = setInterval(() => {
-            setCurrentBannerIndex((prev) => (prev + 1) % (editedInstitution?.bannerImages?.length || 1));
-        }, 5000);
-    };
+            setCurrentBannerIndex((prev) => (prev + 1) % (editedInstitution?.bannerImages?.length || 1))
+        }, 5000)
+    }
 
     useEffect(() => {
-        startBannerInterval();
-        return () => clearInterval(bannerIntervalRef.current);
-    }, [editedInstitution?.bannerImages]);
+        startBannerInterval()
+        return () => clearInterval(bannerIntervalRef.current)
+    }, [editedInstitution?.bannerImages])
 
     const handleBannerNavigation = (direction) => {
-        clearInterval(bannerIntervalRef.current);
+        clearInterval(bannerIntervalRef.current)
         if (direction === "left") {
             setCurrentBannerIndex(
-                (prev) => (prev - 1 + (editedInstitution?.bannerImages?.length || 1)) % (editedInstitution?.bannerImages?.length || 1),
-            );
+                (prev) =>
+                    (prev - 1 + (editedInstitution?.bannerImages?.length || 1)) % (editedInstitution?.bannerImages?.length || 1),
+            )
         } else {
-            setCurrentBannerIndex((prev) => (prev + 1) % (editedInstitution?.bannerImages?.length || 1));
+            setCurrentBannerIndex((prev) => (prev + 1) % (editedInstitution?.bannerImages?.length || 1))
         }
-        startBannerInterval();
-    };
+        startBannerInterval()
+    }
 
     const handleAgentScroll = (direction) => {
-        let visibleCards = 3;
-        if (window.innerWidth < 600) visibleCards = 1;
-        else if (window.innerWidth < 960) visibleCards = 2;
+        let visibleCards = 3
+        if (window.innerWidth < 600) visibleCards = 1
+        else if (window.innerWidth < 960) visibleCards = 2
 
         setAgentScrollIndex((prev) => {
-            const newIndex = prev + (direction === "left" ? -1 : 1);
-            return Math.max(0, Math.min(newIndex, (matchedAgents?.length || 0) - visibleCards));
-        });
-    };
+            const newIndex = prev + (direction === "left" ? -1 : 1)
+            return Math.max(0, Math.min(newIndex, (matchedAgents?.length || 0) - visibleCards))
+        })
+    }
 
     const extractMonths = (intakes) => {
-        if (!intakes) return [];
+        if (!intakes) return []
         return intakes
             .split(",")
             .map((intake) => intake.trim().split(" ")[0])
-            .filter((month, index, self) => self.indexOf(month) === index);
-    };
+            .filter((month, index, self) => self.indexOf(month) === index)
+    }
 
     const filteredPrograms = institution?.programs?.filter((program) =>
         program.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+    )
 
     const toggleEditMode = () => {
         if (editMode) {
             // Cancel all changes
-            setEditedInstitution(JSON.parse(JSON.stringify(institution)));
+            setEditedInstitution(JSON.parse(JSON.stringify(institution)))
             setPendingDeletions({
                 locations: [],
                 programs: [],
                 scholarships: [],
-                bannerImages: []
-            });
+                bannerImages: [],
+            })
         }
-        setEditMode(!editMode);
-    };
+        setEditMode(!editMode)
+    }
 
-    const handleSaveChanges = async () => {
+    const handleSaveChanges = async (e) => {
+        // If it's a form submission event, prevent default behavior
+        if (e && e.preventDefault) {
+            e.preventDefault()
+        }
+
         try {
             // First, filter out marked items
             const toSave = {
                 ...editedInstitution,
                 locations: editedInstitution.locations?.filter(
-                    loc => !pendingDeletions.locations.includes(loc._id) && !loc.markedForDeletion
+                    (loc) => !pendingDeletions.locations.includes(loc._id) && !loc.markedForDeletion,
                 ),
                 programs: editedInstitution.programs?.filter(
-                    prog => !pendingDeletions.programs.includes(prog._id) && !prog.markedForDeletion
+                    (prog) => !pendingDeletions.programs.includes(prog._id) && !prog.markedForDeletion,
                 ),
                 scholarships: editedInstitution.scholarships?.filter(
-                    scholar => !pendingDeletions.scholarships.includes(scholar._id) && !scholar.markedForDeletion
+                    (scholar) => !pendingDeletions.scholarships.includes(scholar._id) && !scholar.markedForDeletion,
                 ),
-                bannerImages: editedInstitution.bannerImages?.filter(
-                    (_, idx) => !pendingDeletions.bannerImages.includes(idx)
-                ),
-            };
+                bannerImages: editedInstitution.bannerImages?.filter((_, idx) => !pendingDeletions.bannerImages.includes(idx)),
+            }
 
-            const response = await axios.put(
-                `http://localhost:3001/api/institutions/${institution._id}`,
-                {
-                    ...toSave,
-                    deletions: pendingDeletions
-                }
-            );
+            const response = await axios.put(`http://localhost:3001/api/institutions/${institution._id}`, {
+                ...toSave,
+                deletions: pendingDeletions,
+            })
 
-            setInstitution(response.data.institution);
-            setEditedInstitution(JSON.parse(JSON.stringify(response.data.institution)));
+            setInstitution(response.data.institution)
+            setEditedInstitution(JSON.parse(JSON.stringify(response.data.institution)))
             setPendingDeletions({
                 locations: [],
                 programs: [],
                 scholarships: [],
-                bannerImages: []
-            });
-            setEditMode(false);
-            
+                bannerImages: [],
+            })
+            setEditMode(false)
+
             setSnackbar({
                 open: true,
                 message: "Changes saved successfully!",
                 severity: "success",
-            });
+            })
 
-            if (onClose) {
-                setTimeout(() => {
-                    onClose();
-                }, 2000);
-            }
+            // Don't automatically close/redirect
+            // if (onClose) {
+            //   setTimeout(() => {
+            //     onClose();
+            //   }, 2000);
+            // }
         } catch (error) {
-            console.error("Error saving changes:", error);
+            console.error("Error saving changes:", error)
             setSnackbar({
                 open: true,
                 message: "Error saving changes. Please try again.",
                 severity: "error",
-            });
+            })
         }
-    };
+    }
 
     const deleteItem = (field, itemId) => {
-        if (field === 'bannerImages') {
+        if (field === "bannerImages") {
             // For banner images, we use the index as itemId
-            setPendingDeletions(prev => ({
+            setPendingDeletions((prev) => ({
                 ...prev,
-                bannerImages: [...prev.bannerImages, itemId]
-            }));
-            
+                bannerImages: [...prev.bannerImages, itemId],
+            }))
+
             // Mark for deletion visually
-            setEditedInstitution(prev => ({
+            setEditedInstitution((prev) => ({
                 ...prev,
-                bannerImages: prev.bannerImages.map((img, idx) => 
-                    idx === itemId ? { ...img, markedForDeletion: true } : img
-                )
-            }));
-            
+                bannerImages: prev.bannerImages.map((img, idx) => (idx === itemId ? { ...img, markedForDeletion: true } : img)),
+            }))
+
             setSnackbar({
                 open: true,
                 message: "Banner image marked for deletion. Save to confirm.",
                 severity: "info",
-            });
-            return;
+            })
+            return
         }
 
         // For other items
-        setPendingDeletions(prev => ({
+        setPendingDeletions((prev) => ({
             ...prev,
-            [field]: [...prev[field], itemId]
-        }));
-        
+            [field]: [...prev[field], itemId],
+        }))
+
         // Mark for deletion visually
-        setEditedInstitution(prev => ({
+        setEditedInstitution((prev) => ({
             ...prev,
-            [field]: prev[field].map(item => 
-                item._id === itemId ? { ...item, markedForDeletion: true } : item
-            )
-        }));
-        
+            [field]: prev[field].map((item) => (item._id === itemId ? { ...item, markedForDeletion: true } : item)),
+        }))
+
         setSnackbar({
             open: true,
             message: `${field.slice(0, -1)} marked for deletion. Save to confirm.`,
             severity: "info",
-        });
-    };
+        })
+    }
 
     const handleInputChange = (field, value) => {
         setEditedInstitution((prev) => ({
             ...prev,
             [field]: value,
-        }));
-    };
+        }))
+    }
 
     const handleNestedInputChange = (parent, field, value) => {
         setEditedInstitution((prev) => ({
@@ -348,8 +371,8 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                 ...prev[parent],
                 [field]: value,
             },
-        }));
-    };
+        }))
+    }
 
     const handleEntryRequirementsChange = (level, field, value) => {
         setEditedInstitution((prev) => ({
@@ -361,8 +384,8 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                     [field]: value,
                 },
             },
-        }));
-    };
+        }))
+    }
 
     // Program editing
     const openProgramDialog = (program = null) => {
@@ -379,39 +402,39 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                     ielts: "",
                     url: "",
                 },
-        );
-        setDialogType("program");
-        setOpenDialog(true);
-    };
+        )
+        setDialogType("program")
+        setOpenDialog(true)
+    }
 
     const handleProgramChange = (field, value) => {
         setEditingProgram((prev) => ({
             ...prev,
             [field]: value,
-        }));
-    };
+        }))
+    }
 
     const saveProgramChanges = () => {
-        const updatedPrograms = [...(editedInstitution.programs || [])];
-        
+        const updatedPrograms = [...(editedInstitution.programs || [])]
+
         if (editingProgram._id) {
-            const index = updatedPrograms.findIndex(p => p._id === editingProgram._id);
+            const index = updatedPrograms.findIndex((p) => p._id === editingProgram._id)
             if (index !== -1) {
-                updatedPrograms[index] = editingProgram;
+                updatedPrograms[index] = editingProgram
             }
         } else {
             updatedPrograms.push({
                 ...editingProgram,
                 _id: Date.now().toString(),
-            });
+            })
         }
 
-        setEditedInstitution(prev => ({
+        setEditedInstitution((prev) => ({
             ...prev,
             programs: updatedPrograms,
-        }));
-        setOpenDialog(false);
-    };
+        }))
+        setOpenDialog(false)
+    }
 
     // Scholarship editing
     const openScholarshipDialog = (scholarship = null) => {
@@ -422,39 +445,49 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                     name: "",
                     link: "",
                 },
-        );
-        setDialogType("scholarship");
-        setOpenDialog(true);
-    };
+        )
+        setDialogType("scholarship")
+        setOpenDialog(true)
+    }
 
     const handleScholarshipChange = (field, value) => {
         setEditingScholarship((prev) => ({
             ...prev,
             [field]: value,
-        }));
-    };
+        }))
+    }
 
+    // Fix the saveScholarshipChanges function to handle _id properly
     const saveScholarshipChanges = () => {
-        const updatedScholarships = [...(editedInstitution.scholarships || [])];
-        
+        const updatedScholarships = [...(editedInstitution.scholarships || [])]
+
         if (editingScholarship._id) {
-            const index = updatedScholarships.findIndex(s => s._id === editingScholarship._id);
+            const index = updatedScholarships.findIndex((s) => s._id === editingScholarship._id)
             if (index !== -1) {
-                updatedScholarships[index] = editingScholarship;
+                updatedScholarships[index] = editingScholarship
             }
         } else {
+            // Don't generate an _id here, let MongoDB handle it
             updatedScholarships.push({
                 ...editingScholarship,
-                _id: Date.now().toString(),
-            });
+                // Use a temporary ID for UI purposes only
+                _id: `temp_${Date.now()}`,
+            })
         }
 
-        setEditedInstitution(prev => ({
+        setEditedInstitution((prev) => ({
             ...prev,
             scholarships: updatedScholarships,
-        }));
-        setOpenDialog(false);
-    };
+        }))
+
+        setSnackbar({
+            open: true,
+            message: `Scholarship "${editingScholarship.name}" ${editingScholarship._id ? "updated" : "added"}. Save changes to confirm.`,
+            severity: "success",
+        })
+
+        setOpenDialog(false)
+    }
 
     // Location editing
     const openLocationDialog = (location = null) => {
@@ -466,132 +499,135 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                     city: "",
                     country: "",
                 },
-        );
-        setDialogType("location");
-        setOpenDialog(true);
-    };
+        )
+        setDialogType("location")
+        setOpenDialog(true)
+    }
 
     const handleLocationChange = (field, value) => {
         setEditingLocation((prev) => ({
             ...prev,
             [field]: value,
-        }));
-    };
+        }))
+    }
 
     const saveLocationChanges = () => {
-        const updatedLocations = [...(editedInstitution.locations || [])];
-        
+        const updatedLocations = [...(editedInstitution.locations || [])]
+
         if (editingLocation._id) {
-            const index = updatedLocations.findIndex(l => l._id === editingLocation._id);
+            const index = updatedLocations.findIndex((l) => l._id === editingLocation._id)
             if (index !== -1) {
-                updatedLocations[index] = editingLocation;
+                updatedLocations[index] = editingLocation
             }
         } else {
             updatedLocations.push({
                 ...editingLocation,
                 _id: Date.now().toString(),
-            });
+            })
         }
 
-        setEditedInstitution(prev => ({
+        setEditedInstitution((prev) => ({
             ...prev,
             locations: updatedLocations,
-        }));
-        setOpenDialog(false);
-    };
+        }))
+        setOpenDialog(false)
+    }
 
     // Image handling
     const handleProfilePictureChange = (e) => {
         if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            const formData = new FormData();
-            formData.append("image", file);
+            const file = e.target.files[0]
+            const formData = new FormData()
+            formData.append("image", file)
 
-            axios.post("http://localhost:3001/api/upload", formData)
+            axios
+                .post("http://localhost:3001/api/upload", formData)
                 .then((response) => {
                     setEditedInstitution((prev) => ({
                         ...prev,
                         profilePicture: response.data.filename,
-                    }));
+                    }))
                     setSnackbar({
                         open: true,
                         message: "Profile picture uploaded successfully!",
                         severity: "success",
-                    });
+                    })
                 })
                 .catch((error) => {
-                    console.error("Error uploading profile picture:", error);
+                    console.error("Error uploading profile picture:", error)
                     setSnackbar({
                         open: true,
                         message: "Error uploading profile picture. Please try again.",
                         severity: "error",
-                    });
-                });
+                    })
+                })
         }
-    };
+    }
 
     const handleBannerImageUpload = (e) => {
         if (e.target.files && e.target.files[0]) {
-            const currentBanners = editedInstitution.bannerImages || [];
+            const currentBanners = editedInstitution.bannerImages || []
             if (currentBanners.length >= 5) {
                 setSnackbar({
                     open: true,
                     message: "Maximum 5 banner images allowed",
                     severity: "error",
-                });
-                return;
+                })
+                return
             }
 
-            const file = e.target.files[0];
-            const formData = new FormData();
-            formData.append("image", file);
+            const file = e.target.files[0]
+            const formData = new FormData()
+            formData.append("image", file)
 
             // Optimistically update UI
-            const tempUrl = URL.createObjectURL(file);
-            setEditedInstitution(prev => ({
+            const tempUrl = URL.createObjectURL(file)
+            setEditedInstitution((prev) => ({
                 ...prev,
-                bannerImages: [...(prev.bannerImages || []), tempUrl]
-            }));
+                bannerImages: [...(prev.bannerImages || []), tempUrl],
+            }))
 
-            axios.post("http://localhost:3001/api/upload", formData)
+            axios
+                .post("http://localhost:3001/api/upload", formData)
                 .then((response) => {
                     // Replace temp URL with actual filename
-                    setEditedInstitution(prev => ({
+                    setEditedInstitution((prev) => ({
                         ...prev,
-                        bannerImages: [
-                            ...prev.bannerImages.slice(0, -1),
-                            response.data.filename
-                        ]
-                    }));
+                        bannerImages: [...prev.bannerImages.slice(0, -1), response.data.filename],
+                    }))
                     setSnackbar({
                         open: true,
                         message: "Banner image uploaded successfully!",
                         severity: "success",
-                    });
+                    })
                 })
                 .catch((error) => {
                     // Remove the temp image on error
-                    setEditedInstitution(prev => ({
+                    setEditedInstitution((prev) => ({
                         ...prev,
-                        bannerImages: prev.bannerImages.slice(0, -1)
-                    }));
-                    console.error("Error uploading banner image:", error);
+                        bannerImages: prev.bannerImages.slice(0, -1),
+                    }))
+                    console.error("Error uploading banner image:", error)
                     setSnackbar({
                         open: true,
                         message: "Error uploading banner image. Please try again.",
                         severity: "error",
-                    });
-                });
+                    })
+                })
         }
-    };
+    }
 
     if (!institution || !editedInstitution) {
-        return <Loading />;
+        return <Loading />
     }
 
     const tabContent = [
         // Overview Tab
-        <Paper key="overview" elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+        <Paper
+            key="overview"
+            elevation={3}
+            sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+        >
             <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
                 About {institution.institutionName}
             </Typography>
@@ -612,7 +648,11 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
         </Paper>,
 
         // Locations Tab
-        <Paper key="locations" elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+        <Paper
+            key="locations"
+            elevation={3}
+            sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+        >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
                     Campuses
@@ -631,28 +671,32 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
             <Grid container spacing={3}>
                 {(editMode ? editedInstitution.locations : institution.locations)?.map((location, index) => (
                     <Grid item xs={12} sm={6} md={4} key={index}>
-                        <Card sx={{ 
-                            borderRadius: 2, 
-                            boxShadow: 3, 
-                            transition: "transform 0.3s, boxShadow 0.3s", 
-                            "&:hover": { transform: "scale(1)", boxShadow: 6 }, 
-                            position: "relative",
-                            opacity: location.markedForDeletion ? 0.6 : 1,
-                            border: location.markedForDeletion ? "2px dashed red" : "none"
-                        }}>
+                        <Card
+                            sx={{
+                                borderRadius: 2,
+                                boxShadow: 3,
+                                transition: "transform 0.3s, boxShadow 0.3s",
+                                "&:hover": { transform: "scale(1)", boxShadow: 6 },
+                                position: "relative",
+                                opacity: location.markedForDeletion ? 0.6 : 1,
+                                border: location.markedForDeletion ? "2px dashed red" : "none",
+                            }}
+                        >
                             {location.markedForDeletion && (
-                                <Box sx={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    backgroundColor: "rgba(255,0,0,0.1)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    zIndex: 1
-                                }}>
+                                <Box
+                                    sx={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        backgroundColor: "rgba(255,0,0,0.1)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        zIndex: 1,
+                                    }}
+                                >
                                     <Typography variant="body2" color="error">
                                         Marked for deletion
                                     </Typography>
@@ -661,10 +705,18 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                             <CardContent sx={{ p: 2 }}>
                                 {editMode && !location.markedForDeletion && (
                                     <Box sx={{ position: "absolute", top: 5, right: 5, display: "flex", gap: 1 }}>
-                                        <IconButton size="small" onClick={() => openLocationDialog(location)} sx={{ backgroundColor: "rgba(79, 70, 229, 0.1)" }}>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => openLocationDialog(location)}
+                                            sx={{ backgroundColor: "rgba(79, 70, 229, 0.1)" }}
+                                        >
                                             <EditIcon fontSize="small" />
                                         </IconButton>
-                                        <IconButton size="small" onClick={() => deleteItem('locations', location._id)} sx={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => deleteItem("locations", location._id)}
+                                            sx={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+                                        >
                                             <DeleteIcon fontSize="small" color="error" />
                                         </IconButton>
                                     </Box>
@@ -683,7 +735,11 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
         </Paper>,
 
         // Programs Tab
-        <Paper key="programs" elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+        <Paper
+            key="programs"
+            elevation={3}
+            sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+        >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
                     Programs Offered
@@ -707,34 +763,43 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                 sx={{ mb: 3 }}
             />
             <Grid container spacing={3}>
-                {(editMode ? editedInstitution.programs?.filter((program) => program.name.toLowerCase().includes(searchQuery.toLowerCase())) : filteredPrograms)?.map((program, index) => (
+                {(editMode
+                    ? editedInstitution.programs?.filter((program) =>
+                        program.name.toLowerCase().includes(searchQuery.toLowerCase()),
+                    )
+                    : filteredPrograms
+                )?.map((program, index) => (
                     <Grid item xs={12} sm={6} md={4} key={index}>
-                        <Card sx={{ 
-                            height: "100%", 
-                            display: "flex", 
-                            flexDirection: "column", 
-                            justifyContent: "space-between", 
-                            borderRadius: 2, 
-                            boxShadow: 3, 
-                            transition: "transform 0.2s, boxShadow 0.2s", 
-                            "&:hover": { transform: "scale(1.02)", boxShadow: 6 }, 
-                            position: "relative",
-                            opacity: program.markedForDeletion ? 0.6 : 1,
-                            border: program.markedForDeletion ? "2px dashed red" : "none"
-                        }}>
+                        <Card
+                            sx={{
+                                height: "100%",
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "space-between",
+                                borderRadius: 2,
+                                boxShadow: 3,
+                                transition: "transform 0.2s, boxShadow 0.2s",
+                                "&:hover": { transform: "scale(1.02)", boxShadow: 6 },
+                                position: "relative",
+                                opacity: program.markedForDeletion ? 0.6 : 1,
+                                border: program.markedForDeletion ? "2px dashed red" : "none",
+                            }}
+                        >
                             {program.markedForDeletion && (
-                                <Box sx={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    backgroundColor: "rgba(255,0,0,0.1)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    zIndex: 1
-                                }}>
+                                <Box
+                                    sx={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        backgroundColor: "rgba(255,0,0,0.1)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        zIndex: 1,
+                                    }}
+                                >
                                     <Typography variant="body2" color="error">
                                         Marked for deletion
                                     </Typography>
@@ -742,43 +807,72 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                             )}
                             {editMode && !program.markedForDeletion && (
                                 <Box sx={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 1 }}>
-                                    <IconButton size="small" onClick={() => openProgramDialog(program)} sx={{ backgroundColor: "rgba(79, 70, 229, 0.1)" }}>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => openProgramDialog(program)}
+                                        sx={{ backgroundColor: "rgba(79, 70, 229, 0.1)" }}
+                                    >
                                         <EditIcon fontSize="small" />
                                     </IconButton>
-                                    <IconButton size="small" onClick={() => deleteItem('programs', program._id)} sx={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => deleteItem("programs", program._id)}
+                                        sx={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+                                    >
                                         <DeleteIcon fontSize="small" color="error" />
                                     </IconButton>
                                 </Box>
                             )}
-                            <CardContent sx={{ 
-                                overflow: "auto", 
-                                flexGrow: 1,
-                                paddingTop: editMode ? '40px' : '16px'
-                            }}>
-                                <Typography variant="subtitle1" gutterBottom sx={{ 
-                                    fontWeight: "bold",
-                                    marginRight: editMode ? '40px' : '0'
-                                }}>
+                            <CardContent
+                                sx={{
+                                    overflow: "auto",
+                                    flexGrow: 1,
+                                    paddingTop: editMode ? "40px" : "16px",
+                                }}
+                            >
+                                <Typography
+                                    variant="subtitle1"
+                                    gutterBottom
+                                    sx={{
+                                        fontWeight: "bold",
+                                        marginRight: editMode ? "40px" : "0",
+                                    }}
+                                >
                                     {program.name}
                                 </Typography>
                                 <List>
                                     <ListItem sx={{ py: 1 }}>
-                                        <ListItemText primary={`Level: ${program.level}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                        <ListItemText
+                                            primary={`Level: ${program.level}`}
+                                            primaryTypographyProps={{ fontWeight: "medium" }}
+                                        />
                                     </ListItem>
                                     <ListItem sx={{ py: 1 }}>
-                                        <ListItemText primary={`Duration: ${program.duration}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                        <ListItemText
+                                            primary={`Duration: ${program.duration}`}
+                                            primaryTypographyProps={{ fontWeight: "medium" }}
+                                        />
                                     </ListItem>
                                     <ListItem sx={{ py: 1 }}>
-                                        <ListItemText primary={`Intakes: ${program.intakes}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                        <ListItemText
+                                            primary={`Intakes: ${program.intakes}`}
+                                            primaryTypographyProps={{ fontWeight: "medium" }}
+                                        />
                                     </ListItem>
                                     <ListItem sx={{ py: 1 }}>
-                                        <ListItemText primary={`Fees: ${program.firstYearFees}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                        <ListItemText
+                                            primary={`Fees: ${program.firstYearFees}`}
+                                            primaryTypographyProps={{ fontWeight: "medium" }}
+                                        />
                                     </ListItem>
                                     <ListItem sx={{ py: 1 }}>
                                         <ListItemText primary={`Campus: ${program.campuses}`} />
                                     </ListItem>
                                     <ListItem sx={{ py: 1 }}>
-                                        <ListItemText primary={`IELTS Requirement: ${program.ielts || "Not specified"}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                        <ListItemText
+                                            primary={`IELTS Requirement: ${program.ielts || "Not specified"}`}
+                                            primaryTypographyProps={{ fontWeight: "medium" }}
+                                        />
                                     </ListItem>
                                 </List>
                             </CardContent>
@@ -789,7 +883,13 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     fullWidth
-                                    sx={{ backgroundColor: "#4f46e5", borderRadius: 2, py: 1, fontWeight: "bold", "&:hover": { backgroundColor: "#4338ca", transform: "scale(1.02)" } }}
+                                    sx={{
+                                        backgroundColor: "#4f46e5",
+                                        borderRadius: 2,
+                                        py: 1,
+                                        fontWeight: "bold",
+                                        "&:hover": { backgroundColor: "#4338ca", transform: "scale(1.02)" },
+                                    }}
                                 >
                                     Learn More
                                 </Button>
@@ -808,7 +908,7 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                 p: 3,
                 backgroundColor: "background.paper",
                 borderRadius: 2,
-                border: "1px solid #e0e0e0"
+                border: "1px solid #e0e0e0",
             }}
         >
             <Typography
@@ -816,48 +916,50 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                 gutterBottom
                 sx={{
                     color: "primary.main",
-                    fontWeight: "bold"
+                    fontWeight: "bold",
                 }}
             >
                 Intakes
             </Typography>
             <Grid container spacing={3}>
-                {Array.from(
-                    new Set(
-                        institution.programs?.flatMap((program) => extractMonths(program.intakes))
-                    )
-                ).map((month, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                        <Card
-                            sx={{
-                                borderRadius: 2,
-                                boxShadow: 3,
-                                transition: "transform 0.2s, boxShadow 0.2s",
-                                "&:hover": {
-                                    transform: "scale(1.02)",
-                                    boxShadow: 6
-                                }
-                            }}
-                        >
-                            <CardContent sx={{ p: 2, textAlign: "center" }}>
-                                <Typography
-                                    variant="body1"
-                                    sx={{
-                                        fontWeight: "medium",
-                                        textAlign: "center"
-                                    }}
-                                >
-                                    {month}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                ))}
+                {Array.from(new Set(institution.programs?.flatMap((program) => extractMonths(program.intakes)))).map(
+                    (month, index) => (
+                        <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Card
+                                sx={{
+                                    borderRadius: 2,
+                                    boxShadow: 3,
+                                    transition: "transform 0.2s, boxShadow 0.2s",
+                                    "&:hover": {
+                                        transform: "scale(1.02)",
+                                        boxShadow: 6,
+                                    },
+                                }}
+                            >
+                                <CardContent sx={{ p: 2, textAlign: "center" }}>
+                                    <Typography
+                                        variant="body1"
+                                        sx={{
+                                            fontWeight: "medium",
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        {month}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    ),
+                )}
             </Grid>
         </Paper>,
 
         // Scholarships Tab
-        <Paper key="scholarships" elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+        <Paper
+            key="scholarships"
+            elevation={3}
+            sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+        >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
                     Scholarships
@@ -876,54 +978,80 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
             <Grid container spacing={3}>
                 {(editMode ? editedInstitution.scholarships : institution.scholarships)?.map((scholarship, index) => (
                     <Grid item xs={12} sm={6} md={4} key={index}>
-                        <Card sx={{ 
-                            minHeight: 100, 
-                            minWidth: 200, 
-                            display: "flex", 
-                            flexDirection: "column", 
-                            justifyContent: "space-between", 
-                            borderRadius: 2, 
-                            boxShadow: 3, 
-                            transition: "transform 0.2s, boxShadow 0.2s", 
-                            "&:hover": { transform: "scale(1.02)", boxShadow: 6 }, 
-                            position: "relative",
-                            opacity: scholarship.markedForDeletion ? 0.6 : 1,
-                            border: scholarship.markedForDeletion ? "2px dashed red" : "none"
-                        }}>
+                        <Card
+                            sx={{
+                                minHeight: 100,
+                                minWidth: 200,
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "space-between",
+                                borderRadius: 2,
+                                boxShadow: 3,
+                                transition: "transform 0.2s, boxShadow 0.2s",
+                                "&:hover": { transform: "scale(1.02)", boxShadow: 6 },
+                                position: "relative",
+                                opacity: scholarship.markedForDeletion ? 0.6 : 1,
+                                border: scholarship.markedForDeletion ? "2px dashed red" : "none",
+                            }}
+                        >
                             {scholarship.markedForDeletion && (
-                                <Box sx={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    backgroundColor: "rgba(255,0,0,0.1)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    zIndex: 1
-                                }}>
+                                <Box
+                                    sx={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        backgroundColor: "rgba(255,0,0,0.1)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        zIndex: 1,
+                                    }}
+                                >
                                     <Typography variant="body2" color="error">
                                         Marked for deletion
                                     </Typography>
                                 </Box>
                             )}
                             {editMode && !scholarship.markedForDeletion && (
-                                <Box sx={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 1 }}>
-                                    <IconButton size="small" onClick={() => openScholarshipDialog(scholarship)} sx={{ backgroundColor: "rgba(79, 70, 229, 0.1)" }}>
+                                <Box sx={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 1, zIndex: 2 }}>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => openScholarshipDialog(scholarship)}
+                                        sx={{ backgroundColor: "rgba(79, 70, 229, 0.1)" }}
+                                    >
                                         <EditIcon fontSize="small" />
                                     </IconButton>
-                                    <IconButton size="small" onClick={() => deleteItem('scholarships', scholarship._id)} sx={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => deleteItem("scholarships", scholarship._id)}
+                                        sx={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+                                    >
                                         <DeleteIcon fontSize="small" color="error" />
                                     </IconButton>
                                 </Box>
                             )}
-                            <CardContent sx={{ p: 2, flexGrow: 1 }}>
-                                <Typography variant="body1" sx={{ fontWeight: "medium", textAlign: "center" }}>
+                            <CardContent sx={{ p: 2, flexGrow: 1, pt: editMode ? 4 : 2 }}>
+                                <Typography
+                                    variant="body1"
+                                    sx={{
+                                        fontWeight: "medium",
+                                        textAlign: "center",
+                                        paddingTop: editMode ? 1 : 0,
+                                        paddingRight: editMode ? 2 : 0,
+                                        wordBreak: "break-word",
+                                    }}
+                                >
                                     {scholarship.name}
                                 </Typography>
-                                <Box sx={{ textAlign: "center" }}>
-                                    <a href={scholarship.link} target="_blank" rel="noopener noreferrer" style={{ color: "#4f46e5", textDecoration: "none", fontWeight: "bold" }}>
+                                <Box sx={{ textAlign: "center", mt: 2 }}>
+                                    <a
+                                        href={scholarship.link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: "#4f46e5", textDecoration: "none", fontWeight: "bold" }}
+                                    >
                                         Learn More
                                     </a>
                                 </Box>
@@ -935,7 +1063,11 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
         </Paper>,
 
         // Entry Requirements Tab
-        <Paper key="entryRequirements" elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+        <Paper
+            key="entryRequirements"
+            elevation={3}
+            sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+        >
             <Typography variant="h6" gutterBottom sx={{ color: "primary.main", fontWeight: "bold" }}>
                 Entry Requirements
             </Typography>
@@ -947,31 +1079,67 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                     {editMode ? (
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="GPA" value={editedInstitution.entryRequirements?.undergraduate?.GPA || ""} onChange={(e) => handleEntryRequirementsChange("undergraduate", "GPA", e.target.value)} margin="normal" />
+                                <TextField
+                                    fullWidth
+                                    label="GPA"
+                                    value={editedInstitution.entryRequirements?.undergraduate?.GPA || ""}
+                                    onChange={(e) => handleEntryRequirementsChange("undergraduate", "GPA", e.target.value)}
+                                    margin="normal"
+                                />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="IELTS" value={editedInstitution.entryRequirements?.undergraduate?.IELTS || ""} onChange={(e) => handleEntryRequirementsChange("undergraduate", "IELTS", e.target.value)} margin="normal" />
+                                <TextField
+                                    fullWidth
+                                    label="IELTS"
+                                    value={editedInstitution.entryRequirements?.undergraduate?.IELTS || ""}
+                                    onChange={(e) => handleEntryRequirementsChange("undergraduate", "IELTS", e.target.value)}
+                                    margin="normal"
+                                />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="PTE" value={editedInstitution.entryRequirements?.undergraduate?.PTE || ""} onChange={(e) => handleEntryRequirementsChange("undergraduate", "PTE", e.target.value)} margin="normal" />
+                                <TextField
+                                    fullWidth
+                                    label="PTE"
+                                    value={editedInstitution.entryRequirements?.undergraduate?.PTE || ""}
+                                    onChange={(e) => handleEntryRequirementsChange("undergraduate", "PTE", e.target.value)}
+                                    margin="normal"
+                                />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="TOEFL" value={editedInstitution.entryRequirements?.undergraduate?.TOEFL || ""} onChange={(e) => handleEntryRequirementsChange("undergraduate", "TOEFL", e.target.value)} margin="normal" />
+                                <TextField
+                                    fullWidth
+                                    label="TOEFL"
+                                    value={editedInstitution.entryRequirements?.undergraduate?.TOEFL || ""}
+                                    onChange={(e) => handleEntryRequirementsChange("undergraduate", "TOEFL", e.target.value)}
+                                    margin="normal"
+                                />
                             </Grid>
                         </Grid>
                     ) : (
                         <List>
                             <ListItem sx={{ py: 1 }}>
-                                <ListItemText primary={`GPA: ${institution.entryRequirements?.undergraduate?.GPA}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                <ListItemText
+                                    primary={`GPA: ${institution.entryRequirements?.undergraduate?.GPA}`}
+                                    primaryTypographyProps={{ fontWeight: "medium" }}
+                                />
                             </ListItem>
                             <ListItem sx={{ py: 1 }}>
-                                <ListItemText primary={`IELTS: ${institution.entryRequirements?.undergraduate?.IELTS}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                <ListItemText
+                                    primary={`IELTS: ${institution.entryRequirements?.undergraduate?.IELTS}`}
+                                    primaryTypographyProps={{ fontWeight: "medium" }}
+                                />
                             </ListItem>
                             <ListItem sx={{ py: 1 }}>
-                                <ListItemText primary={`PTE: ${institution.entryRequirements?.undergraduate?.PTE}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                <ListItemText
+                                    primary={`PTE: ${institution.entryRequirements?.undergraduate?.PTE}`}
+                                    primaryTypographyProps={{ fontWeight: "medium" }}
+                                />
                             </ListItem>
                             <ListItem sx={{ py: 1 }}>
-                                <ListItemText primary={`TOEFL: ${institution.entryRequirements?.undergraduate?.TOEFL}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                <ListItemText
+                                    primary={`TOEFL: ${institution.entryRequirements?.undergraduate?.TOEFL}`}
+                                    primaryTypographyProps={{ fontWeight: "medium" }}
+                                />
                             </ListItem>
                         </List>
                     )}
@@ -983,31 +1151,67 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                     {editMode ? (
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="GPA" value={editedInstitution.entryRequirements?.postgraduate?.GPA || ""} onChange={(e) => handleEntryRequirementsChange("postgraduate", "GPA", e.target.value)} margin="normal" />
+                                <TextField
+                                    fullWidth
+                                    label="GPA"
+                                    value={editedInstitution.entryRequirements?.postgraduate?.GPA || ""}
+                                    onChange={(e) => handleEntryRequirementsChange("postgraduate", "GPA", e.target.value)}
+                                    margin="normal"
+                                />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="IELTS" value={editedInstitution.entryRequirements?.postgraduate?.IELTS || ""} onChange={(e) => handleEntryRequirementsChange("postgraduate", "IELTS", e.target.value)} margin="normal" />
+                                <TextField
+                                    fullWidth
+                                    label="IELTS"
+                                    value={editedInstitution.entryRequirements?.postgraduate?.IELTS || ""}
+                                    onChange={(e) => handleEntryRequirementsChange("postgraduate", "IELTS", e.target.value)}
+                                    margin="normal"
+                                />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="PTE" value={editedInstitution.entryRequirements?.postgraduate?.PTE || ""} onChange={(e) => handleEntryRequirementsChange("postgraduate", "PTE", e.target.value)} margin="normal" />
+                                <TextField
+                                    fullWidth
+                                    label="PTE"
+                                    value={editedInstitution.entryRequirements?.postgraduate?.PTE || ""}
+                                    onChange={(e) => handleEntryRequirementsChange("postgraduate", "PTE", e.target.value)}
+                                    margin="normal"
+                                />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="TOEFL" value={editedInstitution.entryRequirements?.postgraduate?.TOEFL || ""} onChange={(e) => handleEntryRequirementsChange("postgraduate", "TOEFL", e.target.value)} margin="normal" />
+                                <TextField
+                                    fullWidth
+                                    label="TOEFL"
+                                    value={editedInstitution.entryRequirements?.postgraduate?.TOEFL || ""}
+                                    onChange={(e) => handleEntryRequirementsChange("postgraduate", "TOEFL", e.target.value)}
+                                    margin="normal"
+                                />
                             </Grid>
                         </Grid>
                     ) : (
                         <List>
                             <ListItem sx={{ py: 1 }}>
-                                <ListItemText primary={`GPA: ${institution.entryRequirements?.postgraduate?.GPA}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                <ListItemText
+                                    primary={`GPA: ${institution.entryRequirements?.postgraduate?.GPA}`}
+                                    primaryTypographyProps={{ fontWeight: "medium" }}
+                                />
                             </ListItem>
                             <ListItem sx={{ py: 1 }}>
-                                <ListItemText primary={`IELTS: ${institution.entryRequirements?.postgraduate?.IELTS}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                <ListItemText
+                                    primary={`IELTS: ${institution.entryRequirements?.postgraduate?.IELTS}`}
+                                    primaryTypographyProps={{ fontWeight: "medium" }}
+                                />
                             </ListItem>
                             <ListItem sx={{ py: 1 }}>
-                                <ListItemText primary={`PTE: ${institution.entryRequirements?.postgraduate?.PTE}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                <ListItemText
+                                    primary={`PTE: ${institution.entryRequirements?.postgraduate?.PTE}`}
+                                    primaryTypographyProps={{ fontWeight: "medium" }}
+                                />
                             </ListItem>
                             <ListItem sx={{ py: 1 }}>
-                                <ListItemText primary={`TOEFL: ${institution.entryRequirements?.postgraduate?.TOEFL}`} primaryTypographyProps={{ fontWeight: "medium" }} />
+                                <ListItemText
+                                    primary={`TOEFL: ${institution.entryRequirements?.postgraduate?.TOEFL}`}
+                                    primaryTypographyProps={{ fontWeight: "medium" }}
+                                />
                             </ListItem>
                         </List>
                     )}
@@ -1016,25 +1220,58 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
         </Paper>,
 
         // Estimate Cost Tab
-        <Paper key="estimateCost" elevation={3} sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+        <Paper
+            key="estimateCost"
+            elevation={3}
+            sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
+        >
             <Estimation />
         </Paper>,
 
         // Documents Tab
         <div key="documents" style={{ backgroundColor: "#f8fafc", minHeight: "100vh", padding: "40px 24px" }}>
             <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-                <Typography variant="h4" sx={{ mb: 3, color: "#1e293b", fontWeight: 700, display: "flex", alignItems: "center", gap: 2 }}>
+                <Typography
+                    variant="h4"
+                    sx={{ mb: 3, color: "#1e293b", fontWeight: 700, display: "flex", alignItems: "center", gap: 2 }}
+                >
                     <Description sx={{ color: "#4f46e5", fontSize: "2rem" }} />
                     Required Documents
                 </Typography>
 
-                <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "32px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", border: "1px solid #e2e8f0" }}>
+                <div
+                    style={{
+                        backgroundColor: "white",
+                        borderRadius: "16px",
+                        padding: "32px",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                        border: "1px solid #e2e8f0",
+                    }}
+                >
                     {documentCategories.map((category, index) => (
                         <React.Fragment key={index}>
                             <StyledAccordion>
-                                <AccordionSummary expandIcon={<ExpandMore sx={{ color: "#4f46e5" }} />} sx={{ "&:hover": { backgroundColor: "#f8fafc" }, padding: "0 16px" }}>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1e293b", display: "flex", alignItems: "center", gap: 2 }}>
-                                        <span style={{ width: "24px", height: "24px", backgroundColor: "#e0e7ff", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", color: "#4f46e5", fontSize: "0.875rem" }}>
+                                <AccordionSummary
+                                    expandIcon={<ExpandMore sx={{ color: "#4f46e5" }} />}
+                                    sx={{ "&:hover": { backgroundColor: "#f8fafc" }, padding: "0 16px" }}
+                                >
+                                    <Typography
+                                        variant="subtitle1"
+                                        sx={{ fontWeight: 600, color: "#1e293b", display: "flex", alignItems: "center", gap: 2 }}
+                                    >
+                                        <span
+                                            style={{
+                                                width: "24px",
+                                                height: "24px",
+                                                backgroundColor: "#e0e7ff",
+                                                borderRadius: "6px",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                color: "#4f46e5",
+                                                fontSize: "0.875rem",
+                                            }}
+                                        >
                                             {index + 1}
                                         </span>
                                         {category.title}
@@ -1042,20 +1279,35 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                                 </AccordionSummary>
 
                                 <AccordionDetails sx={{ padding: 0 }}>
-                                    <TableContainer sx={{ borderTop: "1px solid #e2e8f0", borderRadius: "0 0 12px 12px", overflow: "hidden" }}>
+                                    <TableContainer
+                                        sx={{ borderTop: "1px solid #e2e8f0", borderRadius: "0 0 12px 12px", overflow: "hidden" }}
+                                    >
                                         <Table>
                                             <TableHead>
                                                 <StyledTableHeader>
-                                                    <TableCell align="center" sx={{ width: "10%" }}>S.N.</TableCell>
-                                                    <TableCell align="left" sx={{ width: "30%" }}>Document</TableCell>
-                                                    <TableCell align="left" sx={{ width: "30%" }}>Source</TableCell>
-                                                    <TableCell align="left" sx={{ width: "30%" }}>Details</TableCell>
+                                                    <TableCell align="center" sx={{ width: "10%" }}>
+                                                        S.N.
+                                                    </TableCell>
+                                                    <TableCell align="left" sx={{ width: "30%" }}>
+                                                        Document
+                                                    </TableCell>
+                                                    <TableCell align="left" sx={{ width: "30%" }}>
+                                                        Source
+                                                    </TableCell>
+                                                    <TableCell align="left" sx={{ width: "30%" }}>
+                                                        Details
+                                                    </TableCell>
                                                 </StyledTableHeader>
                                             </TableHead>
                                             <TableBody>
                                                 {category.details.map((doc, idx) => (
-                                                    <TableRow key={idx} sx={{ "&:last-child td": { borderBottom: 0 }, "&:hover": { backgroundColor: "#f8fafc" } }}>
-                                                        <TableCell align="center" sx={{ color: "#64748b" }}>{idx + 1}</TableCell>
+                                                    <TableRow
+                                                        key={idx}
+                                                        sx={{ "&:last-child td": { borderBottom: 0 }, "&:hover": { backgroundColor: "#f8fafc" } }}
+                                                    >
+                                                        <TableCell align="center" sx={{ color: "#64748b" }}>
+                                                            {idx + 1}
+                                                        </TableCell>
                                                         <TableCell sx={{ fontWeight: 500 }}>{doc.name}</TableCell>
                                                         <TableCell sx={{ color: "#4f46e5" }}>{doc.source}</TableCell>
                                                         <TableCell sx={{ color: "#64748b" }}>{doc.additional}</TableCell>
@@ -1077,60 +1329,76 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                                 Additional Documents
                             </Typography>
                             <Grid container spacing={3}>
-                                {Object.entries(editMode ? editedInstitution.documents || {} : institution.documents || {}).map(([key, value], idx) => (
-                                    <Grid item xs={12} sm={6} md={4} key={idx}>
-                                        <Card sx={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRadius: 2, boxShadow: 3, transition: "transform 0.2s, boxShadow 0.2s", "&:hover": { transform: "scale(1.02)", boxShadow: 6 } }}>
-                                            <CardContent>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 500, color: "#1e293b", mb: 1 }}>
-                                                    {key.replace(/_/g, " ")}
-                                                </Typography>
-                                                {editMode ? (
-                                                    Array.isArray(value) ? (
-                                                        <TextField
-                                                            fullWidth
-                                                            multiline
-                                                            rows={3}
-                                                            value={value.join("\n")}
-                                                            onChange={(e) => {
-                                                                const newValue = e.target.value.split("\n").filter((line) => line.trim() !== "");
-                                                                const updatedDocs = { ...editedInstitution.documents, [key]: newValue };
-                                                                setEditedInstitution((prev) => ({ ...prev, documents: updatedDocs }));
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <TextField
-                                                            fullWidth
-                                                            value={value.toString()}
-                                                            onChange={(e) => {
-                                                                const updatedDocs = { ...editedInstitution.documents, [key]: e.target.value };
-                                                                setEditedInstitution((prev) => ({ ...prev, documents: updatedDocs }));
-                                                            }}
-                                                        />
-                                                    )
-                                                ) : Array.isArray(value) ? (
-                                                    <List dense>
-                                                        {value.map((item, itemIndex) => (
-                                                            <ListItem key={itemIndex} sx={{ py: 0.5, px: 1 }}>
-                                                                <ListItemText primary={item} primaryTypographyProps={{ fontWeight: "medium", color: "text.primary" }} />
-                                                            </ListItem>
-                                                        ))}
-                                                    </List>
-                                                ) : (
-                                                    <Typography variant="body2" sx={{ color: "#64748b" }}>
-                                                        {value.toString()}
+                                {Object.entries(editMode ? editedInstitution.documents || {} : institution.documents || {}).map(
+                                    ([key, value], idx) => (
+                                        <Grid item xs={12} sm={6} md={4} key={idx}>
+                                            <Card
+                                                sx={{
+                                                    height: "100%",
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    justifyContent: "space-between",
+                                                    borderRadius: 2,
+                                                    boxShadow: 3,
+                                                    transition: "transform 0.2s, boxShadow 0.2s",
+                                                    "&:hover": { transform: "scale(1.02)", boxShadow: 6 },
+                                                }}
+                                            >
+                                                <CardContent>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 500, color: "#1e293b", mb: 1 }}>
+                                                        {key.replace(/_/g, " ")}
                                                     </Typography>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    </Grid>
-                                ))}
+                                                    {editMode ? (
+                                                        Array.isArray(value) ? (
+                                                            <TextField
+                                                                fullWidth
+                                                                multiline
+                                                                rows={3}
+                                                                value={value.join("\n")}
+                                                                onChange={(e) => {
+                                                                    const newValue = e.target.value.split("\n").filter((line) => line.trim() !== "")
+                                                                    const updatedDocs = { ...editedInstitution.documents, [key]: newValue }
+                                                                    setEditedInstitution((prev) => ({ ...prev, documents: updatedDocs }))
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <TextField
+                                                                fullWidth
+                                                                value={value.toString()}
+                                                                onChange={(e) => {
+                                                                    const updatedDocs = { ...editedInstitution.documents, [key]: e.target.value }
+                                                                    setEditedInstitution((prev) => ({ ...prev, documents: updatedDocs }))
+                                                                }}
+                                                            />
+                                                        )
+                                                    ) : Array.isArray(value) ? (
+                                                        <List dense>
+                                                            {value.map((item, itemIndex) => (
+                                                                <ListItem key={itemIndex} sx={{ py: 0.5, px: 1 }}>
+                                                                    <ListItemText
+                                                                        primary={item}
+                                                                        primaryTypographyProps={{ fontWeight: "medium", color: "text.primary" }}
+                                                                    />
+                                                                </ListItem>
+                                                            ))}
+                                                        </List>
+                                                    ) : (
+                                                        <Typography variant="body2" sx={{ color: "#64748b" }}>
+                                                            {value.toString()}
+                                                        </Typography>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        </Grid>
+                                    ),
+                                )}
                             </Grid>
                         </Box>
                     )}
                 </div>
             </div>
         </div>,
-    ];
+    ]
 
     return (
         <Box sx={{ minHeight: "100vh", backgroundColor: "background.default" }}>
@@ -1186,7 +1454,11 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                             sx={{ fontWeight: "bold", minWidth: { xs: "100%", sm: "400px" } }}
                         />
                     ) : (
-                        <Typography variant="h4" fontWeight="bold" sx={{ color: "#333", textShadow: "1px 1px 2px rgba(0, 0, 0, 0.2)" }}>
+                        <Typography
+                            variant="h4"
+                            fontWeight="bold"
+                            sx={{ color: "#333", textShadow: "1px 1px 2px rgba(0, 0, 0, 0.2)" }}
+                        >
                             {institution.institutionName}
                         </Typography>
                     )}
@@ -1204,43 +1476,45 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                         }}
                     >
                         {editedInstitution?.bannerImages?.map((image, index) => (
-                            <Box 
-                                key={index} 
-                                sx={{ 
+                            <Box
+                                key={index}
+                                sx={{
                                     width: `${100 / (editedInstitution?.bannerImages?.length || 1)}%`,
                                     height: "100%",
                                     position: "relative",
                                     flexShrink: 0,
                                     opacity: pendingDeletions.bannerImages.includes(index) ? 0.6 : 1,
-                                    border: pendingDeletions.bannerImages.includes(index) ? "2px dashed red" : "none"
+                                    border: pendingDeletions.bannerImages.includes(index) ? "2px dashed red" : "none",
                                 }}
                             >
                                 {pendingDeletions.bannerImages.includes(index) && (
-                                    <Box sx={{
-                                        position: "absolute",
-                                        top: 0,
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        backgroundColor: "rgba(255,0,0,0.1)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        zIndex: 1
-                                    }}>
+                                    <Box
+                                        sx={{
+                                            position: "absolute",
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            bottom: 0,
+                                            backgroundColor: "rgba(255,0,0,0.1)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            zIndex: 1,
+                                        }}
+                                    >
                                         <Typography variant="body2" color="error">
                                             Marked for deletion
                                         </Typography>
                                     </Box>
                                 )}
                                 <img
-                                    src={getImageUrl(image)}
+                                    src={getImageUrl(image) || "/placeholder.svg"}
                                     alt={`Banner ${index + 1}`}
                                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                                 />
                                 {editMode && !pendingDeletions.bannerImages.includes(index) && (
                                     <IconButton
-                                        onClick={() => deleteItem('bannerImages', index)}
+                                        onClick={() => deleteItem("bannerImages", index)}
                                         sx={{
                                             position: "absolute",
                                             top: 10,
@@ -1248,7 +1522,7 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                                             backgroundColor: "rgba(239, 68, 68, 0.8)",
                                             color: "white",
                                             "&:hover": { backgroundColor: "rgba(239, 68, 68, 1)" },
-                                            zIndex: 2
+                                            zIndex: 2,
                                         }}
                                     >
                                         <DeleteIcon />
@@ -1302,12 +1576,7 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                             }}
                             disabled={editedInstitution?.bannerImages?.length >= 5}
                         >
-                            <input 
-                                type="file" 
-                                hidden 
-                                accept="image/*" 
-                                onChange={handleBannerImageUpload} 
-                            />
+                            <input type="file" hidden accept="image/*" onChange={handleBannerImageUpload} />
                             <AddIcon />
                         </IconButton>
                     )}
@@ -1341,121 +1610,6 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
 
                 {/* Tab Content */}
                 <Box sx={{ mb: 4 }}>{tabContent[tabIndex]}</Box>
-
-                {/* Agents Section */}
-                <Box sx={{ mt: 6, mb: 4, userSelect: "text" }}>
-                    <Typography variant="h5" fontWeight="bold" mb={4} textAlign="center">
-                        Authorized Agents
-                    </Typography>
-
-                    <Box sx={{ position: "relative", width: "100%", mx: "auto", px: { xs: 2, sm: 4 } }}>
-                        {matchedAgents?.length > 1 && (
-                            <>
-                                <IconButton
-                                    onClick={() => handleAgentScroll("left")}
-                                    disabled={agentScrollIndex === 0}
-                                    sx={{
-                                        position: "absolute",
-                                        left: { xs: -8, sm: -16 },
-                                        top: "50%",
-                                        transform: "translateY(-50%)",
-                                        zIndex: 10,
-                                        backgroundColor: "rgba(79, 70, 229, 0.9)",
-                                        color: "white",
-                                        "&:hover": { backgroundColor: "#4338ca" },
-                                        "&:disabled": { opacity: 0.5 },
-                                        boxShadow: 2,
-                                        width: { xs: 36, sm: 40 },
-                                        height: { xs: 36, sm: 40 },
-                                    }}
-                                >
-                                    <ChevronLeft />
-                                </IconButton>
-
-                                <IconButton
-                                    onClick={() => handleAgentScroll("right")}
-                                    disabled={agentScrollIndex >= (matchedAgents?.length || 0) - (window.innerWidth < 600 ? 1 : window.innerWidth < 960 ? 2 : 3)}
-                                    sx={{
-                                        position: "absolute",
-                                        right: { xs: -8, sm: -16 },
-                                        top: "50%",
-                                        transform: "translateY(-50%)",
-                                        zIndex: 10,
-                                        backgroundColor: "rgba(79, 70, 229, 0.9)",
-                                        color: "white",
-                                        "&:hover": { backgroundColor: "#4338ca" },
-                                        "&:disabled": { opacity: 0.5 },
-                                        boxShadow: 2,
-                                        width: { xs: 36, sm: 40 },
-                                        height: { xs: 36, sm: 40 },
-                                    }}
-                                >
-                                    <ChevronRight />
-                                </IconButton>
-                            </>
-                        )}
-
-                        <Box sx={{ display: "flex", justifyContent: "center", gap: 3, overflow: "visible" }}>
-                            {matchedAgents
-                                ?.slice(agentScrollIndex, agentScrollIndex + (window.innerWidth < 600 ? 1 : window.innerWidth < 960 ? 2 : 3))
-                                .map((agent, index) => (
-                                    <Box key={index} sx={{ width: { xs: "100%", sm: "300px" }, height: "400px", flexShrink: 0 }}>
-                                        <AgentCard>
-                                            <CardContent sx={{ textAlign: "center", flexGrow: 1, py: 2, display: "flex", flexDirection: "column" }}>
-                                                <Avatar
-                                                    src={agent?.head_office?.avatar}
-                                                    sx={{
-                                                        width: 80,
-                                                        height: 80,
-                                                        mx: "auto",
-                                                        mb: 2,
-                                                        "& img": { objectFit: "cover" },
-                                                    }}
-                                                />
-                                                <Box sx={{ height: 50, display: "flex", alignItems: "center", justifyContent: "center", mb: 1 }}>
-                                                    <Typography variant="body1" gutterBottom sx={{ fontWeight: "bold" }}>
-                                                        {agent?.name}
-                                                    </Typography>
-                                                </Box>
-                                                <Box sx={{ flexGrow: 1 }}>
-                                                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                                                        📍 {agent?.head_office?.location}
-                                                    </Typography>
-                                                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                                                        📞 {agent?.head_office?.tel}
-                                                    </Typography>
-                                                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                                                        ✉️ {agent?.head_office?.email}
-                                                    </Typography>
-                                                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                                                        🌐{" "}
-                                                        <a href={agent?.head_office?.web} target="_blank" rel="noopener noreferrer" style={{ color: "#4f46e5", textDecoration: "none" }}>
-                                                            Visit Website
-                                                        </a>
-                                                    </Typography>
-                                                </Box>
-                                            </CardContent>
-                                            <Box sx={{ p: 2, flexShrink: 0 }}>
-                                                <Button
-                                                    variant="contained"
-                                                    fullWidth
-                                                    sx={{
-                                                        backgroundColor: "#4f46e5",
-                                                        borderRadius: 2,
-                                                        py: 1,
-                                                        fontWeight: "bold",
-                                                        "&:hover": { backgroundColor: "#4338ca", transform: "scale(1.02)" },
-                                                    }}
-                                                >
-                                                    CONTACT AGENT
-                                                </Button>
-                                            </Box>
-                                        </AgentCard>
-                                    </Box>
-                                ))}
-                        </Box>
-                    </Box>
-                </Box>
             </Container>
 
             {/* Admin Edit FAB */}
@@ -1484,34 +1638,6 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                 </Fab>
             )}
 
-            {/* Cancel Changes FAB */}
-            {isAdmin && editMode && (
-                <Fab
-                    color="secondary"
-                    aria-label="cancel"
-                    onClick={() => {
-                        setEditMode(false);
-                        setEditedInstitution(JSON.parse(JSON.stringify(institution)));
-                        setPendingDeletions({
-                            locations: [],
-                            programs: [],
-                            scholarships: [],
-                            bannerImages: []
-                        });
-                    }}
-                    sx={{
-                        position: "fixed",
-                        bottom: 20,
-                        right: 170,
-                        backgroundColor: "#ef4444",
-                        color: "white",
-                        "&:hover": { backgroundColor: "#dc2626" },
-                    }}
-                >
-                    <CancelIcon />
-                </Fab>
-            )}
-
             {/* Edit Dialogs */}
             <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>
@@ -1523,28 +1649,68 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                     {dialogType === "program" && (
                         <Grid container spacing={2} sx={{ mt: 1 }}>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="Program Name" value={editingProgram?.name || ""} onChange={(e) => handleProgramChange("name", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="Program Name"
+                                    value={editingProgram?.name || ""}
+                                    onChange={(e) => handleProgramChange("name", e.target.value)}
+                                />
                             </Grid>
                             <Grid item xs={12} sm={6}>
-                                <TextField fullWidth label="Level" value={editingProgram?.level || ""} onChange={(e) => handleProgramChange("level", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="Level"
+                                    value={editingProgram?.level || ""}
+                                    onChange={(e) => handleProgramChange("level", e.target.value)}
+                                />
                             </Grid>
                             <Grid item xs={12} sm={6}>
-                                <TextField fullWidth label="Duration" value={editingProgram?.duration || ""} onChange={(e) => handleProgramChange("duration", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="Duration"
+                                    value={editingProgram?.duration || ""}
+                                    onChange={(e) => handleProgramChange("duration", e.target.value)}
+                                />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="Intakes" value={editingProgram?.intakes || ""} onChange={(e) => handleProgramChange("intakes", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="Intakes"
+                                    value={editingProgram?.intakes || ""}
+                                    onChange={(e) => handleProgramChange("intakes", e.target.value)}
+                                />
                             </Grid>
                             <Grid item xs={12} sm={6}>
-                                <TextField fullWidth label="First Year Fees" value={editingProgram?.firstYearFees || ""} onChange={(e) => handleProgramChange("firstYearFees", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="First Year Fees"
+                                    value={editingProgram?.firstYearFees || ""}
+                                    onChange={(e) => handleProgramChange("firstYearFees", e.target.value)}
+                                />
                             </Grid>
                             <Grid item xs={12} sm={6}>
-                                <TextField fullWidth label="IELTS Requirement" value={editingProgram?.ielts || ""} onChange={(e) => handleProgramChange("ielts", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="IELTS Requirement"
+                                    value={editingProgram?.ielts || ""}
+                                    onChange={(e) => handleProgramChange("ielts", e.target.value)}
+                                />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="Campuses" value={editingProgram?.campuses || ""} onChange={(e) => handleProgramChange("campuses", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="Campuses"
+                                    value={editingProgram?.campuses || ""}
+                                    onChange={(e) => handleProgramChange("campuses", e.target.value)}
+                                />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="URL" value={editingProgram?.url || ""} onChange={(e) => handleProgramChange("url", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="URL"
+                                    value={editingProgram?.url || ""}
+                                    onChange={(e) => handleProgramChange("url", e.target.value)}
+                                />
                             </Grid>
                         </Grid>
                     )}
@@ -1552,10 +1718,20 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                     {dialogType === "scholarship" && (
                         <Grid container spacing={2} sx={{ mt: 1 }}>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="Scholarship Name" value={editingScholarship?.name || ""} onChange={(e) => handleScholarshipChange("name", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="Scholarship Name"
+                                    value={editingScholarship?.name || ""}
+                                    onChange={(e) => handleScholarshipChange("name", e.target.value)}
+                                />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="Link" value={editingScholarship?.link || ""} onChange={(e) => handleScholarshipChange("link", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="Link"
+                                    value={editingScholarship?.link || ""}
+                                    onChange={(e) => handleScholarshipChange("link", e.target.value)}
+                                />
                             </Grid>
                         </Grid>
                     )}
@@ -1563,13 +1739,28 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                     {dialogType === "location" && (
                         <Grid container spacing={2} sx={{ mt: 1 }}>
                             <Grid item xs={12}>
-                                <TextField fullWidth label="Campus Name" value={editingLocation?.campusName || ""} onChange={(e) => handleLocationChange("campusName", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="Campus Name"
+                                    value={editingLocation?.campusName || ""}
+                                    onChange={(e) => handleLocationChange("campusName", e.target.value)}
+                                />
                             </Grid>
                             <Grid item xs={12} sm={6}>
-                                <TextField fullWidth label="City" value={editingLocation?.city || ""} onChange={(e) => handleLocationChange("city", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="City"
+                                    value={editingLocation?.city || ""}
+                                    onChange={(e) => handleLocationChange("city", e.target.value)}
+                                />
                             </Grid>
                             <Grid item xs={12} sm={6}>
-                                <TextField fullWidth label="Country" value={editingLocation?.country || ""} onChange={(e) => handleLocationChange("country", e.target.value)} />
+                                <TextField
+                                    fullWidth
+                                    label="Country"
+                                    value={editingLocation?.country || ""}
+                                    onChange={(e) => handleLocationChange("country", e.target.value)}
+                                />
                             </Grid>
                         </Grid>
                     )}
@@ -1578,9 +1769,9 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                     <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
                     <Button
                         onClick={() => {
-                            if (dialogType === "program") saveProgramChanges();
-                            else if (dialogType === "scholarship") saveScholarshipChanges();
-                            else if (dialogType === "location") saveLocationChanges();
+                            if (dialogType === "program") saveProgramChanges()
+                            else if (dialogType === "scholarship") saveScholarshipChanges()
+                            else if (dialogType === "location") saveLocationChanges()
                         }}
                         variant="contained"
                         sx={{ backgroundColor: "#4f46e5" }}
@@ -1595,12 +1786,27 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                 open={snackbar.open}
                 autoHideDuration={6000}
                 onClose={() => setSnackbar({ ...snackbar, open: false })}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                sx={{
+                    top: { xs: 80, sm: 100 }, // Increased top position to make it more visible
+                    "& .MuiAlert-root": {
+                        width: "100%",
+                        maxWidth: "600px",
+                        boxShadow: "0 8px 16px rgba(0,0,0,0.2)",
+                        fontSize: "1rem",
+                    },
+                    zIndex: 100, // Ensure it's above everything else
+                }}
             >
-                <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: "100%" }}>
+                <Alert
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    severity={snackbar.severity}
+                    variant="filled"
+                    sx={{ width: "100%" }}
+                >
                     {snackbar.message}
                 </Alert>
             </Snackbar>
         </Box>
-    );
+    )
 }

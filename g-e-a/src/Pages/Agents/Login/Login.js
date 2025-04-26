@@ -1,5 +1,5 @@
-import * as React from "react"
-import { useContext, useEffect } from "react"
+"use client"
+import { useContext, useEffect, useState } from "react"
 import {
   Box,
   Button,
@@ -16,14 +16,19 @@ import {
   IconButton,
   InputAdornment,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import { Visibility, VisibilityOff } from "@mui/icons-material"
 import ForgotPassword from "./ForgotPassword"
 import { NavLink, useNavigate, useLocation } from "react-router-dom"
-import axios from "../../utils/axiosConfig"
-import { AuthContext } from "../../Context/context"
-import "../Institutions/institutions.css"
+import axios from "../../../utils/axiosConfig"
+import { AuthContext } from "../../../Context/context"
+import "../../Institutions/institutions.css"
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -64,40 +69,32 @@ const PrimaryButton = styled(Button)(({ theme }) => ({
 }))
 
 export default function Login() {
-  const [emailError, setEmailError] = React.useState(false)
-  const [emailErrorMessage, setEmailErrorMessage] = React.useState("")
-  const [passwordError, setPasswordError] = React.useState(false)
-  const [passwordErrorMessage, setPasswordErrorMessage] = React.useState("")
-  const [open, setOpen] = React.useState(false)
-  const [alertMessage, setAlertMessage] = React.useState("")
-  const [alertSeverity, setAlertSeverity] = React.useState(null)
-  const [showPassword, setShowPassword] = React.useState(false)
-  const [rememberMe, setRememberMe] = React.useState(false)
-  const [email, setEmail] = React.useState("")
-  const [password, setPassword] = React.useState("")
-  const [isLoading, setIsLoading] = React.useState(false)
+  const [emailError, setEmailError] = useState(false)
+  const [emailErrorMessage, setEmailErrorMessage] = useState("")
+  const [passwordError, setPasswordError] = useState(false)
+  const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
+  const [open, setOpen] = useState(false)
+  const [alertMessage, setAlertMessage] = useState("")
+  const [alertSeverity, setAlertSeverity] = useState(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Status modals
+  const [pendingModalOpen, setPendingModalOpen] = useState(false)
+  const [rejectedModalOpen, setRejectedModalOpen] = useState(false)
+  const [rejectedRemarks, setRejectedRemarks] = useState("")
+  const [agentId, setAgentId] = useState(null)
 
   const handleForgotPasswordOpen = () => setOpen(true)
   const handleForgotPasswordClose = () => setOpen(false)
 
   const navigate = useNavigate()
   const location = useLocation()
-  // Get the redirectTo from location state, default to home page if not provided
-  const redirectTo = location.state?.redirectTo || "/"
 
-  const { setLoggedIn, setUserAvatar, setUserType } = useContext(AuthContext)
-
-  useEffect(() => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("userType")
-    localStorage.removeItem("userAvatar")
-
-    const savedEmail = localStorage.getItem("rememberedEmail")
-    if (savedEmail) {
-      setEmail(savedEmail)
-      setRememberMe(true)
-    }
-  }, [])
+  const { setLoggedIn, setUserAvatar, setUserType, logout } = useContext(AuthContext) || {}
 
   useEffect(() => {
     if (alertMessage) {
@@ -159,14 +156,18 @@ export default function Login() {
     setIsLoading(true)
 
     try {
-      const result = await axios.post("/login", { email, password })
+      const result = await axios.post("/agent/login", { email, password })
       setIsLoading(false)
 
-      if (result.data.message === "Success") {
-        const newToken = result.data.auth
-        localStorage.setItem("token", newToken)
-        localStorage.setItem("userAvatar", result.data.firstName)
-        localStorage.setItem("userType", result.data.user)
+      if (result.data.success) {
+        const agentData = result.data.data
+        const token = result.data.token
+
+        // Store the JWT token
+        localStorage.setItem("token", token)
+        localStorage.setItem("userAvatar", agentData.companyName)
+        localStorage.setItem("userType", "agent")
+        localStorage.setItem("agentData", JSON.stringify(agentData))
 
         if (rememberMe) {
           localStorage.setItem("rememberedEmail", email)
@@ -175,47 +176,35 @@ export default function Login() {
         }
 
         setLoggedIn(true)
-        setUserAvatar(result.data.firstName)
-        setUserType(result.data.user)
+        setUserAvatar(agentData.companyName)
+        setUserType("agent")
 
         setAlertMessage("Logged in successfully.")
         setAlertSeverity("success")
 
-
-        // Add a slight delay to ensure state updates before navigation
-        setTimeout(() => {
-          navigate(redirectTo)
-        }, 100)
-      } else if (result.data.requiresVerification) {
-        console.log("Redirecting to OTP verification:", email)
-        navigate("/verify-email", {
-          state: {
-            email,
-            message: "Please verify your email with the OTP sent to your inbox.",
-            redirectTo: redirectTo, 
-          },
-        })
-      } else {
-        console.log("Login failed:", result.data.message)
-        setAlertMessage(`Login failed: ${result.data.message || "Please try again."}`)
-        setAlertSeverity("error")
+        navigate("/agent-dashboard")
+        return
       }
     } catch (err) {
       setIsLoading(false)
       console.error("Login error:", err.response?.data || err.message)
-      const errorMessage = err.response?.data?.message || "An error occurred. Please try again later."
-      setAlertMessage(`Error: ${errorMessage}`)
-      setAlertSeverity("error")
 
-      if (err.response?.data?.requiresVerification) {
-        console.log("Redirecting to OTP due to error:", email)
-        navigate("/verify-email", {
-          state: {
-            email,
-            message: "Please verify your email with the OTP sent to your inbox.",
-            redirectTo: redirectTo, 
-          },
-        })
+      if (err.response?.data) {
+        const { status, remarks, error } = err.response.data
+
+        if (status === "pending") {
+          setPendingModalOpen(true)
+        } else if (status === "rejected") {
+          setRejectedRemarks(remarks || "Your registration has been rejected.")
+          setAgentId(err.response.data.data?._id)
+          setRejectedModalOpen(true)
+        } else {
+          setAlertMessage(`Error: ${error || "An error occurred. Please try again later."}`)
+          setAlertSeverity("error")
+        }
+      } else {
+        setAlertMessage("An error occurred. Please try again later.")
+        setAlertSeverity("error")
       }
     }
   }
@@ -225,13 +214,32 @@ export default function Login() {
     handleForgotPasswordOpen()
   }
 
+  const handleDeleteRejectedAccount = async () => {
+    if (!agentId) {
+      setRejectedModalOpen(false)
+      return
+    }
+
+    try {
+      await axios.delete(`/agent/${agentId}`)
+      setRejectedModalOpen(false)
+      setAlertMessage("Your account has been deleted.")
+      setAlertSeverity("info")
+    } catch (error) {
+      console.error("Error deleting account:", error)
+      setRejectedModalOpen(false)
+      setAlertMessage("Failed to delete your account. Please try again later.")
+      setAlertSeverity("error")
+    }
+  }
+
   return (
     <>
       <CssBaseline enableColorScheme />
       <SignInContainer alignItems="center" justifyContent="center">
         <Card variant="outlined">
           <Typography component="h1" variant="h4" fontWeight="bold" sx={{ textAlign: "center" }}>
-            Login
+            Agent Login
           </Typography>
 
           {alertMessage && (
@@ -311,7 +319,7 @@ export default function Login() {
           <Typography textAlign="center">
             Don't have an account?{" "}
             <NavLink
-              to="/signup"
+              to="/agent-signup"
               variant="body2"
               style={{
                 color: "#0078D7",
@@ -324,6 +332,52 @@ export default function Login() {
           </Typography>
         </Card>
       </SignInContainer>
+
+      {/* Pending Status Modal */}
+      <Dialog
+        open={pendingModalOpen}
+        onClose={() => setPendingModalOpen(false)}
+        aria-labelledby="pending-dialog-title"
+        aria-describedby="pending-dialog-description"
+      >
+        <DialogTitle id="pending-dialog-title">{"Registration Status"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="pending-dialog-description">
+            Registration not verified yet. Your account is pending approval from the administrator.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingModalOpen(false)} color="primary" autoFocus>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Rejected Status Modal */}
+      <Dialog
+        open={rejectedModalOpen}
+        onClose={() => setRejectedModalOpen(false)}
+        aria-labelledby="rejected-dialog-title"
+        aria-describedby="rejected-dialog-description"
+      >
+        <DialogTitle id="rejected-dialog-title">{"Registration Rejected"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="rejected-dialog-description">
+            Your registration has been rejected.
+            <br />
+            <br />
+            <strong>Reason:</strong> {rejectedRemarks}
+            <br />
+            <br />
+            Clicking "OK" will delete your account data. You can register again with updated information.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteRejectedAccount} color="primary" autoFocus>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <ForgotPassword open={open} handleClose={handleForgotPasswordClose} />
     </>

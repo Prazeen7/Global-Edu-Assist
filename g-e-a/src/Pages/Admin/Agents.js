@@ -1,70 +1,111 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-// Material-UI components imports
 import {
-    Box, Paper, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, TableSortLabel, Toolbar, Typography,
-    Chip, IconButton, Tooltip, TextField, InputAdornment,
-    MenuItem, Select, FormControl, InputLabel, Menu, Avatar,
-    Pagination
+    Box,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TableSortLabel,
+    Toolbar,
+    Typography,
+    Chip,
+    Tooltip,
+    TextField,
+    InputAdornment,
+    MenuItem,
+    Select,
+    FormControl,
+    InputLabel,
+    Menu,
+    Avatar,
+    Pagination,
+    IconButton,
+    Drawer,
+    Button,
+    Grid,
+    Divider,
+    List,
+    ListItem,
+    ListItemText,
+    Card,
+    CardContent,
+    CardMedia,
+    CircularProgress,
+    Alert,
+    Breadcrumbs,
+    Link as MuiLink,
 } from "@mui/material";
-// Icons imports
-import { Add, Search, FilterList, MoreVert } from "@mui/icons-material";
-import PageHeader from "../../components/Admin/PageHeader";
+import {
+    Search,
+    FilterList,
+    Close,
+    Business,
+    Person,
+    Email,
+    Phone,
+    Language,
+    LocationOn,
+    Description,
+    Check
+} from "@mui/icons-material";
 
 function Agents() {
-    // State management for agents data and UI controls
-    const [agents, setAgents] = useState([]); 
-    const [order, setOrder] = useState("asc"); 
-    const [orderBy, setOrderBy] = useState("name"); 
-    const [searchTerm, setSearchTerm] = useState(""); 
-    const [rowsPerPage, setRowsPerPage] = useState(10); 
-    const [page, setPage] = useState(0); 
-    const [anchorEl, setAnchorEl] = useState(null); 
-    const [actionMenuAnchorEl, setActionMenuAnchorEl] = useState(null); 
-    const [selectedAgent, setSelectedAgent] = useState(null); 
-    const [error, setError] = useState(null); 
-    const [isLoading, setIsLoading] = useState(true); 
+    const [agents, setAgents] = useState([]);
+    const [order, setOrder] = useState("asc");
+    const [orderBy, setOrderBy] = useState("companyName");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [page, setPage] = useState(0);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedAgent, setSelectedAgent] = useState(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [agentDetailsLoading, setAgentDetailsLoading] = useState(false);
+    const [agentDetailsError, setAgentDetailsError] = useState(null);
+    const [isDisapproving, setIsDisapproving] = useState(false);
+    const [disapprovalRemark, setDisapprovalRemark] = useState("");
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+    const [statusUpdateError, setStatusUpdateError] = useState(null);
+    const [statusUpdateSuccess, setStatusUpdateSuccess] = useState(false);
 
-    // Fetch agents data
     useEffect(() => {
         const fetchAgents = async () => {
             try {
                 setIsLoading(true);
-                const response = await axios.get("http://localhost:3001/api/agents");
+                const response = await axios.get("http://localhost:3001/api/getAgent");
 
-                // Validate response data structure
-                if (!response.data || !Array.isArray(response.data)) {
+                if (!response.data?.success || !Array.isArray(response.data.data)) {
                     throw new Error("Invalid data format received from server");
                 }
 
-                const transformedAgents = response.data.map((doc) => {
-                    // Extract agent name 
-                    const agentName = Object.keys(doc).find(key => key !== "_id" && key !== "__v");
-
-                    // Skip invalid documents missing required fields
-                    if (!agentName || !doc[agentName]?.head_office) {
-                        console.warn("Skipping invalid agent document:", doc);
-                        return null;
-                    }
-
-                    const agentData = doc[agentName];
+                const transformedAgents = response.data.data.map((agent) => {
                     return {
-                        id: doc._id, 
-                        name: agentName,
-                        email: agentData.head_office.email || "No email",
-                        country: agentData.head_office.location || "Unknown",
-                        institutions: agentData.other_locations?.length || 0, 
-                        status: "Active", 
-                        avatar: agentData.head_office.avatar || "",
-                        initials: agentName 
-                            .split(" ")
-                            .map(word => word[0])
-                            .join("")
-                            .toUpperCase()
-                            .substring(0, 2)
+                        id: agent._id,
+                        companyName: agent.companyName || "Unknown Company",
+                        email: agent.email || "",
+                        website: agent.website || "",
+                        contactNumber: agent.contactNumber || "",
+                        location: agent.headOfficeAddress || "Location not specified",
+                        branches: agent.branches?.length || 0,
+                        status: agent.status || "pending",
+                        profilePicture: agent.profilePicture?.url || "",
+                        owners: agent.owners?.map(owner => owner?.name).filter(Boolean).join(", ") || "No owner specified",
+                        initials: agent.companyName
+                            ? agent.companyName
+                                .split(" ")
+                                .filter(word => word.length > 0)
+                                .map(word => word[0])
+                                .join("")
+                                .toUpperCase()
+                                .substring(0, 2)
+                            : "UC"
                     };
-                }).filter(agent => agent !== null); // Remove any null entries
+                });
 
                 setAgents(transformedAgents);
             } catch (error) {
@@ -78,14 +119,41 @@ function Agents() {
         fetchAgents();
     }, []);
 
-    // Handle sorting column changes
+    useEffect(() => {
+        if (statusUpdateSuccess || statusUpdateError) {
+            const timer = setTimeout(() => {
+                setStatusUpdateSuccess(false);
+                setStatusUpdateError(null);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [statusUpdateSuccess, statusUpdateError]);
+
+    const fetchAgentDetails = async (agentId) => {
+        try {
+            setAgentDetailsLoading(true);
+            setAgentDetailsError(null);
+            const response = await axios.get(`http://localhost:3001/api/agent/${agentId}`);
+
+            if (!response.data?.data) {
+                throw new Error("Invalid data format received from server");
+            }
+
+            setSelectedAgent(response.data.data);
+        } catch (error) {
+            console.error("Failed to load agent details:", error);
+            setAgentDetailsError(error.response?.data?.message || error.message || "Could not load agent details");
+        } finally {
+            setAgentDetailsLoading(false);
+        }
+    };
+
     const handleRequestSort = (property) => {
         const isAsc = orderBy === property && order === "asc";
         setOrder(isAsc ? "desc" : "asc");
         setOrderBy(property);
     };
 
-    // Filter menu handlers
     const handleFilterClick = (event) => {
         setAnchorEl(event.currentTarget);
     };
@@ -94,86 +162,149 @@ function Agents() {
         setAnchorEl(null);
     };
 
-    // Action menu handlers
-    const handleActionClick = (event, agent) => {
-        setActionMenuAnchorEl(event.currentTarget);
-        setSelectedAgent(agent);
+    const handleRowClick = async (agentId) => {
+        await fetchAgentDetails(agentId);
+        setDrawerOpen(true);
     };
 
-    const handleActionClose = () => {
-        setActionMenuAnchorEl(null);
+    const handleCloseDrawer = () => {
+        setDrawerOpen(false);
         setSelectedAgent(null);
+        setIsDisapproving(false);
+        setDisapprovalRemark("");
+        setStatusUpdateSuccess(false);
+        setStatusUpdateError(null);
     };
 
-    // Determine color for status chips
     const getStatusColor = (status) => {
-        switch (status) {
-            case "Active": return "success";
-            case "Inactive": return "default";
-            case "Pending": return "warning";
-            default: return "default";
+        switch (status.toLowerCase()) {
+            case "approved":
+                return "success";
+            case "active":
+                return "success";
+            case "rejected":
+                return "error";
+            case "inactive":
+                return "default";
+            case "pending":
+                return "warning";
+            default:
+                return "default";
         }
     };
 
-    // Action handlers for agent operations
-    const handleViewProfile = () => {
-        console.log("Viewing profile:", selectedAgent);
-        handleActionClose();
-    };
-
-    const handleEdit = () => {
-        console.log("Editing:", selectedAgent);
-        handleActionClose();
-    };
-
-    const handleViewStudents = () => {
-        console.log("Viewing students:", selectedAgent);
-        handleActionClose();
-    };
-
-    const handleToggleStatus = () => {
-        console.log("Toggling status:", selectedAgent);
-        handleActionClose();
-    };
-
-    // Filter agents based on search term (name, email, or country)
-    const filteredAgents = agents.filter((agent) =>
-        agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        agent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        agent.country.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredAgents = agents.filter(
+        (agent) =>
+            agent.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            agent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            agent.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            agent.owners.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
-    // Sort agents based on current sort column and direction
     const sortedAgents = filteredAgents.sort((a, b) => {
         const isAsc = order === "asc";
-        if (orderBy === "name") {
-            return isAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-        } else if (orderBy === "country") {
-            return isAsc ? a.country.localeCompare(b.country) : b.country.localeCompare(a.country);
-        } else if (orderBy === "institutions") {
-            return isAsc ? a.institutions - b.institutions : b.institutions - a.institutions;
+        if (orderBy === "companyName") {
+            return isAsc ? a.companyName.localeCompare(b.companyName) : b.companyName.localeCompare(a.companyName);
+        } else if (orderBy === "location") {
+            return isAsc ? a.location.localeCompare(b.location) : b.location.localeCompare(a.location);
+        } else if (orderBy === "branches") {
+            return isAsc ? a.branches - b.branches : b.branches - a.branches;
         } else if (orderBy === "status") {
             return isAsc ? a.status.localeCompare(b.status) : b.status.localeCompare(a.status);
+        } else if (orderBy === "owners") {
+            return isAsc ? a.owners.localeCompare(b.owners) : b.owners.localeCompare(a.owners);
         }
         return 0;
     });
 
-    // Paginate the sorted agents list
-    const paginatedAgents = sortedAgents.slice(
-        page * rowsPerPage,
-        (page + 1) * rowsPerPage
-    );
+    const paginatedAgents = sortedAgents.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
 
-    // Loading state UI
+    const handlePageChange = (event, newPage) => {
+        setPage(newPage - 1);
+    };
+
+    const handleApprove = async () => {
+        if (!selectedAgent) return;
+
+        try {
+            setIsUpdatingStatus(true);
+            setStatusUpdateError(null);
+            setStatusUpdateSuccess(false);
+
+            const response = await axios.put(`http://localhost:3001/api/${selectedAgent._id}/status`, {
+                status: "approved",
+            });
+
+            if (response.data?.success) {
+                setSelectedAgent({
+                    ...selectedAgent,
+                    status: "approved",
+                    remarks: undefined,
+                });
+
+                setAgents(agents.map((agent) =>
+                    agent.id === selectedAgent._id ? { ...agent, status: "approved" } : agent
+                ));
+
+                setStatusUpdateSuccess(true);
+            }
+        } catch (error) {
+            console.error("Failed to approve agent:", error);
+            setStatusUpdateError(error.response?.data?.message || error.message || "Could not update agent status");
+        } finally {
+            setIsUpdatingStatus(false);
+        }
+    };
+
+    const handleDisapprove = async () => {
+        if (!selectedAgent || !disapprovalRemark.trim()) return;
+
+        try {
+            setIsUpdatingStatus(true);
+            setStatusUpdateError(null);
+            setStatusUpdateSuccess(false);
+
+            const response = await axios.put(`http://localhost:3001/api/${selectedAgent._id}/status`, {
+                status: "rejected",
+                remarks: disapprovalRemark,
+            });
+
+            if (response.data?.success) {
+                setSelectedAgent({
+                    ...selectedAgent,
+                    status: "rejected",
+                    remarks: disapprovalRemark,
+                });
+
+                setAgents(agents.map((agent) =>
+                    agent.id === selectedAgent._id ? { ...agent, status: "rejected" } : agent
+                ));
+
+                setStatusUpdateSuccess(true);
+                setIsDisapproving(false);
+                setDisapprovalRemark("");
+            }
+        } catch (error) {
+            console.error("Failed to reject agent:", error);
+            setStatusUpdateError(error.response?.data?.message || error.message || "Could not update agent status");
+        } finally {
+            setIsUpdatingStatus(false);
+        }
+    };
+
+    const handleCancelDisapprove = () => {
+        setIsDisapproving(false);
+        setDisapprovalRemark("");
+    };
+
     if (isLoading) {
         return (
-            <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
                 <Typography>Loading agent data...</Typography>
             </Box>
         );
     }
 
-    // Error state UI
     if (error) {
         return (
             <Box sx={{ p: 3 }}>
@@ -182,23 +313,13 @@ function Agents() {
         );
     }
 
-    // Main component render
     return (
         <Box sx={{ p: 3 }}>
-            {/* Page header with title and add button */}
-            <PageHeader
-                title="Agent Management"
-                subtitle="Manage educational agents in the system"
-                action={true}
-                actionIcon={<Add />}
-                actionText="Add Agent"
-            />
+            <Typography variant="h4" gutterBottom>Agent Management</Typography>
+            <Typography variant="subtitle1" gutterBottom>Manage educational agents in the system</Typography>
 
-            {/* Main table container */}
             <Paper sx={{ width: "100%", mt: 3 }}>
-                {/* Toolbar with search and pagination controls */}
                 <Toolbar sx={{ pl: { sm: 2 }, pr: { xs: 1, sm: 1 } }}>
-                    {/* Search input field */}
                     <TextField
                         size="small"
                         placeholder="Search agents..."
@@ -214,13 +335,11 @@ function Agents() {
                         sx={{ width: { xs: "100%", md: 300 } }}
                     />
                     <Box sx={{ flexGrow: 1 }} />
-                    {/* Filter button */}
                     <Tooltip title="Filter list">
                         <IconButton onClick={handleFilterClick}>
                             <FilterList />
                         </IconButton>
                     </Tooltip>
-                    {/* Rows per page selector */}
                     <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
                         <InputLabel id="rows-per-page-label">Per Page</InputLabel>
                         <Select
@@ -238,37 +357,45 @@ function Agents() {
                     </FormControl>
                 </Toolbar>
 
-                {/* Agents table */}
                 <TableContainer>
                     <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle">
                         <TableHead>
                             <TableRow>
-                                {/* Sortable table headers */}
                                 <TableCell>
                                     <TableSortLabel
-                                        active={orderBy === "name"}
-                                        direction={orderBy === "name" ? order : "asc"}
-                                        onClick={() => handleRequestSort("name")}
+                                        active={orderBy === "companyName"}
+                                        direction={orderBy === "companyName" ? order : "asc"}
+                                        onClick={() => handleRequestSort("companyName")}
                                     >
-                                        Agent Name
+                                        Company Name
                                     </TableSortLabel>
                                 </TableCell>
                                 <TableCell>
                                     <TableSortLabel
-                                        active={orderBy === "country"}
-                                        direction={orderBy === "country" ? order : "asc"}
-                                        onClick={() => handleRequestSort("country")}
+                                        active={orderBy === "owners"}
+                                        direction={orderBy === "owners" ? order : "asc"}
+                                        onClick={() => handleRequestSort("owners")}
                                     >
-                                        Country
+                                        Owner(s)
+                                    </TableSortLabel>
+                                </TableCell>
+                                <TableCell>Contact</TableCell>
+                                <TableCell>
+                                    <TableSortLabel
+                                        active={orderBy === "location"}
+                                        direction={orderBy === "location" ? order : "asc"}
+                                        onClick={() => handleRequestSort("location")}
+                                    >
+                                        Head Office
                                     </TableSortLabel>
                                 </TableCell>
                                 <TableCell align="right">
                                     <TableSortLabel
-                                        active={orderBy === "institutions"}
-                                        direction={orderBy === "institutions" ? order : "asc"}
-                                        onClick={() => handleRequestSort("institutions")}
+                                        active={orderBy === "branches"}
+                                        direction={orderBy === "branches" ? order : "asc"}
+                                        onClick={() => handleRequestSort("branches")}
                                     >
-                                        Offices
+                                        Branches
                                     </TableSortLabel>
                                 </TableCell>
                                 <TableCell>
@@ -280,46 +407,68 @@ function Agents() {
                                         Status
                                     </TableSortLabel>
                                 </TableCell>
-                                <TableCell align="right">Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {/* Render each agent row */}
                             {paginatedAgents.map((agent) => (
-                                <TableRow hover key={agent.id} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+                                <TableRow
+                                    hover
+                                    key={agent.id}
+                                    sx={{
+                                        "&:last-child td, &:last-child th": { border: 0 },
+                                        cursor: "pointer",
+                                        "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" },
+                                    }}
+                                    onClick={() => handleRowClick(agent.id)}
+                                >
                                     <TableCell component="th" scope="row">
                                         <Box sx={{ display: "flex", alignItems: "center" }}>
-                                            {/* Agent avatar with fallback to initials */}
-                                            <Avatar src={agent.avatar} alt={agent.name} sx={{ mr: 2, width: 32, height: 32 }}>
+                                            <Avatar
+                                                src={agent.profilePicture ? `http://localhost:3001${agent.profilePicture}` : ""}
+                                                alt={agent.companyName}
+                                                sx={{ mr: 2, width: 32, height: 32 }}
+                                            >
                                                 {agent.initials}
                                             </Avatar>
                                             <Box>
-                                                <Typography variant="body2">{agent.name}</Typography>
+                                                <Typography variant="body2">{agent.companyName}</Typography>
                                                 <Typography variant="caption" color="text.secondary">
                                                     {agent.email}
                                                 </Typography>
                                             </Box>
                                         </Box>
                                     </TableCell>
-                                    <TableCell>{agent.country}</TableCell>
-                                    <TableCell align="right">{agent.institutions}</TableCell>
+                                    <TableCell>{agent.owners}</TableCell>
                                     <TableCell>
-                                        {/* Status indicator chip */}
+                                        <Typography variant="body2">{agent.contactNumber}</Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {agent.website}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                maxWidth: 200,
+                                                whiteSpace: "nowrap",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                            }}
+                                        >
+                                            {agent.location}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell align="right">{agent.branches}</TableCell>
+                                    <TableCell>
                                         <Chip
-                                            label={agent.status}
+                                            label={agent.status.charAt(0).toUpperCase() + agent.status.slice(1)}
                                             color={getStatusColor(agent.status)}
                                             size="small"
                                             sx={{
-                                                backgroundColor: agent.status === "Active" ? "#4f46e5" : undefined,
-                                                color: agent.status === "Active" ? "white" : undefined,
+                                                backgroundColor: agent.status.toLowerCase() === "approved" ? "#4f46e5" : undefined,
+                                                color: agent.status.toLowerCase() === "approved" ? "white" : undefined,
                                             }}
                                         />
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        {/* Action menu trigger */}
-                                        <IconButton size="small" onClick={(event) => handleActionClick(event, agent)}>
-                                            <MoreVert />
-                                        </IconButton>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -327,38 +476,349 @@ function Agents() {
                     </Table>
                 </TableContainer>
 
-                {/* Pagination controls */}
                 <Box sx={{ display: "flex", justifyContent: "center", mt: 2, p: 2 }}>
                     <Pagination
                         count={Math.ceil(sortedAgents.length / rowsPerPage)}
                         page={page + 1}
-                        onChange={(event, value) => setPage(value - 1)}
+                        onChange={handlePageChange}
                         color="primary"
                     />
                 </Box>
             </Paper>
 
-            {/* Filter dropdown menu */}
             <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleFilterClose}>
                 <MenuItem onClick={handleFilterClose}>All Agents</MenuItem>
-                <MenuItem onClick={handleFilterClose}>Active Only</MenuItem>
-                <MenuItem onClick={handleFilterClose}>Inactive Only</MenuItem>
-                <MenuItem onClick={handleFilterClose}>Pending Approval</MenuItem>
+                <MenuItem onClick={handleFilterClose}>Approved Only</MenuItem>
+                <MenuItem onClick={handleFilterClose}>Pending Only</MenuItem>
+                <MenuItem onClick={handleFilterClose}>Rejected Only</MenuItem>
             </Menu>
 
-            {/* Action dropdown menu */}
-            <Menu
-                anchorEl={actionMenuAnchorEl}
-                open={Boolean(actionMenuAnchorEl)}
-                onClose={handleActionClose}
+            <Drawer
+                anchor="right"
+                open={drawerOpen}
+                onClose={handleCloseDrawer}
+                PaperProps={{
+                    sx: { width: { xs: "100%", md: "70%", lg: "60%" } },
+                }}
             >
-                <MenuItem onClick={handleViewProfile}>View profile</MenuItem>
-                <MenuItem onClick={handleEdit}>Edit</MenuItem>
-                <MenuItem onClick={handleViewStudents}>View students</MenuItem>
-                <MenuItem onClick={handleToggleStatus}>
-                    {selectedAgent?.status === "Active" ? "Deactivate" : "Activate"}
-                </MenuItem>
-            </Menu>
+                <Box sx={{ p: 3 }}>
+                    <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+                        <IconButton onClick={handleCloseDrawer}>
+                            <Close />
+                        </IconButton>
+                    </Box>
+
+                    {agentDetailsLoading && (
+                        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+                            <CircularProgress />
+                        </Box>
+                    )}
+
+                    {agentDetailsError && (
+                        <Box sx={{ p: 3 }}>
+                            <Alert severity="error">{agentDetailsError}</Alert>
+                        </Box>
+                    )}
+
+                    {selectedAgent && !agentDetailsLoading && !agentDetailsError && (
+                        <>
+                            <Breadcrumbs sx={{ mb: 3 }}>
+                                <MuiLink
+                                    component="button"
+                                    underline="hover"
+                                    color="inherit"
+                                    onClick={handleCloseDrawer}
+                                    sx={{ cursor: "pointer" }}
+                                >
+                                    Agents
+                                </MuiLink>
+                                <Typography color="text.primary">{selectedAgent.companyName}</Typography>
+                            </Breadcrumbs>
+
+                            <Paper sx={{ p: 3, mb: 3 }}>
+                                <Grid container spacing={3} alignItems="center">
+                                    <Grid item>
+                                        <Avatar
+                                            src={selectedAgent.profilePicture ? `http://localhost:3001${selectedAgent.profilePicture.url}` : ""}
+                                            alt={selectedAgent.companyName}
+                                            sx={{ width: 100, height: 100 }}
+                                        >
+                                            {selectedAgent.companyName
+                                                ?.split(" ")
+                                                .map((word) => word[0])
+                                                .join("")
+                                                .toUpperCase()
+                                                .substring(0, 2)}
+                                        </Avatar>
+                                    </Grid>
+                                    <Grid item xs>
+                                        <Typography variant="h4" gutterBottom>
+                                            {selectedAgent.companyName}
+                                        </Typography>
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                            <Chip
+                                                label={selectedAgent.status?.charAt(0).toUpperCase() + selectedAgent.status?.slice(1)}
+                                                color={getStatusColor(selectedAgent.status)}
+                                                sx={{
+                                                    backgroundColor: selectedAgent.status?.toLowerCase() === "approved" ? "#4f46e5" : undefined,
+                                                    color: selectedAgent.status?.toLowerCase() === "approved" ? "white" : undefined,
+                                                }}
+                                            />
+                                            <Typography variant="body2" color="text.secondary">
+                                                Created: {new Date(selectedAgent.createdAt).toLocaleDateString()}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </Paper>
+
+                            <Grid container spacing={3}>
+                                <Grid item xs={12} md={6}>
+                                    <Paper sx={{ p: 3, height: "100%" }}>
+                                        <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center" }}>
+                                            <Business sx={{ mr: 1 }} /> Company Information
+                                        </Typography>
+                                        <Divider sx={{ mb: 2 }} />
+                                        <List disablePadding>
+                                            <ListItem disablePadding sx={{ py: 1 }}>
+                                                <ListItemText
+                                                    primary="Email"
+                                                    secondary={
+                                                        <Typography component="span" variant="body2" color="text.secondary">
+                                                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                                                                <Email fontSize="small" sx={{ mr: 1, color: "text.secondary" }} />
+                                                                {selectedAgent.email || "No email"}
+                                                            </Box>
+                                                        </Typography>
+                                                    }
+                                                />
+                                            </ListItem>
+                                            <ListItem disablePadding sx={{ py: 1 }}>
+                                                <ListItemText
+                                                    primary="Website"
+                                                    secondary={
+                                                        <Typography component="span" variant="body2" color="text.secondary">
+                                                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                                                                <Language fontSize="small" sx={{ mr: 1, color: "text.secondary" }} />
+                                                                {selectedAgent.website || "No website"}
+                                                            </Box>
+                                                        </Typography>
+                                                    }
+                                                />
+                                            </ListItem>
+                                            <ListItem disablePadding sx={{ py: 1 }}>
+                                                <ListItemText
+                                                    primary="Contact Number"
+                                                    secondary={
+                                                        <Typography component="span" variant="body2" color="text.secondary">
+                                                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                                                                <Phone fontSize="small" sx={{ mr: 1, color: "text.secondary" }} />
+                                                                {selectedAgent.contactNumber || "No contact number"}
+                                                            </Box>
+                                                        </Typography>
+                                                    }
+                                                />
+                                            </ListItem>
+                                            <ListItem disablePadding sx={{ py: 1 }}>
+                                                <ListItemText
+                                                    primary="Head Office Address"
+                                                    secondary={
+                                                        <Typography component="span" variant="body2" color="text.secondary">
+                                                            <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+                                                                <LocationOn fontSize="small" sx={{ mr: 1, mt: 0.5, color: "text.secondary" }} />
+                                                                {selectedAgent.headOfficeAddress || "No address provided"}
+                                                            </Box>
+                                                        </Typography>
+                                                    }
+                                                />
+                                            </ListItem>
+                                        </List>
+                                    </Paper>
+                                </Grid>
+
+                                <Grid item xs={12} md={6}>
+                                    <Paper sx={{ p: 3, height: "100%" }}>
+                                        <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center" }}>
+                                            <Person sx={{ mr: 1 }} /> Owners
+                                        </Typography>
+                                        <Divider sx={{ mb: 2 }} />
+                                        {selectedAgent.owners?.length > 0 ? (
+                                            <List disablePadding>
+                                                {selectedAgent.owners.map((owner) => (
+                                                    <ListItem key={owner._id} disablePadding sx={{ py: 1 }}>
+                                                        <ListItemText
+                                                            primary={owner.name}
+                                                            secondary={
+                                                                <Typography component="span" variant="body2" color="text.secondary">
+                                                                    {owner.email || "No email"}
+                                                                </Typography>
+                                                            }
+                                                        />
+                                                    </ListItem>
+                                                ))}
+                                            </List>
+                                        ) : (
+                                            <Typography color="text.secondary">No owners listed</Typography>
+                                        )}
+
+                                        <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center", mt: 3 }}>
+                                            <Business sx={{ mr: 1 }} /> Branches
+                                        </Typography>
+                                        <Divider sx={{ mb: 2 }} />
+                                        {selectedAgent.branches?.length > 0 ? (
+                                            <List disablePadding>
+                                                {selectedAgent.branches.map((branch, index) => (
+                                                    <ListItem key={branch._id || index} disablePadding sx={{ py: 1 }}>
+                                                        <ListItemText
+                                                            primary={`Branch ${index + 1}`}
+                                                            secondary={
+                                                                <Typography component="span" variant="body2" color="text.secondary">
+                                                                    {branch.address || "No address provided"}
+                                                                </Typography>
+                                                            }
+                                                        />
+                                                    </ListItem>
+                                                ))}
+                                            </List>
+                                        ) : (
+                                            <Typography color="text.secondary">No branches listed</Typography>
+                                        )}
+                                    </Paper>
+                                </Grid>
+
+                                <Grid item xs={12}>
+                                    <Paper sx={{ p: 3 }}>
+                                        <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center" }}>
+                                            <Description sx={{ mr: 1 }} /> Documents
+                                        </Typography>
+                                        <Divider sx={{ mb: 3 }} />
+
+                                        {selectedAgent.documents ? (
+                                            <Grid container spacing={3}>
+                                                {Object.entries(selectedAgent.documents).map(([key, doc]) => (
+                                                    <Grid item xs={12} sm={6} md={3} key={key}>
+                                                        <Card>
+                                                            <CardMedia
+                                                                component="img"
+                                                                height="140"
+                                                                image={`http://localhost:3001${doc.url}`}
+                                                                alt={key}
+                                                                sx={{ objectFit: "contain", bgcolor: "rgba(0,0,0,0.04)" }}
+                                                            />
+                                                            <CardContent>
+                                                                <Typography variant="subtitle1">
+                                                                    {key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
+                                                                </Typography>
+                                                                <Typography variant="body2" color="text.secondary">
+                                                                    {doc.filename}
+                                                                </Typography>
+                                                                <Button
+                                                                    variant="outlined"
+                                                                    size="small"
+                                                                    sx={{ mt: 1 }}
+                                                                    href={`http://localhost:3001${doc.url}`}
+                                                                    target="_blank"
+                                                                >
+                                                                    View Document
+                                                                </Button>
+                                                            </CardContent>
+                                                        </Card>
+                                                    </Grid>
+                                                ))}
+                                            </Grid>
+                                        ) : (
+                                            <Typography color="text.secondary">No documents available</Typography>
+                                        )}
+                                    </Paper>
+                                </Grid>
+                            </Grid>
+
+                            {/* Action buttons moved to bottom */}
+                            <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                                {statusUpdateSuccess && (
+                                    <Alert severity="success" sx={{ flexGrow: 1 }}>
+                                        Agent status updated successfully
+                                    </Alert>
+                                )}
+
+                                {statusUpdateError && (
+                                    <Alert severity="error" sx={{ flexGrow: 1 }}>
+                                        {statusUpdateError}
+                                    </Alert>
+                                )}
+
+                                {isDisapproving ? (
+                                    <Box sx={{ display: "flex", flexDirection: "column", width: "100%", gap: 2 }}>
+                                        <TextField
+                                            label="Disapproval Reason"
+                                            multiline
+                                            rows={3}
+                                            value={disapprovalRemark}
+                                            onChange={(e) => setDisapprovalRemark(e.target.value)}
+                                            fullWidth
+                                            required
+                                            error={disapprovalRemark.trim() === ""}
+                                            helperText={disapprovalRemark.trim() === "" ? "Reason is required" : ""}
+                                        />
+                                        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                                            <Button variant="outlined" onClick={handleCancelDisapprove} disabled={isUpdatingStatus}>
+                                                Cancel
+                                            </Button>
+                                            <Button
+                                                variant="contained"
+                                                color="error"
+                                                onClick={handleDisapprove}
+                                                disabled={isUpdatingStatus || disapprovalRemark.trim() === ""}
+                                            >
+                                                {isUpdatingStatus ? <CircularProgress size={24} /> : "Confirm Disapproval"}
+                                            </Button>
+                                        </Box>
+                                    </Box>
+                                ) : (
+                                    <>
+                                        <Button
+                                            variant="contained"
+                                            color="error"
+                                            onClick={() => setIsDisapproving(true)}
+                                            disabled={isUpdatingStatus || selectedAgent.status === "rejected"}
+                                            startIcon={<Close />}
+                                        >
+                                            Disapprove
+                                        </Button>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            onClick={handleApprove}
+                                            disabled={isUpdatingStatus || selectedAgent.status === "approved"}
+                                            startIcon={<Check />}
+                                            sx={{ bgcolor: "#4f46e5", "&:hover": { bgcolor: "#4338ca" } }}
+                                        >
+                                            Approve
+                                        </Button>
+                                    </>
+                                )}
+                            </Box>
+
+                            {/* Remarks section moved to bottom */}
+                            {selectedAgent.status === "rejected" && selectedAgent.remarks && (
+                                <Box sx={{ mt: 3 }}>
+                                    <Paper sx={{ p: 3, bgcolor: "#FEF2F2" }}>
+                                        <Typography
+                                            variant="h6"
+                                            gutterBottom
+                                            sx={{ color: "#B91C1C", display: "flex", alignItems: "center" }}
+                                        >
+                                            <Close sx={{ mr: 1 }} /> Disapproval Reason
+                                        </Typography>
+                                        <Divider sx={{ mb: 2 }} />
+                                        <Typography>{selectedAgent.remarks}</Typography>
+                                    </Paper>
+                                </Box>
+                            )}
+                        </>
+                    )}
+                </Box>
+            </Drawer>
         </Box>
     );
 }

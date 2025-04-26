@@ -215,6 +215,10 @@ export default function EstimateCostsTab() {
     useEffect(() => {
         const progressMap = [20, 40, 60, 80, 100];
         setProgress(progressMap[activeTab] || 20);
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        })
     }, [activeTab]);
 
     // Calculate costs
