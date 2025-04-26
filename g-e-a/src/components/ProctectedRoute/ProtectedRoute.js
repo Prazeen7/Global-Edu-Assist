@@ -41,7 +41,9 @@ const ProtectedRoute = ({ children, isAdminRoute = false }) => {
 
     // If not logged in or token is invalid, redirect to login
     if (!LoggedIn || !isTokenValid) {
-        return <Navigate to={isAdminRoute ? "/admin" : "/login"} state={{ from: location }} replace />;
+        // Changed from: state={{ from: location }}
+        // To: state={{ redirectTo: location.pathname }}
+        return <Navigate to={isAdminRoute ? "/admin" : "/login"} state={{ redirectTo: location.pathname }} replace />;
     }
 
     // If it's an admin route and the user is not an admin, redirect to home

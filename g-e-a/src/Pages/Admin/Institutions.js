@@ -11,19 +11,15 @@ import {
     TableRow,
     TableSortLabel,
     Toolbar,
-    Chip,
-    IconButton,
-    Tooltip,
     TextField,
     InputAdornment,
     MenuItem,
     Select,
     FormControl,
     InputLabel,
-    Menu,
-    Button,
+    TablePagination,
 } from "@mui/material";
-import { Add, Search, FilterList, MoreVert, ArrowBack } from "@mui/icons-material";
+import { Add, Search } from "@mui/icons-material";
 import PageHeader from "../../components/Admin/PageHeader";
 import AddInstitution from "../../components/Admin/AddInstitutions";
 import AdminInstitutionsPage from "./InstitutionPage";
@@ -31,14 +27,15 @@ import AdminInstitutionsPage from "./InstitutionPage";
 function AdminInstitutions() {
     const [institutions, setInstitutions] = useState([]);
     const [order, setOrder] = useState("asc");
-    const [orderBy, setOrderBy] = useState("name");
+    const [orderBy, setOrderBy] = useState("institutionName");
     const [searchTerm, setSearchTerm] = useState("");
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [actionMenuAnchorEl, setActionMenuAnchorEl] = useState(null);
     const [selectedInstitution, setSelectedInstitution] = useState(null);
     const [showAddInstitution, setShowAddInstitution] = useState(false);
     const [showInstitutionDetails, setShowInstitutionDetails] = useState(false);
+
+    // Pagination state
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     useEffect(() => {
         fetchInstitutions();
@@ -47,7 +44,10 @@ function AdminInstitutions() {
     const fetchInstitutions = async () => {
         try {
             const response = await axios.get("http://localhost:3001/api/institutions");
-            setInstitutions(response.data);
+            const sortedData = response.data.sort((a, b) =>
+                a.institutionName.localeCompare(b.institutionName)
+            );
+            setInstitutions(sortedData);
         } catch (error) {
             console.error("Error fetching institutions:", error);
         }
@@ -57,32 +57,6 @@ function AdminInstitutions() {
         const isAsc = orderBy === property && order === "asc";
         setOrder(isAsc ? "desc" : "asc");
         setOrderBy(property);
-    };
-
-    const handleFilterClick = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleFilterClose = () => {
-        setAnchorEl(null);
-    };
-
-    const handleActionClick = (event, institution) => {
-        setActionMenuAnchorEl(event.currentTarget);
-        setSelectedInstitution(institution);
-    };
-
-    const handleActionClose = (action) => {
-        if (action === "View details" && selectedInstitution) {
-            setShowInstitutionDetails(true);
-        } else if (action === "Edit") {
-            // Handle edit action
-        } else if (action === "Manage programs") {
-            // Handle manage programs action
-        } else if (action === "Toggle status") {
-            // Handle toggle status action
-        }
-        setActionMenuAnchorEl(null);
     };
 
     const handleAddInstitutionClick = () => {
@@ -95,17 +69,20 @@ function AdminInstitutions() {
         fetchInstitutions();
     };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case "Active":
-                return "success";
-            case "Inactive":
-                return "default";
-            case "Pending":
-                return "warning";
-            default:
-                return "default";
-        }
+    const handleRowClick = (institution) => {
+        setSelectedInstitution(institution);
+        setShowInstitutionDetails(true);
+    };
+
+    // Handle page change
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+    };
+
+    // Handle rows per page change
+    const handleChangeRowsPerPage = (event) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
     };
 
     // Filter institutions based on search term
@@ -113,14 +90,33 @@ function AdminInstitutions() {
         institution.institutionName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Sort institutions
+    const sortedInstitutions = filteredInstitutions.sort((a, b) => {
+        if (orderBy === "institutionName") {
+            return order === "asc"
+                ? a.institutionName.localeCompare(b.institutionName)
+                : b.institutionName.localeCompare(a.institutionName);
+        } else {
+            if (order === "asc") {
+                return a[orderBy] > b[orderBy] ? 1 : -1;
+            } else {
+                return a[orderBy] < b[orderBy] ? 1 : -1;
+            }
+        }
+    });
+
+    // Paginate institutions
+    const paginatedInstitutions = sortedInstitutions.slice(
+        page * rowsPerPage,
+        page * rowsPerPage + rowsPerPage
+    );
+
     return (
         <Box sx={{ p: 3 }}>
             {showAddInstitution ? (
                 <AddInstitution onClose={handleBackToInstitutions} />
             ) : showInstitutionDetails ? (
-                <>
-                    <AdminInstitutionsPage institution={selectedInstitution} onClose={handleBackToInstitutions} />
-                </>
+                <AdminInstitutionsPage institution={selectedInstitution} onClose={handleBackToInstitutions} />
             ) : (
                 <>
                     <PageHeader
@@ -149,11 +145,6 @@ function AdminInstitutions() {
                                 sx={{ width: { xs: "100%", md: 300 } }}
                             />
                             <Box sx={{ flexGrow: 1 }} />
-                            <Tooltip title="Filter list">
-                                <IconButton onClick={handleFilterClick}>
-                                    <FilterList />
-                                </IconButton>
-                            </Tooltip>
                             <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
                                 <InputLabel id="rows-per-page-label">Per Page</InputLabel>
                                 <Select
@@ -161,7 +152,7 @@ function AdminInstitutions() {
                                     id="rows-per-page"
                                     value={rowsPerPage}
                                     label="Per Page"
-                                    onChange={(e) => setRowsPerPage(e.target.value)}
+                                    onChange={handleChangeRowsPerPage}
                                 >
                                     <MenuItem value={10}>10</MenuItem>
                                     <MenuItem value={20}>20</MenuItem>
@@ -174,11 +165,12 @@ function AdminInstitutions() {
                             <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle">
                                 <TableHead>
                                     <TableRow>
+                                        <TableCell>SN</TableCell>
                                         <TableCell>
                                             <TableSortLabel
-                                                active={orderBy === "name"}
-                                                direction={orderBy === "name" ? order : "asc"}
-                                                onClick={() => handleRequestSort("name")}
+                                                active={orderBy === "institutionName"}
+                                                direction={orderBy === "institutionName" ? order : "asc"}
+                                                onClick={() => handleRequestSort("institutionName")}
                                             >
                                                 Institution Name
                                             </TableSortLabel>
@@ -186,13 +178,17 @@ function AdminInstitutions() {
                                         <TableCell>Country</TableCell>
                                         <TableCell>Type</TableCell>
                                         <TableCell align="right">Programs</TableCell>
-                                        <TableCell>Status</TableCell>
-                                        <TableCell align="right">Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {filteredInstitutions.map((institution) => (
-                                        <TableRow hover key={institution._id}>
+                                    {paginatedInstitutions.map((institution, index) => (
+                                        <TableRow
+                                            hover
+                                            key={institution._id}
+                                            onClick={() => handleRowClick(institution)}
+                                            sx={{ cursor: 'pointer' }}
+                                        >
+                                            <TableCell>{page * rowsPerPage + index + 1}</TableCell>
                                             <TableCell>{institution.institutionName}</TableCell>
                                             <TableCell>
                                                 {institution.locations[0]?.country || "N/A"}
@@ -201,49 +197,21 @@ function AdminInstitutions() {
                                             <TableCell align="right">
                                                 {institution.programs.length}
                                             </TableCell>
-                                            <TableCell>
-                                                <Chip
-                                                    label="Active"
-                                                    color={getStatusColor("Active")}
-                                                    size="small"
-                                                />
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={(event) => handleActionClick(event, institution)}
-                                                >
-                                                    <MoreVert />
-                                                </IconButton>
-                                            </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
                         </TableContainer>
+                        <TablePagination
+                            rowsPerPageOptions={[10, 20, 50, 100]}
+                            component="div"
+                            count={filteredInstitutions.length}
+                            rowsPerPage={rowsPerPage}
+                            page={page}
+                            onPageChange={handleChangePage}
+                            onRowsPerPageChange={handleChangeRowsPerPage}
+                        />
                     </Paper>
-
-                    {/* Filter Menu */}
-                    <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleFilterClose}>
-                        <MenuItem onClick={handleFilterClose}>All Institutions</MenuItem>
-                        <MenuItem onClick={handleFilterClose}>Active Only</MenuItem>
-                        <MenuItem onClick={handleFilterClose}>Inactive Only</MenuItem>
-                        <MenuItem onClick={handleFilterClose}>Pending Approval</MenuItem>
-                    </Menu>
-
-                    {/* Action Menu */}
-                    <Menu
-                        anchorEl={actionMenuAnchorEl}
-                        open={Boolean(actionMenuAnchorEl)}
-                        onClose={() => handleActionClose(null)}
-                    >
-                        <MenuItem onClick={() => handleActionClose("View details")}>View details</MenuItem>
-                        <MenuItem onClick={() => handleActionClose("Edit")}>Edit</MenuItem>
-                        <MenuItem onClick={() => handleActionClose("Manage programs")}>Manage programs</MenuItem>
-                        <MenuItem onClick={() => handleActionClose("Toggle status")}>
-                            {selectedInstitution?.status === "Active" ? "Deactivate" : "Activate"}
-                        </MenuItem>
-                    </Menu>
                 </>
             )}
         </Box>

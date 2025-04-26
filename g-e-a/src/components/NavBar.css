@@ -1,42 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Parkinsans:wght@300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
 
+/* Ensure body has no margins to allow full-width navbar */
+body {
+    margin: 0;
+}
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-
-}
-
-.hamburger {
-    display: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.5em;
-}
-
-.hamburger-icon {
-    width: 1.5em;
-    position: relative;
-    display: inline-block;
-    transition: all 0.3s ease-in-out;
 }
 
 .navbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
+    width: 100%;
+    /* Full viewport width */
+    max-width: none;
+    /* Remove any max-width constraints */
     padding: 1em 2em;
     background-color: #fff;
     border-bottom: 0.125em solid #e5e7eb;
     box-shadow: 0 0.125em 0.25em rgba(0, 0, 0, 0.1);
-    position: sticky; 
-    top: 0; 
-    z-index: 1000; 
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
-
 
 .logo-container {
     display: flex;
@@ -53,9 +44,7 @@
 .website-name {
     font-size: 1.3rem;
     font-family: "Roboto Mono", monospace;
-    font-optical-sizing: auto;
     font-weight: 600;
-    font-style: normal;
 }
 
 .navbar a {
@@ -65,34 +54,19 @@
 
 .nav-links {
     display: flex;
-    gap: 2em;
+    gap: 1.5em;
     list-style-type: none;
-}
-
-.nav-links.active {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: #fff;
-    width: 100%;
-    box-shadow: 0 0.125em 0.25em rgba(0, 0, 0, 0.1);
-    padding: 1em 0;
-    gap: 1em;
 }
 
 .nav-links a {
     text-decoration: none;
     color: #374151;
-    font-size: 1.1rem;
+    font-size: 1rem;
     padding: 0.5em;
     border-bottom: 0.125em solid transparent;
     transition: all 0.3s ease-in-out;
     font-family: "Parkinsans", sans-serif;
-    font-optical-sizing: auto;
     font-weight: 400;
-    font-style: normal;
 }
 
 .nav-links a:hover {
@@ -103,18 +77,20 @@
     border-bottom: 0.125em solid #4f46e5;
 }
 
-.auth-link {
-    display: none;
+.nav-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.nav-buttons>* {
+    font-size: 1.2rem;
+    /* Icon size */
 }
 
 .auth-buttons {
     display: flex;
     gap: 1rem;
-}
-
-.nav-buttons{
-    display: flex;
-    gap: 0.5rem;
 }
 
 .login-button,
@@ -147,6 +123,37 @@
     color: white;
 }
 
+.hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5em;
+}
+
+.hamburger-icon {
+    width: 1.5em;
+    transition: all 0.3s ease-in-out;
+}
+
+.nav-links.active {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    width: 100%;
+    box-shadow: 0 0.125em 0.25em rgba(0, 0, 0, 0.1);
+    padding: 1em;
+    gap: 1em;
+    z-index: 999;
+}
+
+.auth-link {
+    display: none;
+}
+
 /* Mobile view */
 @media (max-width: 960px) {
     .hamburger {
@@ -169,4 +176,77 @@
         display: block;
     }
 
+    .navbar {
+        padding: 0.5em 1em;
+        flex-wrap: nowrap;
+    }
+
+    .logo {
+        width: 30px;
+    }
+
+    .website-name {
+        font-size: 1.1rem;
+    }
+
+    .nav-buttons {
+        gap: 0.3rem;
+    }
+
+    .nav-buttons>* {
+        font-size: 1rem;
+        /* Smaller icons in mobile */
+    }
+
+    .hamburger-icon {
+        width: 1.2em;
+    }
+}
+
+/* Intermediate view (961px–1200px) */
+@media (min-width: 961px) and (max-width: 1200px) {
+    .navbar {
+        padding: 0.75em 1em;
+        /* Slightly less padding to maximize content width */
+    }
+
+    .nav-links {
+        gap: 1em;
+    }
+
+    .nav-links a {
+        font-size: 0.95rem;
+        padding: 0.4em;
+    }
+
+    .nav-buttons {
+        gap: 0.5rem;
+    }
+
+    .nav-buttons>* {
+        font-size: 1.1rem;
+    }
+
+    .logo {
+        width: 35px;
+    }
+
+    .website-name {
+        font-size: 1.2rem;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 400px) {
+    .navbar {
+        padding: 0.5em 0.5em;
+    }
+
+    .nav-buttons>* {
+        font-size: 0.9rem;
+    }
+
+    .website-name {
+        font-size: 1rem;
+    }
 }

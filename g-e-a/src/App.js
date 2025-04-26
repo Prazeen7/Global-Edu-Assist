@@ -14,27 +14,29 @@ import InstitutionPage from './Pages/Institutions/InstitutionPage';
 import Estimation from './components/Estimation';
 import ProgressTracking from './components/ProgressTracking';
 import Admin from './layouts/Admin/DashboardLayout';
-import AdminAbout from './Pages/Admin/About';
 import AdminAgents from './Pages/Admin/Agents';
 import AdminLogin from './Pages/Admin/Login';
 import AdminDashboard from './Pages/Admin/Dashboard';
 import AdminDocuments from './Pages/Admin/Documents';
 import AdminInstitutions from './Pages/Admin/Institutions';
-import AdminLandingPage from './Pages/Admin/LandingPage';
-import AdminSetting from './Pages/Admin/Settings';
 import AdminInstitutionsPage from './Pages/Admin/InstitutionPage';
 import { AuthContext } from "./Context/context";
+import { AuthProvider } from "./Context/AuthContext";
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProctectedRoute/ProtectedRoute';
 import AuthRoute from './components/ProctectedRoute/AuthRoute';
 import Verify from './components/verify';
 import { validateToken, isTokenExpired } from './utils/utils';
+import Profile from './Pages/profile';
+import AgentRegistration from './Pages/Agents/Registration/Registration';
+import AgentLogin from './Pages/Agents/Login/Login';
+import AgentDashboard from './Pages/Agents/Dashboard/Dashboard'
 
 function App() {
     const [LoggedIn, setLoggedIn] = useState(false);
     const [UserAvatar, setUserAvatar] = useState('');
     const [UserType, setUserType] = useState('u');
-    const [isLoading, setIsLoading] = useState(true); 
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -44,7 +46,7 @@ function App() {
         if (token) {
             const { isValid } = validateToken(token);
             const expired = isTokenExpired(token);
-            
+
             if (isValid && !expired) {
                 setLoggedIn(true);
                 setUserAvatar(userAvatar || '');
@@ -57,11 +59,11 @@ function App() {
                 setLoggedIn(false);
             }
         }
-        setIsLoading(false); 
+        setIsLoading(false);
     }, []);
 
     if (isLoading) {
-        return <div>Loading...</div>; 
+        return <div>Loading...</div>;
     }
 
     // Create routes using React Router
@@ -72,6 +74,16 @@ function App() {
                 <>
                     <Navbar />
                     <LandingPage />
+                    <Footer />
+                </>
+            ),
+        },
+        {
+            path: "/profile",
+            element: (
+                <>
+                    <Navbar />
+                    <Profile />
                     <Footer />
                 </>
             ),
@@ -183,9 +195,36 @@ function App() {
                 </>
             ),
         },
+
+        {
+            path: "/agent-registration",
+            element: (
+                    <>
+                    <Navbar />
+                    <AgentRegistration />
+                    </>
+            ),
+        },
+        {
+            path: "/agent-login",
+            element: (
+                <>
+                <Navbar />
+                <AgentLogin />
+                </>
+
+            ),
+        },
+        {
+            path: "/agent-dashboard",
+            element: (
+                <AgentDashboard />
+            ),
+        },
+
         {
             path: "/admin",
-            element: <AdminLogin />, 
+            element: <AdminLogin />,
         },
         {
             path: "/admin/*",
@@ -210,18 +249,6 @@ function App() {
                 {
                     path: "agents",
                     element: <AdminAgents />,
-                },
-                {
-                    path: "landingPage",
-                    element: <AdminLandingPage />,
-                },
-                {
-                    path: "about",
-                    element: <AdminAbout />,
-                },
-                {
-                    path: "settings",
-                    element: <AdminSetting />,
                 },
                 {
                     path: "institutionPage/:id",

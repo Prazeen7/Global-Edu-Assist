@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react"
-import { useParams, useLocation } from "react-router-dom"
+import { useParams, useLocation, useNavigate } from "react-router-dom"
 import {
   Tabs,
   Tab,
@@ -31,7 +31,6 @@ import {
 import { ChevronLeft, ChevronRight, ExpandMore, Description } from "@mui/icons-material"
 import { styled } from "@mui/material/styles"
 import axios from "axios"
-import Estimation from "../../components/Estimation"
 import "./institutions.css"
 import Loading from "../../components/Loading"
 
@@ -73,6 +72,7 @@ const AgentCard = styled(Card)(({ theme }) => ({
 export default function InstitutionPage() {
   const { id } = useParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const [institution, setInstitution] = useState(location.state || null)
   const [tabIndex, setTabIndex] = useState(0)
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
@@ -124,7 +124,7 @@ export default function InstitutionPage() {
   // Fetch all agents from the API
   useEffect(() => {
     axios
-      .get("http://localhost:3001/api/agents")
+      .get("http://localhost:3001/api/availAgent")
       .then((response) => {
         setAllAgents(response.data)
       })
@@ -533,7 +533,55 @@ export default function InstitutionPage() {
       elevation={3}
       sx={{ p: 3, backgroundColor: "background.paper", borderRadius: 2, border: "1px solid #e0e0e0" }}
     >
-      <Estimation />
+      <Box sx={{ textAlign: "center", py: 4 }}>
+        <Typography variant="h5" gutterBottom sx={{ color: "primary.main", fontWeight: "bold", mb: 3 }}>
+          Cost Estimation Tool
+        </Typography>
+
+        <Box sx={{ maxWidth: 600, mx: "auto", mb: 4 }}>
+          <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6 }}>
+            Use our comprehensive cost estimation tool to calculate your expenses from initial offer to visa application.
+            Get a detailed breakdown of tuition fees, living expenses, visa costs, and more.
+          </Typography>
+
+          <Button
+            variant="contained"
+            size="large"
+            onClick={() => {
+              // Check if user is logged in by looking for token in localStorage
+              const token = localStorage.getItem("token");
+
+              if (token) {
+                // User is logged in, redirect directly to cost estimation page
+                navigate("/cost-estimation");
+              } else {
+                // User is not logged in, redirect to login page with return URL
+                navigate("/login", { state: { redirectTo: "/cost-estimation" } });
+              }
+            }}
+            sx={{
+              backgroundColor: "#4f46e5",
+              borderRadius: 2,
+              py: 1.5,
+              px: 4,
+              fontWeight: "bold",
+              "&:hover": {
+                backgroundColor: "#4338ca",
+                transform: "scale(1.02)"
+              }
+            }}
+          >
+            START ESTIMATION
+          </Button>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Typography variant="body2" color="text.secondary">
+          Our cost estimation tool provides an approximate calculation based on current rates.
+          Actual costs may vary based on individual circumstances and changes in fees or living expenses.
+        </Typography>
+      </Box>
     </Paper>,
 
     // Documents Tab
@@ -937,7 +985,7 @@ export default function InstitutionPage() {
                         sx={{ textAlign: "center", flexGrow: 1, py: 2, display: "flex", flexDirection: "column" }}
                       >
                         <Avatar
-                          src={agent?.head_office?.avatar}
+                          src={`http://localhost:3001${agent?.head_office?.avatar}`}
                           sx={{
                             width: 80,
                             height: 80,

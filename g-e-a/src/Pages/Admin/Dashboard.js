@@ -33,7 +33,7 @@ function Dashboard() {
             try {
                 const [institutionsResponse, agentsResponse, usersResponse] = await Promise.all([
                     axios.get("http://localhost:3001/api/institutions"),
-                    axios.get("http://localhost:3001/api/agents"),
+                    axios.get("http://localhost:3001/api//getAgent"),
                     axios.get("http://localhost:3001/api/users"),
                 ]);
 

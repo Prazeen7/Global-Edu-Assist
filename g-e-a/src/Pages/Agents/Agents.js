@@ -1,11 +1,11 @@
+"use client"
+
 import {
   Avatar,
   Box,
   Button,
   Card,
   CardContent,
-  CardMedia,
-  Chip,
   Container,
   Divider,
   Grid,
@@ -14,138 +14,181 @@ import {
   Paper,
   TextField,
   Typography,
-  styled,
+  CircularProgress,
+  Alert,
 } from "@mui/material"
-import { Search, ChevronLeft, ChevronRight, KeyboardArrowDown, Favorite, ChatBubbleOutline } from "@mui/icons-material"
-import '../Institutions/institutions.css'
+import {
+  ChatBubbleOutline,
+  Favorite,
+  LocationOn,
+  Mail,
+  Phone,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+} from "@mui/icons-material"
+import { useNavigate } from "react-router-dom"
+import { useState, useRef, useEffect, useContext } from "react"
+import { AuthContext } from "../../Context/context"
 
-// Styled components
-const StyledAgentCard = styled(Card)(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  minWidth: 300,
-  transition: "transform 0.3s, box-shadow 0.3s",
-  "&:hover": {
-    transform: "translateY(-4px)",
-    boxShadow: theme.shadows[4],
-  },
-}))
+const AgentsPage = () => {
+  const navigate = useNavigate()
+  const scrollRef = useRef(null)
+  const [scrollPosition, setScrollPosition] = useState(0)
+  const [containerWidth, setContainerWidth] = useState(0)
+  const [agents, setAgents] = useState([])
+  const [filteredAgents, setFilteredAgents] = useState([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const { LoggedIn } = useContext(AuthContext)
 
-const StyledPostCard = styled(Card)(({ theme }) => ({
-  overflow: "hidden",
-  transition: "transform 0.3s, box-shadow 0.3s",
-  "&:hover": {
-    transform: "translateY(-4px)",
-    boxShadow: theme.shadows[4],
-  },
-}))
+  // Update container width on mount and resize
+  useEffect(() => {
+    const updateWidth = () => {
+      if (scrollRef.current) {
+        setContainerWidth(scrollRef.current.offsetWidth)
+      }
+    }
 
-const PostImageOverlay = styled(Box)(({ theme }) => ({
-  position: "absolute",
-  bottom: 0,
-  left: 0,
-  right: 0,
-  background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)",
-  padding: theme.spacing(2),
-  opacity: 0,
-  transition: "opacity 0.3s",
-  color: "white",
-}))
+    updateWidth()
+    window.addEventListener("resize", updateWidth)
+    return () => window.removeEventListener("resize", updateWidth)
+  }, [])
 
-const PostCardMedia = styled(CardMedia)(({ theme }) => ({
-  height: 400,
-  position: "relative",
-  "&:hover .overlay": {
-    opacity: 1,
-  },
-}))
+  // Fetch agents from API
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        setLoading(true)
+        // Use the correct API endpoint with the base URL
+        const response = await fetch("http://localhost:3001/api/getAgent")
 
-const LoadMoreButton = styled(Button)(({ theme }) => ({
-  position: "relative",
-  overflow: "hidden",
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: theme.palette.primary.dark,
-    transform: "translateY(-100%)",
-    transition: "transform 0.3s",
-    zIndex: 0,
-  },
-  "&:hover::before": {
-    transform: "translateY(0)",
-  },
-  "& .buttonText": {
-    position: "relative",
-    zIndex: 1,
-  },
-}))
+        if (!response.ok) {
+          throw new Error(`Failed to fetch agents: ${response.status} ${response.statusText}`)
+        }
 
-const AgentDirectoryPage = () => {
-  // Sample data
-  const agents = [
-    {
-      id: 1,
-      name: "John Smith",
-      address: "123 Main St, City",
-      contactNo: "+1 234 567 8901",
-      email: "john@example.com",
-      specialty: "Study Abroad",
-      rating: 4.8,
-      initials: "JS",
-    },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      address: "456 Oak Ave, Town",
-      contactNo: "+1 234 567 8902",
-      email: "sarah@example.com",
-      specialty: "Visa Consulting",
-      rating: 4.9,
-      initials: "SJ",
-    },
-    {
-      id: 3,
-      name: "Michael Brown",
-      address: "789 Pine Rd, Village",
-      contactNo: "+1 234 567 8903",
-      email: "michael@example.com",
-      specialty: "Scholarship Guidance",
-      rating: 4.7,
-      initials: "MB",
-    },
-    {
-      id: 4,
-      name: "Emily Davis",
-      address: "101 Elm St, County",
-      contactNo: "+1 234 567 8904",
-      email: "emily@example.com",
-      specialty: "Test Preparation",
-      rating: 4.6,
-      initials: "ED",
-    },
-    {
-      id: 5,
-      name: "Robert Wilson",
-      address: "202 Cedar Ln, District",
-      contactNo: "+1 234 567 8905",
-      email: "robert@example.com",
-      specialty: "Career Counseling",
-      rating: 4.9,
-      initials: "RW",
-    },
-  ]
+        const data = await response.json()
 
+        // Filter only approved agents for public display
+        const approvedAgents = data.data.filter((agent) => agent.status === "approved")
+        setAgents(approvedAgents)
+        setFilteredAgents(approvedAgents)
+        setLoading(false)
+      } catch (err) {
+        console.error("Error fetching agents:", err)
+        setError("Failed to load agents. Please try again later.")
+        setLoading(false)
+      }
+    }
+
+    fetchAgents()
+  }, [])
+
+  // Filter agents based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredAgents(agents)
+    } else {
+      const filtered = agents.filter(
+        (agent) =>
+          agent.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (agent.headOfficeAddress && agent.headOfficeAddress.toLowerCase().includes(searchTerm.toLowerCase())),
+      )
+      setFilteredAgents(filtered)
+    }
+  }, [searchTerm, agents])
+
+  // Function to handle starting a chat with an agent
+  const handleMessageAgent = (agent) => {
+    // Check if user is logged in
+    if (!LoggedIn) {
+      console.log("User not logged in according to AuthContext")
+      alert("Please log in to chat with agents")
+      navigate("/login")
+      return
+    }
+
+    // Check if agent exists and has an _id
+    if (!agent || !agent._id) {
+      console.error("Invalid agent data:", agent)
+      return
+    }
+
+    console.log("Dispatching messageAgent event for agent:", agent.companyName)
+    // Dispatch a custom event that the ChatSystem component listens for
+    const messageAgentEvent = new CustomEvent("messageAgent", {
+      detail: { agent },
+    })
+    window.dispatchEvent(messageAgentEvent)
+  }
+
+  const handleScroll = (direction) => {
+    if (scrollRef.current) {
+      const cardWidth = containerWidth / 3 // Width of each card (3 cards per view)
+      const scrollAmount = direction === "left" ? -cardWidth : cardWidth
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" })
+
+      // Update scroll position for button visibility
+      setTimeout(() => {
+        if (scrollRef.current) {
+          setScrollPosition(scrollRef.current.scrollLeft)
+        }
+      }, 300)
+    }
+  }
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value)
+  }
+
+  // Extract initials from company name for avatar
+  const getInitials = (name) => {
+    if (!name) return "AG"
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase()
+  }
+
+  // Format address for display
+  const formatAddress = (address) => {
+    if (!address) return "Address not available"
+    return address.length > 60 ? `${address.substring(0, 60)}...` : address
+  }
+
+  // Fix profile picture URL to use the correct base URL
+  const getProfilePictureUrl = (profilePicture) => {
+    if (!profilePicture || !profilePicture.url) return null
+
+    // If the URL is already absolute, use it as is
+    if (profilePicture.url.startsWith("http")) {
+      return profilePicture.url
+    }
+
+    // Otherwise, construct the full URL with the correct base
+    return `http://localhost:3001${profilePicture.url}`
+  }
+
+  // Calculate card width based on container width to show exactly 3 cards
+  const cardWidth = containerWidth ? (containerWidth - 48) / 3 : 280 // 48px for gaps (16px * 3)
+
+  // Check if we can scroll in a direction
+  const canScrollLeft = scrollPosition > 0
+  const canScrollRight = scrollRef.current
+    ? scrollRef.current.scrollWidth > scrollRef.current.clientWidth + scrollPosition
+    : true
+
+  // Sample posts data for the "Latest Updates" section
   const posts = [
     {
       id: 1,
       title: "New Scholarship Opportunity",
       content:
-        "Exciting news! We've partnered with University of Technology to offer 5 full scholarships for international students. Applications open next week. Don't miss this opportunity to study at one of the top universities.",
-      agent: agents[0],
+        "Exciting news! We've partnered with University of Technology to offer 5 full scholarships for international students. Applications open next week.",
+      agent: filteredAgents[0] || { companyName: "Education Consultant", initials: "EC" },
       category: "Study Abroad",
       postedAt: "2 days ago",
       likes: 24,
@@ -155,8 +198,8 @@ const AgentDirectoryPage = () => {
       id: 2,
       title: "Study in Canada - Information Session",
       content:
-        "Join our virtual information session about studying in Canada. Learn about visa requirements, top universities, and cost of living. Expert speakers will share insights and answer your questions.",
-      agent: agents[1],
+        "Join our virtual information session about studying in Canada. Learn about visa requirements, top universities, and cost of living.",
+      agent: filteredAgents[1] || { companyName: "Visa Expert", initials: "VE" },
       category: "Visa Consulting",
       postedAt: "3 days ago",
       likes: 36,
@@ -166,59 +209,18 @@ const AgentDirectoryPage = () => {
       id: 3,
       title: "UK Student Visa Updates",
       content:
-        "Important updates to UK student visa requirements for 2025. New financial requirements and application process changes. Make sure you're prepared for these changes if you're planning to study in the UK.",
-      agent: agents[2],
+        "Important updates to UK student visa requirements for 2025. New financial requirements and application process changes.",
+      agent: filteredAgents[2] || { companyName: "Global Education", initials: "GE" },
       category: "Scholarship",
       postedAt: "5 days ago",
       likes: 18,
       comments: 5,
     },
-    {
-      id: 4,
-      title: "Australia Student Accommodation Guide",
-      content:
-        "Everything you need to know about student accommodation in Australia. On-campus vs. off-campus options compared. Find the best housing solution for your budget and preferences.",
-      agent: agents[3],
-      category: "Test Prep",
-      postedAt: "1 week ago",
-      likes: 42,
-      comments: 15,
-    },
-    {
-      id: 5,
-      title: "IELTS Preparation Workshop",
-      content:
-        "Join our free IELTS preparation workshop. Learn tips and strategies to improve your score from experienced trainers. Limited seats available, register now to secure your spot.",
-      agent: agents[4],
-      category: "Career",
-      postedAt: "1 week ago",
-      likes: 29,
-      comments: 7,
-    },
-    {
-      id: 6,
-      title: "USA University Application Deadlines",
-      content:
-        "Important deadlines for Fall 2025 admissions to top US universities. Early action, early decision, and regular decision dates. Plan your applications accordingly to maximize your chances.",
-      agent: {
-        name: "Agent B",
-        initials: "AB",
-      },
-      category: "Admissions",
-      postedAt: "2 weeks ago",
-      likes: 33,
-      comments: 9,
-    },
   ]
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        background: "linear-gradient(to bottom, #ffffff, #f9fafb)",
-      }}
-    >
-      <Container maxWidth="lg" sx={{ py: 6 }}>
+    <Box sx={{ bgcolor: "#ffffff", minHeight: "100vh" }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
         {/* Header Section */}
         <Box
           sx={{
@@ -226,7 +228,7 @@ const AgentDirectoryPage = () => {
             flexDirection: { xs: "column", md: "row" },
             alignItems: { xs: "flex-start", md: "center" },
             justifyContent: "space-between",
-            mb: 6,
+            mb: 5,
             gap: 3,
           }}
         >
@@ -239,343 +241,467 @@ const AgentDirectoryPage = () => {
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", gap: 1, width: { xs: "100%", md: "auto" }, maxWidth: 400 }}>
+          <Box
+            sx={{
+              display: "flex",
+              width: { xs: "100%", md: "auto" },
+            }}
+          >
             <TextField
               placeholder="Search agents..."
               size="small"
-              fullWidth
+              value={searchTerm}
+              onChange={handleSearchChange}
+              sx={{
+                flexGrow: 1,
+                minWidth: { xs: "100%", sm: 250, md: 300 },
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 1,
+                  height: "100%",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                },
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "rgba(0,0,0,0.15)",
+                },
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Search fontSize="small" />
+                    <Search fontSize="small" color="action" />
                   </InputAdornment>
                 ),
+                sx: { py: 1.25 },
               }}
             />
           </Box>
         </Box>
 
-        {/* Available Agents Header */}
+        {/* Education Consultant Section */}
         <Box
           sx={{
             display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
             alignItems: "center",
-            mb: 4,
+            justifyContent: "space-between",
+            mb: 6,
+            mt: 2,
+            py: 3,
+            px: { xs: 3, sm: 4 },
+            borderRadius: 2,
+            bgcolor: "#ffffff",
+            border: "1px solid rgba(0,0,0,0.12)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
           }}
         >
-          <Chip
-            label="Available Agents"
-            sx={{
-              bgcolor: "#eef2ff",
-              color: "#4f46e5",
-              fontWeight: 500,
-              fontSize: "1rem",
-              py: 1,
-              px: 1,
-              height: "auto",
-              "& .MuiChip-label": { px: 1 },
-            }}
-          />
-        </Box>
-
-        {/* Agent Cards Carousel */}
-        <Box sx={{ position: "relative", mb: 8 }}>
-          <IconButton
-            sx={{
-              position: "absolute",
-              left: -16,
-              top: "50%",
-              transform: "translateY(-50%)",
-              zIndex: 10,
-              bgcolor: "white",
-              boxShadow: 2,
-              "&:hover": { bgcolor: "#eef2ff" },
-            }}
-            aria-label="Previous agents"
-          >
-            <ChevronLeft />
-          </IconButton>
-
+          <Typography variant="h6" sx={{ color: "#4b5563", fontWeight: 600, mb: { xs: 2, sm: 0 } }}>
+            Are you an education consultant?
+          </Typography>
           <Box
             sx={{
               display: "flex",
-              gap: 3,
-              overflowX: "auto",
-              pb: 4,
-              pt: 1,
-              "&::-webkit-scrollbar": { display: "none" },
-              scrollbarWidth: "none",
+              gap: 2,
+              flexDirection: { xs: "column", sm: "row" },
+              width: { xs: "100%", sm: "auto" },
             }}
           >
-            {agents.map((agent) => (
-              <StyledAgentCard key={agent.id} elevation={1}>
-                <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <Box sx={{ position: "relative", mb: 2 }}>
-                    <Chip
-                      label={`${agent.rating} ★`}
-                      size="small"
-                      sx={{
-                        position: "absolute",
-                        top: -8,
-                        right: -8,
-                        bgcolor: "#4f46e5",
-                        color: "white",
-                        fontWeight: "bold",
-                      }}
-                    />
-                    <Avatar
-                      sx={{
-                        width: 96,
-                        height: 96,
-                        bgcolor: "#f5f5f5",
-                        border: "2px solid #e0e7ff",
-                      }}
-                    >
-                      Logo
-                    </Avatar>
-                  </Box>
-
-                  <Box sx={{ textAlign: "center", mb: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {agent.name}
-                    </Typography>
-                    <Typography variant="body2" color="primary" fontWeight={500}>
-                      {agent.specialty}
-                    </Typography>
-                  </Box>
-
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 2,
-                      mb: 3,
-                      width: "100%",
-                      bgcolor: "#f9fafb",
-                    }}
-                  >
-                    <Box sx={{ display: "flex", mb: 1 }}>
-                      <Typography variant="body2" fontWeight="medium" sx={{ mr: 1 }}>
-                        Email:
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {agent.email}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", mb: 1 }}>
-                      <Typography variant="body2" fontWeight="medium" sx={{ mr: 1 }}>
-                        Contact:
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {agent.contactNo}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex" }}>
-                      <Typography variant="body2" fontWeight="medium" sx={{ mr: 1 }}>
-                        Address:
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {agent.address}
-                      </Typography>
-                    </Box>
-                  </Paper>
-
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    sx={{
-                      bgcolor: "#4f46e5",
-                      "&:hover": { bgcolor: "#4338ca" },
-                    }}
-                  >
-                    Message Agent
-                  </Button>
-                </CardContent>
-              </StyledAgentCard>
-            ))}
-          </Box>
-
-          <IconButton
-            sx={{
-              position: "absolute",
-              right: -16,
-              top: "50%",
-              transform: "translateY(-50%)",
-              zIndex: 10,
-              bgcolor: "white",
-              boxShadow: 2,
-              "&:hover": { bgcolor: "#eef2ff" },
-            }}
-            aria-label="Next agents"
-          >
-            <ChevronRight />
-          </IconButton>
-        </Box>
-
-        {/* Scroll Indicator */}
-        <Box sx={{ position: "relative", mb: 8 }}>
-          <Divider />
-          <Box sx={{ display: "flex", justifyContent: "center", mt: -1.5 }}>
-            <Chip
-              icon={<KeyboardArrowDown sx={{ animation: "bounce 1s infinite" }} />}
-              label="Scroll to see what agents are offering"
+            <Button
+              variant="contained"
               sx={{
-                px: 2,
-                bgcolor: "white",
-                boxShadow: 1,
-                "& .MuiChip-label": { px: 1 },
+                bgcolor: "#6366F1",
+                color: "white",
+                fontWeight: 600,
+                py: 1,
+                px: 2.5,
+                borderRadius: 2,
+                textTransform: "none",
+                fontSize: "0.875rem",
+                boxShadow: "0 2px 10px rgba(99, 102, 241, 0.3)",
+                "&:hover": {
+                  bgcolor: "#4F46E5",
+                  boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
+                },
               }}
-            />
+              onClick={() => navigate("/agent-login")}
+            >
+              Login as Agent
+            </Button>
+            <Button
+              variant="outlined"
+              sx={{
+                borderColor: "#6366F1",
+                color: "#6366F1",
+                fontWeight: 600,
+                py: 1,
+                px: 2.5,
+                borderRadius: 2,
+                textTransform: "none",
+                fontSize: "0.875rem",
+                "&:hover": {
+                  borderColor: "#4F46E5",
+                  bgcolor: "rgba(99, 102, 241, 0.05)",
+                },
+              }}
+              onClick={() => navigate("/agent-registration")}
+            >
+              Register as Agent
+            </Button>
           </Box>
         </Box>
 
-        {/* Agent Posts Section */}
-        <Box sx={{ mb: 8 }}>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              mb: 4,
-            }}
-          >
-            <Typography variant="h5" component="h2" fontWeight="bold">
-              Latest Updates from Agents
+        {/* Available Agents Section */}
+        <Box sx={{ mb: 6 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              Available Agents
             </Typography>
+
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Button variant="outlined" size="small">
-                Recent
-              </Button>
-              <Button variant="outlined" size="small">
-                Popular
-              </Button>
+              <IconButton
+                onClick={() => handleScroll("left")}
+                disabled={!canScrollLeft}
+                sx={{
+                  bgcolor: "#EEF2FF",
+                  color: "#6366F1",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  "&:hover": { bgcolor: "#DFE4FF" },
+                  "&.Mui-disabled": {
+                    bgcolor: "#F9FAFB",
+                    color: "rgba(0,0,0,0.26)",
+                  },
+                }}
+              >
+                <ChevronLeft />
+              </IconButton>
+              <IconButton
+                onClick={() => handleScroll("right")}
+                disabled={!canScrollRight}
+                sx={{
+                  bgcolor: "#EEF2FF",
+                  color: "#6366F1",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  "&:hover": { bgcolor: "#DFE4FF" },
+                  "&.Mui-disabled": {
+                    bgcolor: "#F9FAFB",
+                    color: "rgba(0,0,0,0.26)",
+                  },
+                }}
+              >
+                <ChevronRight />
+              </IconButton>
             </Box>
           </Box>
 
-          <Grid container spacing={4}>
-            {posts.map((post) => (
-              <Grid item xs={12} md={12} lg={12} key={post.id}>
-                <StyledPostCard elevation={1}>
-                  <PostCardMedia
-                    sx={{ bgcolor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center" }}
-                  >
-                    <Typography color="text.disabled">Post Image</Typography>
-                    <PostImageOverlay className="overlay">
-                      <Typography variant="subtitle1" fontWeight="medium">
-                        {post.title}
-                      </Typography>
-                    </PostImageOverlay>
-                  </PostCardMedia>
-
+          {loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+              <CircularProgress sx={{ color: "#6366F1" }} />
+            </Box>
+          ) : error ? (
+            <Alert severity="error" sx={{ mb: 4 }}>
+              {error}
+            </Alert>
+          ) : filteredAgents.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Typography variant="h6" color="text.secondary">
+                No agents found matching your search criteria.
+              </Typography>
+            </Box>
+          ) : (
+            <Box
+              ref={scrollRef}
+              sx={{
+                display: "flex",
+                overflowX: "auto",
+                gap: 3,
+                pb: 2,
+                scrollbarWidth: "none", // Hide scrollbar for Firefox
+                msOverflowStyle: "none", // Hide scrollbar for IE/Edge
+                "&::-webkit-scrollbar": {
+                  display: "none", // Hide scrollbar for Chrome/Safari
+                },
+              }}
+              onScroll={(e) => setScrollPosition(e.target.scrollLeft)}
+            >
+              {filteredAgents.map((agent) => (
+                <Card
+                  key={agent._id}
+                  sx={{
+                    width: `${cardWidth}px`,
+                    minWidth: `${cardWidth}px`,
+                    maxWidth: `${cardWidth}px`,
+                    flexShrink: 0,
+                    bgcolor: "#ffffff",
+                    boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
+                    border: "1px solid rgba(0,0,0,0.08)",
+                    borderRadius: 2,
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      boxShadow: "0 6px 15px rgba(0,0,0,0.1)",
+                    },
+                  }}
+                >
                   <CardContent sx={{ p: 3 }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        mb: 2,
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2 }}>
+                      {agent.profilePicture && agent.profilePicture.url ? (
+                        <Avatar
+                          src={getProfilePictureUrl(agent.profilePicture)}
+                          alt={agent.companyName}
+                          sx={{
+                            width: 80,
+                            height: 80,
+                            mb: 2,
+                            boxShadow: "0 2px 8px rgba(99, 102, 241, 0.2)",
+                          }}
+                        />
+                      ) : (
                         <Avatar
                           sx={{
-                            bgcolor: "#eef2ff",
-                            color: "#4f46e5",
-                            border: "1px solid #c7d2fe",
-                            width: 40,
-                            height: 40,
-                            fontSize: "0.75rem",
+                            width: 80,
+                            height: 80,
+                            bgcolor: "#EEF2FF",
+                            color: "#6366F1",
+                            fontSize: "1.75rem",
                             fontWeight: "bold",
+                            mb: 2,
+                            boxShadow: "0 2px 8px rgba(99, 102, 241, 0.2)",
                           }}
                         >
-                          {post.agent.initials}
+                          {getInitials(agent.companyName)}
                         </Avatar>
-                        <Box>
-                          <Typography variant="subtitle2">{post.agent.name}</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Posted {post.postedAt}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Chip
-                        label={post.category}
-                        size="small"
+                      )}
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        {agent.companyName}
+                      </Typography>
+                      <Typography
+                        variant="body2"
                         sx={{
-                          bgcolor: "#eef2ff",
-                          color: "#4f46e5",
-                          fontWeight: 500,
+                          color: "#6366F1",
+                          mb: 1,
+                          fontWeight: 600,
+                          bgcolor: "#EEF2FF",
+                          px: 2,
+                          py: 0.5,
+                          borderRadius: 10,
+                          mt: 1,
                         }}
-                      />
+                      >
+                        Education Consultant
+                      </Typography>
                     </Box>
-
-                    <Typography variant="h6" gutterBottom>
-                      {post.title}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{
-                        mb: 3,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {post.content}
-                    </Typography>
 
                     <Divider sx={{ mb: 2 }} />
 
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Box sx={{ display: "flex", gap: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                          <IconButton size="small" sx={{ color: "text.disabled", "&:hover": { color: "#4f46e5" } }}>
-                            <Favorite fontSize="small" />
-                          </IconButton>
-                          <Typography variant="caption" color="text.secondary">
-                            {post.likes}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                          <IconButton size="small" sx={{ color: "text.disabled", "&:hover": { color: "#4f46e5" } }}>
-                            <ChatBubbleOutline fontSize="small" />
-                          </IconButton>
-                          <Typography variant="caption" color="text.secondary">
-                            {post.comments}
-                          </Typography>
-                        </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                        <Mail fontSize="small" sx={{ color: "#6366F1", mr: 1 }} />
+                        <Typography variant="body2">{agent.email}</Typography>
                       </Box>
-                      <Button
-                        size="small"
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                        <Phone fontSize="small" sx={{ color: "#6366F1", mr: 1 }} />
+                        <Typography variant="body2">{agent.contactNumber || "Not provided"}</Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+                        <LocationOn fontSize="small" sx={{ color: "#6366F1", mr: 1, mt: 0.3 }} />
+                        <Typography variant="body2">{formatAddress(agent.headOfficeAddress)}</Typography>
+                      </Box>
+                    </Box>
+
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={() => handleMessageAgent(agent)}
+                      sx={{
+                        bgcolor: "#6366F1",
+                        mt: 2,
+                        py: 1.2,
+                        boxShadow: "0 2px 10px rgba(99, 102, 241, 0.3)",
+                        "&:hover": {
+                          bgcolor: "#4F46E5",
+                          boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
+                        },
+                      }}
+                    >
+                      Message Agent
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          )}
+        </Box>
+
+        {/* Latest Updates Section */}
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
+            Latest Updates from Agents
+          </Typography>
+
+          <Grid container spacing={3}>
+            {posts.map((post) => (
+              <Grid item xs={12} key={post.id}>
+                <Paper
+                  sx={{
+                    p: 3,
+                    bgcolor: "#ffffff",
+                    boxShadow: "0 3px 10px rgba(0,0,0,0.06)",
+                    border: "1px solid rgba(0,0,0,0.08)",
+                    borderRadius: 2,
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: "0 6px 15px rgba(0,0,0,0.08)",
+                    },
+                  }}
+                >
+                  <Box sx={{ display: "flex", mb: 3 }}>
+                    <Avatar
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        bgcolor: "#EEF2FF",
+                        color: "#6366F1",
+                        mr: 3,
+                        boxShadow: "0 2px 8px rgba(99, 102, 241, 0.2)",
+                      }}
+                    >
+                      {post.agent.initials || getInitials(post.agent.companyName)}
+                    </Avatar>
+                    <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                        {post.agent.companyName}
+                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Typography variant="body2" sx={{ color: "#6B7280" }}>
+                          {post.postedAt}
+                        </Typography>
+                        <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "#9CA3AF" }} />
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "#6366F1",
+                            fontWeight: 600,
+                            bgcolor: "#EEF2FF",
+                            px: 1.5,
+                            py: 0.3,
+                            borderRadius: 10,
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          {post.category}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5 }}>
+                    {post.title}
+                  </Typography>
+
+                  <Grid container spacing={3} sx={{ mb: 3 }}>
+                    <Grid item xs={12} md={8}>
+                      <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                        {post.content}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Box
                         sx={{
-                          bgcolor: "#eef2ff",
-                          color: "#4f46e5",
-                          "&:hover": { bgcolor: "#e0e7ff" },
+                          height: 180,
+                          bgcolor: "#EEF2FF",
+                          borderRadius: 2,
+                          overflow: "hidden",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "1px solid rgba(99, 102, 241, 0.2)",
                         }}
                       >
-                        Contact Agent
-                      </Button>
+                        <Typography variant="body2" sx={{ color: "#6366F1", fontWeight: 500 }}>
+                          {post.category} Image
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+
+                  <Divider sx={{ mb: 2 }} />
+
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box sx={{ display: "flex", gap: 3 }}>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <IconButton size="small" sx={{ color: "#F43F5E", mr: 0.5 }}>
+                          <Favorite fontSize="small" />
+                        </IconButton>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {post.likes}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <IconButton size="small" sx={{ color: "#6366F1", mr: 0.5 }}>
+                          <ChatBubbleOutline fontSize="small" />
+                        </IconButton>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {post.comments}
+                        </Typography>
+                      </Box>
                     </Box>
-                  </CardContent>
-                </StyledPostCard>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => (post.agent && post.agent._id ? handleMessageAgent(post.agent) : null)}
+                      sx={{
+                        color: "#6366F1",
+                        borderColor: "#6366F1",
+                        "&:hover": {
+                          borderColor: "#4F46E5",
+                          bgcolor: "rgba(99, 102, 241, 0.05)",
+                        },
+                        py: 0.7,
+                        px: 2,
+                      }}
+                    >
+                      Contact Agent
+                    </Button>
+                  </Box>
+                </Paper>
               </Grid>
             ))}
           </Grid>
 
-          {/* Load More Button */}
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 6 }}>
-            <LoadMoreButton
-              variant="contained"
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+            <Button
+              variant="outlined"
               sx={{
-                px: 4,
-                py: 1.5,
-                bgcolor: "#4f46e5",
-                "&:hover": { bgcolor: "#4338ca" },
+                borderColor: "#6366F1",
+                color: "#6366F1",
+                "&:hover": {
+                  borderColor: "#4F46E5",
+                },
+                py: 1,
+                px: 3,
+                boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
               }}
             >
-              <span className="buttonText">Load More Posts</span>
-            </LoadMoreButton>
+              Load More Posts
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Simple Footer */}
+        <Divider sx={{ mb: 3 }} />
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            © 2025 Agent Directory. All rights reserved.
+          </Typography>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Typography variant="body2" color="#6366F1" sx={{ cursor: "pointer", fontWeight: 500 }}>
+              Terms
+            </Typography>
+            <Typography variant="body2" color="#6366F1" sx={{ cursor: "pointer", fontWeight: 500 }}>
+              Privacy
+            </Typography>
+            <Typography variant="body2" color="#6366F1" sx={{ cursor: "pointer", fontWeight: 500 }}>
+              Contact
+            </Typography>
           </Box>
         </Box>
       </Container>
@@ -583,5 +709,4 @@ const AgentDirectoryPage = () => {
   )
 }
 
-export default AgentDirectoryPage
-
+export default AgentsPage
