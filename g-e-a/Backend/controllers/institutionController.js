@@ -120,11 +120,47 @@ const addInstitution = async (req, res) => {
     }
 };
 
-// Update an institution
+// Process scholarships to ensure proper _id handling
 const updateInstitution = async (req, res) => {
     try {
         const { id } = req.params;
         const updates = req.body;
+        
+        // Process locations to ensure proper _id handling
+        if (updates.locations && Array.isArray(updates.locations)) {
+            updates.locations = updates.locations.map(location => {
+                if (location._id && typeof location._id === 'string' && 
+                    !location._id.match(/^[0-9a-fA-F]{24}$/)) {
+                    const { _id, ...locationWithoutId } = location;
+                    return locationWithoutId;
+                }
+                return location;
+            });
+        }
+        
+        // Process scholarships to ensure proper _id handling
+        if (updates.scholarships && Array.isArray(updates.scholarships)) {
+            updates.scholarships = updates.scholarships.map(scholarship => {
+                if (scholarship._id && typeof scholarship._id === 'string' && 
+                    !scholarship._id.match(/^[0-9a-fA-F]{24}$/)) {
+                    const { _id, ...scholarshipWithoutId } = scholarship;
+                    return scholarshipWithoutId;
+                }
+                return scholarship;
+            });
+        }
+        
+        // Process programs to ensure proper _id handling
+        if (updates.programs && Array.isArray(updates.programs)) {
+            updates.programs = updates.programs.map(program => {
+                if (program._id && typeof program._id === 'string' && 
+                    !program._id.match(/^[0-9a-fA-F]{24}$/)) {
+                    const { _id, ...programWithoutId } = program;
+                    return programWithoutId;
+                }
+                return program;
+            });
+        }
         
         // Find and update the institution
         const updatedInstitution = await InstitutionModel.findByIdAndUpdate(
@@ -161,7 +197,7 @@ const updateInstitution = async (req, res) => {
         }
         
         res.status(500).json({
-            error: "An error occurred while updating the institution",
+            error: `Error updating institution: ${err.message}`,
         });
     }
 };
