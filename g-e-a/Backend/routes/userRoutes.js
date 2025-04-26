@@ -1,22 +1,35 @@
-const express = require("express");
-const router = express.Router();
+const express = require("express")
+const router = express.Router()
 const {
     registerUser,
-    getAllUsers,
+    loginUser,
     verifyUserEmail,
-    resendVerificationOTP
-} = require("../controllers/userController");
+    resendVerificationOTP,
+    getAllUsers,
+    getProfile,
+    updateProfile,
+    updatePassword,
+    verifyToken,
+} = require("../controllers/userController")
+const { uploadSingle } = require("../config/multerConfig")
+const authenticateJWT = require("../middleware/authMiddleware")
 
-// Register a new user
-router.post("/registerUser", registerUser);
+// Public routes
+router.post("/registerUser", registerUser)
+router.post("/login", loginUser)
+router.post("/verify-email", verifyUserEmail)
+router.post("/resend-otp", resendVerificationOTP)
 
-// Verify user email with OTP
-router.post("/verify-email", verifyUserEmail);
+// Protected routes
+router.get("/users", authenticateJWT, getAllUsers)
+router.get("/auth/profile", authenticateJWT, getProfile)
+router.put("/auth/profile", authenticateJWT, uploadSingle, updateProfile)
+router.put("/auth/password", authenticateJWT, updatePassword)
+router.get("/auth/verify-token", authenticateJWT, verifyToken)
 
-// Resend verification OTP
-router.post("/resend-otp", resendVerificationOTP);
+// User-specific routes
+router.get("/user/profile", authenticateJWT.isUser, getProfile)
+router.put("/user/profile", authenticateJWT.isUser, uploadSingle, updateProfile)
+router.put("/user/password", authenticateJWT.isUser, updatePassword)
 
-// Get all users
-router.get("/users", getAllUsers);
-
-module.exports = router;
+module.exports = router
