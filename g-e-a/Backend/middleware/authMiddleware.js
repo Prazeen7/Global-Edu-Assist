@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken")
 require("dotenv").config()
+const Admin = require("../models/admin")
 
 const JWT_SECRET = process.env.JWT_SECRET
 const JWT_SECRET_Agent = process.env.JWT_SECRET_Agent
@@ -70,8 +71,17 @@ verifyToken.isUser = (req, res, next) => {
 // Helper middleware to check if the request is from an admin
 verifyToken.isAdmin = (req, res, next) => {
     console.log("Checking if user is admin. User type:", req.userType, "Role:", req.user?.role)
-    if (req.userType !== "user" || !req.user.role || req.user.role !== "admin") {
+    if (req.userType !== "admin") {
         return res.status(403).json({ message: "Admin access required" })
+    }
+    next()
+}
+
+// Add a new helper middleware to check if the request is from a super admin
+verifyToken.isSuperAdmin = (req, res, next) => {
+    console.log("Checking if user is super admin. User type:", req.userType, "SuperAdmin:", req.user?.superAdmin)
+    if (req.userType !== "admin" || !req.user.superAdmin) {
+        return res.status(403).json({ message: "Super Admin access required" })
     }
     next()
 }
