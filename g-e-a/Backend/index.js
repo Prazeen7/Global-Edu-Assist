@@ -13,6 +13,8 @@ const agentRoutes = require("./routes/agentRoutes")
 const { uploadSingle } = require("./config/multerConfig")
 const progressRoutes = require("./routes/progressRoutes")
 const chatRoutes = require("./routes/chatRoutes")
+const postRoutes = require("./routes/postRoutes")
+const adminRoutes = require("./routes/adminRoutes")
 
 const app = express()
 app.use(express.json())
@@ -104,7 +106,8 @@ app.use("/api", programRoutes)
 app.use("/api", agentRoutes)
 app.use("/api/progress", progressRoutes)
 app.use("/api/chat", chatRoutes)
-
+app.use("/api/posts", postRoutes)
+app.use("/api/admin", adminRoutes)
 // Start Server
 server.listen(3001, "0.0.0.0", () => {
     console.log("Server is running on port 3001")
