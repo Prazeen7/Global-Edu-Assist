@@ -16,11 +16,6 @@ import {
   IconButton,
   InputAdornment,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
 } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import { Visibility, VisibilityOff } from "@mui/icons-material"
@@ -81,12 +76,6 @@ export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-
-  // Status modals
-  const [pendingModalOpen, setPendingModalOpen] = useState(false)
-  const [rejectedModalOpen, setRejectedModalOpen] = useState(false)
-  const [rejectedRemarks, setRejectedRemarks] = useState("")
-  const [agentId, setAgentId] = useState(null)
 
   const handleForgotPasswordOpen = () => setOpen(true)
   const handleForgotPasswordClose = () => setOpen(false)
@@ -190,14 +179,14 @@ export default function Login() {
       console.error("Login error:", err.response?.data || err.message)
 
       if (err.response?.data) {
-        const { status, remarks, error } = err.response.data
+        const { status, error } = err.response.data
 
         if (status === "pending") {
-          setPendingModalOpen(true)
+          setAlertMessage("Your account is pending approval. Please check your email for updates.")
+          setAlertSeverity("info")
         } else if (status === "rejected") {
-          setRejectedRemarks(remarks || "Your registration has been rejected.")
-          setAgentId(err.response.data.data?._id)
-          setRejectedModalOpen(true)
+          setAlertMessage("Your registration has been rejected. Please check your email for details.")
+          setAlertSeverity("error")
         } else {
           setAlertMessage(`Error: ${error || "An error occurred. Please try again later."}`)
           setAlertSeverity("error")
@@ -212,25 +201,6 @@ export default function Login() {
   const handleForgotPasswordClick = (event) => {
     event.preventDefault()
     handleForgotPasswordOpen()
-  }
-
-  const handleDeleteRejectedAccount = async () => {
-    if (!agentId) {
-      setRejectedModalOpen(false)
-      return
-    }
-
-    try {
-      await axios.delete(`/agent/${agentId}`)
-      setRejectedModalOpen(false)
-      setAlertMessage("Your account has been deleted.")
-      setAlertSeverity("info")
-    } catch (error) {
-      console.error("Error deleting account:", error)
-      setRejectedModalOpen(false)
-      setAlertMessage("Failed to delete your account. Please try again later.")
-      setAlertSeverity("error")
-    }
   }
 
   return (
@@ -319,7 +289,7 @@ export default function Login() {
           <Typography textAlign="center">
             Don't have an account?{" "}
             <NavLink
-              to="/agent-signup"
+              to="/agent-registration"
               variant="body2"
               style={{
                 color: "#0078D7",
@@ -332,52 +302,6 @@ export default function Login() {
           </Typography>
         </Card>
       </SignInContainer>
-
-      {/* Pending Status Modal */}
-      <Dialog
-        open={pendingModalOpen}
-        onClose={() => setPendingModalOpen(false)}
-        aria-labelledby="pending-dialog-title"
-        aria-describedby="pending-dialog-description"
-      >
-        <DialogTitle id="pending-dialog-title">{"Registration Status"}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="pending-dialog-description">
-            Registration not verified yet. Your account is pending approval from the administrator.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPendingModalOpen(false)} color="primary" autoFocus>
-            OK
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Rejected Status Modal */}
-      <Dialog
-        open={rejectedModalOpen}
-        onClose={() => setRejectedModalOpen(false)}
-        aria-labelledby="rejected-dialog-title"
-        aria-describedby="rejected-dialog-description"
-      >
-        <DialogTitle id="rejected-dialog-title">{"Registration Rejected"}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="rejected-dialog-description">
-            Your registration has been rejected.
-            <br />
-            <br />
-            <strong>Reason:</strong> {rejectedRemarks}
-            <br />
-            <br />
-            Clicking "OK" will delete your account data. You can register again with updated information.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteRejectedAccount} color="primary" autoFocus>
-            OK
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       <ForgotPassword open={open} handleClose={handleForgotPasswordClose} />
     </>

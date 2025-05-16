@@ -26,42 +26,50 @@ function OverviewChart({ institutions = [], agents = [], students = [] }) {
     useEffect(() => {
         const processData = () => {
             // Normalize agent data
-            const normalizedAgents = agents.map(agent => {
+            const normalizedAgents = Array.isArray(agents) ? agents.map(agent => {
+                // If agent is already in the right format, just return it
+                if (agent.companyName || agent.email) {
+                    return {
+                        ...agent,
+                        createdAt: agent.createdAt,
+                        _id: agent._id
+                    };
+                }
+
+                // Otherwise, try to normalize it
                 const agentKey = Object.keys(agent).find(key => key !== '_id' && key !== 'createdAt');
-                return {
+                return agentKey ? {
                     ...agent[agentKey],
                     createdAt: agent.createdAt,
                     _id: agent._id,
                     name: agentKey
-                };
-            });
+                } : agent;
+            }) : [];
 
-            const allRecords = [...institutions, ...normalizedAgents, ...students];
+            // Calculate date range for the last year
+            const now = new Date();
+            const lastYear = new Date(now);
+            lastYear.setFullYear(now.getFullYear() - 1);
 
-            if (allRecords.length === 0) {
-                setChartData([]);
-                setLastWeekChange({ institutions: 0, agents: 0, students: 0 });
-                return;
-            }
+            // Filter records to only include those from the last year
+            const filterByLastYear = (records) => {
+                return records.filter(record => {
+                    const date = getDateFromCreatedAt(record.createdAt);
+                    return date && date >= lastYear && date <= now;
+                });
+            };
 
-            const dates = allRecords
-                .map(record => getDateFromCreatedAt(record.createdAt))
-                .filter(date => date !== null);
+            const lastYearInstitutions = filterByLastYear(institutions);
+            const lastYearAgents = filterByLastYear(normalizedAgents);
+            const lastYearStudents = filterByLastYear(students);
 
-            if (dates.length === 0) {
-                setChartData([]);
-                setLastWeekChange({ institutions: 0, agents: 0, students: 0 });
-                return;
-            }
-
-            const minDate = new Date(Math.min(...dates));
-            const maxDate = new Date(Math.max(...dates));
-            const timeSpanDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
-
-            // Calculate last week's percentage change
+            // Calculate last week's percentage change (keep this for the header)
             const calculateLastWeekChange = () => {
-                const oneWeekAgo = new Date(maxDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-                const twoWeeksAgo = new Date(maxDate.getTime() - 14 * 24 * 60 * 60 * 1000);
+                const oneWeekAgo = new Date(now);
+                oneWeekAgo.setDate(now.getDate() - 7);
+
+                const twoWeeksAgo = new Date(now);
+                twoWeeksAgo.setDate(now.getDate() - 14);
 
                 const countRecordsInRange = (records, startDate, endDate) =>
                     records.filter(record => {
@@ -70,9 +78,9 @@ function OverviewChart({ institutions = [], agents = [], students = [] }) {
                     }).length;
 
                 const currentWeek = {
-                    institutions: countRecordsInRange(institutions, oneWeekAgo, maxDate),
-                    agents: countRecordsInRange(normalizedAgents, oneWeekAgo, maxDate),
-                    students: countRecordsInRange(students, oneWeekAgo, maxDate),
+                    institutions: countRecordsInRange(institutions, oneWeekAgo, now),
+                    agents: countRecordsInRange(normalizedAgents, oneWeekAgo, now),
+                    students: countRecordsInRange(students, oneWeekAgo, now),
                 };
 
                 const previousWeek = {
@@ -96,76 +104,26 @@ function OverviewChart({ institutions = [], agents = [], students = [] }) {
 
             setLastWeekChange(calculateLastWeekChange());
 
-            // Determine grouping
-            let groupBy;
-            if (timeSpanDays <= 7) {
-                groupBy = 'day';
-            } else if (timeSpanDays <= 30) {
-                groupBy = 'week';
-            } else {
-                groupBy = 'month';
+            // Create monthly buckets for the last year
+            const buckets = [];
+            for (let i = 0; i < 12; i++) {
+                const monthStart = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+                monthStart.setHours(0, 0, 0, 0);
+
+                const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+                monthEnd.setHours(23, 59, 59, 999);
+
+                buckets.push({
+                    name: monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                    startDate: monthStart,
+                    endDate: monthEnd,
+                    institutions: 0,
+                    agents: 0,
+                    students: 0,
+                });
             }
 
-            let buckets = [];
-            if (groupBy === 'day') {
-                let current = new Date(minDate);
-                current.setUTCHours(0, 0, 0, 0);
-                const endDate = new Date(maxDate);
-                endDate.setUTCHours(23, 59, 59, 999);
-                while (current <= endDate) {
-                    const bucketStart = new Date(current);
-                    const bucketEnd = new Date(current);
-                    bucketEnd.setUTCDate(current.getUTCDate() + 1);
-                    bucketEnd.setUTCMilliseconds(-1);
-                    buckets.push({
-                        name: current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                        startDate: bucketStart,
-                        endDate: bucketEnd,
-                        institutions: 0,
-                        agents: 0,
-                        students: 0,
-                    });
-                    current.setUTCDate(current.getUTCDate() + 1);
-                }
-            } else if (groupBy === 'week') {
-                const weeks = Math.ceil(timeSpanDays / 7);
-                for (let i = 0; i < weeks; i++) {
-                    const startDate = new Date(minDate);
-                    startDate.setUTCDate(startDate.getUTCDate() + (i * 7));
-                    startDate.setUTCHours(0, 0, 0, 0);
-                    const endDate = new Date(startDate);
-                    endDate.setUTCDate(endDate.getUTCDate() + 6);
-                    endDate.setUTCHours(23, 59, 59, 999);
-                    buckets.push({
-                        name: `Week ${i + 1}`,
-                        startDate,
-                        endDate,
-                        institutions: 0,
-                        agents: 0,
-                        students: 0,
-                    });
-                }
-            } else {
-                let currentDate = new Date(minDate.getUTCFullYear(), minDate.getUTCMonth(), 1);
-                currentDate.setUTCHours(0, 0, 0, 0);
-                const endMonth = new Date(maxDate.getUTCFullYear(), maxDate.getUTCMonth() + 1, 0);
-                while (currentDate <= endMonth) {
-                    const startDate = new Date(currentDate);
-                    const endDate = new Date(currentDate.getUTCFullYear(), currentDate.getUTCMonth() + 1, 0);
-                    endDate.setUTCHours(23, 59, 59, 999);
-                    buckets.push({
-                        name: startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-                        startDate,
-                        endDate,
-                        institutions: 0,
-                        agents: 0,
-                        students: 0,
-                    });
-                    currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
-                }
-            }
-
-            // Count records
+            // Count records in each bucket
             const countRecords = (records, type) => {
                 records.forEach(record => {
                     const recordDate = getDateFromCreatedAt(record.createdAt);
@@ -179,35 +137,17 @@ function OverviewChart({ institutions = [], agents = [], students = [] }) {
                 });
             };
 
-            countRecords(institutions, 'institutions');
-            countRecords(normalizedAgents, 'agents');
-            countRecords(students, 'students');
+            countRecords(lastYearInstitutions, 'institutions');
+            countRecords(lastYearAgents, 'agents');
+            countRecords(lastYearStudents, 'students');
 
             // Format chart data
-            const formattedData = buckets.map(bucket => {
-                if (groupBy === 'day') {
-                    return {
-                        name: bucket.name,
-                        institutions: bucket.institutions,
-                        agents: bucket.agents,
-                        students: bucket.students,
-                    };
-                } else if (groupBy === 'week') {
-                    return {
-                        name: `${bucket.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${bucket.endDate.toLocaleDateString('en-US', { day: 'numeric' })}`,
-                        institutions: bucket.institutions,
-                        agents: bucket.agents,
-                        students: bucket.students,
-                    };
-                } else {
-                    return {
-                        name: bucket.name,
-                        institutions: bucket.institutions,
-                        agents: bucket.agents,
-                        students: bucket.students,
-                    };
-                }
-            });
+            const formattedData = buckets.map(bucket => ({
+                name: bucket.name,
+                institutions: bucket.institutions,
+                agents: bucket.agents,
+                students: bucket.students,
+            }));
 
             setChartData(formattedData);
         };
@@ -221,13 +161,7 @@ function OverviewChart({ institutions = [], agents = [], students = [] }) {
                 title="Overview"
                 subheader={
                     <Box>
-                        <Typography>Platform activity over time</Typography>
-                        <Typography variant="caption">
-                            Last week change:
-                            Institutions: {lastWeekChange.institutions}%
-                            | Agents: {lastWeekChange.agents}%
-                            | Students: {lastWeekChange.students}%
-                        </Typography>
+                        <Typography>Platform activity over the past year</Typography>
                     </Box>
                 }
             />
@@ -262,7 +196,7 @@ function OverviewChart({ institutions = [], agents = [], students = [] }) {
                     </ResponsiveContainer>
                 ) : (
                     <Typography variant="body1" color="textSecondary">
-                        No activity data available
+                        No activity data available for the past year
                     </Typography>
                 )}
             </CardContent>

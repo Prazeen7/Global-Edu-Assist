@@ -1,32 +1,51 @@
-import { useContext } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom"; // Add useNavigate
-import { styled, useTheme } from "@mui/material/styles";
-import Box from "@mui/material/Box";
-import Drawer from "@mui/material/Drawer";
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import List from "@mui/material/List";
-import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import MenuIcon from "@mui/icons-material/Menu";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import BusinessIcon from "@mui/icons-material/Business";
-import DescriptionIcon from "@mui/icons-material/Description";
-import PeopleIcon from "@mui/icons-material/People";
-import HomeIcon from "@mui/icons-material/Home";
-import ArticleIcon from "@mui/icons-material/Article";
-import SettingsIcon from "@mui/icons-material/Settings";
-import LogoutIcon from "@mui/icons-material/Logout"; // Add LogoutIcon
-import useMediaQuery from "@mui/material/useMediaQuery";
-import { SidebarContext } from "../../layouts/Admin/DashboardLayout";
+"use client"
 
-const drawerWidth = 240;
+import { useContext, useState, useEffect } from "react"
+import { Link, useLocation, useNavigate } from "react-router-dom"
+import { styled, useTheme } from "@mui/material/styles"
+import Box from "@mui/material/Box"
+import Drawer from "@mui/material/Drawer"
+import AppBar from "@mui/material/AppBar"
+import Toolbar from "@mui/material/Toolbar"
+import List from "@mui/material/List"
+import Typography from "@mui/material/Typography"
+import Divider from "@mui/material/Divider"
+import IconButton from "@mui/material/IconButton"
+import ListItem from "@mui/material/ListItem"
+import ListItemButton from "@mui/material/ListItemButton"
+import ListItemIcon from "@mui/material/ListItemIcon"
+import ListItemText from "@mui/material/ListItemText"
+import MenuIcon from "@mui/icons-material/Menu"
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
+import DashboardIcon from "@mui/icons-material/Dashboard"
+import BusinessIcon from "@mui/icons-material/Business"
+import DescriptionIcon from "@mui/icons-material/Description"
+import PeopleIcon from "@mui/icons-material/People"
+import HomeIcon from "@mui/icons-material/Home"
+import ArticleIcon from "@mui/icons-material/Article"
+import SettingsIcon from "@mui/icons-material/Settings"
+import LogoutIcon from "@mui/icons-material/Logout"
+import useMediaQuery from "@mui/material/useMediaQuery"
+import { SidebarContext } from "../../layouts/Admin/DashboardLayout"
+import SuperAdminMenu from "./SuperAdminMenu"
+import parseJwt from "../../utils/parseJwt"
+import axios from "axios"
+
+// Create a basic axios instance for this component
+const api = axios.create({
+    baseURL: process.env.NODE_ENV === "development" ? "http://localhost:3001/api" : "/api",
+})
+
+// Add token to requests
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token") || localStorage.getItem("auth")
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+})
+
+const drawerWidth = 240
 
 const DrawerHeader = styled("div")(({ theme }) => ({
     display: "flex",
@@ -34,7 +53,7 @@ const DrawerHeader = styled("div")(({ theme }) => ({
     padding: theme.spacing(0, 1),
     ...theme.mixins.toolbar,
     justifyContent: "flex-end",
-}));
+}))
 
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
     width: drawerWidth,
@@ -43,14 +62,73 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
         width: drawerWidth,
         boxSizing: "border-box",
     },
-}));
+}))
 
 function Sidebar() {
-    const theme = useTheme();
-    const location = useLocation();
-    const navigate = useNavigate(); // Add useNavigate
-    const { isOpen, toggle } = useContext(SidebarContext);
-    const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
+    const theme = useTheme()
+    const location = useLocation()
+    const navigate = useNavigate()
+    const { isOpen, toggle } = useContext(SidebarContext)
+    const isMobile = useMediaQuery(theme.breakpoints.down("lg"))
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        checkSuperAdminStatus()
+    }, [])
+
+    const checkSuperAdminStatus = async () => {
+        setIsLoading(true)
+        try {
+            // Get token from localStorage - check both possible keys
+            const token = localStorage.getItem("auth") || localStorage.getItem("token")
+
+            if (!token) {
+                console.log("No token found")
+                setIsSuperAdmin(false)
+                setIsLoading(false)
+                return
+            }
+
+            // First try to decode the token locally using parseJwt
+            const decodedToken = parseJwt(token)
+            console.log("Decoded token data:", decodedToken)
+
+            if (decodedToken && decodedToken.superAdmin === true) {
+                console.log("User is a super admin (from token)")
+                setIsSuperAdmin(true)
+                setIsLoading(false)
+                return
+            } else if (decodedToken) {
+                console.log("User is not a super admin (from token)")
+                setIsSuperAdmin(false)
+                setIsLoading(false)
+                return
+            }
+
+            // If we couldn't determine from the token, make an API call
+            console.log("Making API call to verify token")
+
+            // Use the configured axios instance
+            const response = await api.get("/auth/verify-token")
+
+            console.log("API response:", response.data)
+
+            if (response.data.user && response.data.user.superAdmin === true) {
+                console.log("User is a super admin (from API)")
+                setIsSuperAdmin(true)
+            } else {
+                console.log("User is not a super admin")
+                setIsSuperAdmin(false)
+            }
+        } catch (error) {
+            console.error("Error checking super admin status:", error)
+            // IMPORTANT: Do not set hardcoded super admin status
+            setIsSuperAdmin(false)
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     // Updated menuItems with correct nested paths
     const menuItems = [
@@ -58,21 +136,22 @@ function Sidebar() {
         { text: "Institution Management", icon: <BusinessIcon />, path: "/admin/institutions" },
         { text: "Documents Management", icon: <DescriptionIcon />, path: "/admin/documents" },
         { text: "Agent Management", icon: <PeopleIcon />, path: "/admin/agents" },
-        { text: "Landing Page", icon: <HomeIcon />, path: "/admin/landingPage" },
+        { text: "Landing Page", icon: <HomeIcon />, path: "/admin/landing-page-editor" },
         { text: "About Section", icon: <ArticleIcon />, path: "/admin/about" },
         { text: "Settings", icon: <SettingsIcon />, path: "/admin/settings" },
-    ];
+    ]
 
     // Logout function
     const handleLogout = () => {
         // Clear authentication data from local storage
-        localStorage.removeItem("token");
-        localStorage.removeItem("userAvatar");
-        localStorage.removeItem("userType");
+        localStorage.removeItem("token")
+        localStorage.removeItem("auth")
+        localStorage.removeItem("userAvatar")
+        localStorage.removeItem("userType")
 
         // Redirect to admin login page
-        navigate("/admin");
-    };
+        navigate("/admin")
+    }
 
     const drawer = (
         <>
@@ -88,7 +167,7 @@ function Sidebar() {
             </DrawerHeader>
             <Divider />
             <List>
-                {menuItems.slice(0, 4).map((item) => (
+                {menuItems.map((item) => (
                     <ListItem key={item.text} disablePadding>
                         <ListItemButton
                             component={Link}
@@ -116,6 +195,11 @@ function Sidebar() {
                 ))}
             </List>
             <Divider />
+
+            {/* Super Admin Menu */}
+            {!isLoading && <SuperAdminMenu isSuperAdmin={isSuperAdmin} />}
+
+            <Divider />
             {/* Logout Button */}
             <List>
                 <ListItem disablePadding>
@@ -128,7 +212,7 @@ function Sidebar() {
                 </ListItem>
             </List>
         </>
-    );
+    )
 
     return (
         <>
@@ -157,7 +241,7 @@ function Sidebar() {
                         open={isOpen}
                         onClose={toggle}
                         ModalProps={{
-                            keepMounted: true, 
+                            keepMounted: true,
                         }}
                     >
                         {drawer}
@@ -169,7 +253,7 @@ function Sidebar() {
                 )}
             </Box>
         </>
-    );
+    )
 }
 
-export default Sidebar;
+export default Sidebar

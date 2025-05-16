@@ -1,69 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import "./App.css";
-import Navbar from "./components/NavBar";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import LandingPage from "./Pages/LandingPage/LandingPage";
-import Destinations from "./Pages/Programs/Programs";
-import Institutions from "./Pages/Institutions/Institutions";
-import About from "./Pages/About/About";
-import Agents from "./Pages/Agents/Agents";
-import Login from "./Pages/Login/Login";
-import Signup from "./Pages/Signup/Signup";
-import Documents from "./Pages/Documents/Documents";
-import InstitutionPage from './Pages/Institutions/InstitutionPage';
-import Estimation from './components/Estimation';
-import ProgressTracking from './components/ProgressTracking';
-import Admin from './layouts/Admin/DashboardLayout';
-import AdminAgents from './Pages/Admin/Agents';
-import AdminLogin from './Pages/Admin/Login';
-import AdminDashboard from './Pages/Admin/Dashboard';
-import AdminDocuments from './Pages/Admin/Documents';
-import AdminInstitutions from './Pages/Admin/Institutions';
-import AdminInstitutionsPage from './Pages/Admin/InstitutionPage';
-import { AuthContext } from "./Context/context";
-import { AuthProvider } from "./Context/AuthContext";
-import Footer from './components/Footer';
-import ProtectedRoute from './components/ProctectedRoute/ProtectedRoute';
-import AuthRoute from './components/ProctectedRoute/AuthRoute';
-import Verify from './components/verify';
-import { validateToken, isTokenExpired } from './utils/utils';
-import Profile from './Pages/profile';
-import AgentRegistration from './Pages/Agents/Registration/Registration';
-import AgentLogin from './Pages/Agents/Login/Login';
-import AgentDashboard from './Pages/Agents/Dashboard/Dashboard'
+"use client"
+
+import { useState, useEffect } from "react"
+import "./App.css"
+import Navbar from "./components/NavBar"
+import { createBrowserRouter, RouterProvider } from "react-router-dom"
+import LandingPage from "./Pages/LandingPage/LandingPage"
+import Destinations from "./Pages/Programs/Programs"
+import Institutions from "./Pages/Institutions/Institutions"
+import About from "./Pages/About/About"
+import Agents from "./Pages/Agents/Agents"
+import Login from "./Pages/Login/Login"
+import Signup from "./Pages/Signup/Signup"
+import Documents from "./Pages/Documents/Documents"
+import InstitutionPage from "./Pages/Institutions/InstitutionPage"
+import Estimation from "./components/Estimation"
+import ProgressTracking from "./components/ProgressTracking"
+import Admin from "./layouts/Admin/DashboardLayout"
+import AdminAgents from "./Pages/Admin/Agents"
+import AdminLogin from "./Pages/Admin/Login"
+import AdminDashboard from "./Pages/Admin/Dashboard"
+import AdminDocuments from "./Pages/Admin/Documents"
+import AdminInstitutions from "./Pages/Admin/Institutions"
+import AdminInstitutionsPage from "./Pages/Admin/InstitutionPage"
+import ManageAdmins from "./Pages/Admin/ManageAdmins"
+import { AuthContext } from "./Context/context"
+import Footer from "./components/Footer"
+import ProtectedRoute from "./components/ProctectedRoute/ProtectedRoute"
+import AuthRoute from "./components/ProctectedRoute/AuthRoute"
+import Verify from "./components/verify"
+import { validateToken, isTokenExpired } from "./utils/utils"
+import Profile from "./Pages/profile"
+import AgentRegistration from "./Pages/Agents/Registration/Registration"
+import AgentLogin from "./Pages/Agents/Login/Login"
+import AgentDashboard from "./Pages/Agents/Dashboard/Dashboard"
 
 function App() {
-    const [LoggedIn, setLoggedIn] = useState(false);
-    const [UserAvatar, setUserAvatar] = useState('');
-    const [UserType, setUserType] = useState('u');
-    const [isLoading, setIsLoading] = useState(true);
+    const [LoggedIn, setLoggedIn] = useState(false)
+    const [UserAvatar, setUserAvatar] = useState("")
+    const [UserType, setUserType] = useState("u")
+    const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        const userAvatar = localStorage.getItem('userAvatar');
-        const userType = localStorage.getItem('userType');
+        const token = localStorage.getItem("token")
+        const userAvatar = localStorage.getItem("userAvatar")
+        const userType = localStorage.getItem("userType")
 
         if (token) {
-            const { isValid } = validateToken(token);
-            const expired = isTokenExpired(token);
+            const { isValid } = validateToken(token)
+            const expired = isTokenExpired(token)
 
             if (isValid && !expired) {
-                setLoggedIn(true);
-                setUserAvatar(userAvatar || '');
-                setUserType(userType || 'u');
+                setLoggedIn(true)
+                setUserAvatar(userAvatar || "")
+                setUserType(userType || "u")
             } else {
                 // Clear invalid/expired token
-                localStorage.removeItem('token');
-                localStorage.removeItem('userAvatar');
-                localStorage.removeItem('userType');
-                setLoggedIn(false);
+                localStorage.removeItem("token")
+                localStorage.removeItem("userAvatar")
+                localStorage.removeItem("userType")
+                setLoggedIn(false)
             }
         }
-        setIsLoading(false);
-    }, []);
+        setIsLoading(false)
+    }, [])
 
     if (isLoading) {
-        return <div>Loading...</div>;
+        return <div>Loading...</div>
     }
 
     // Create routes using React Router
@@ -199,27 +201,24 @@ function App() {
         {
             path: "/agent-registration",
             element: (
-                    <>
+                <>
                     <Navbar />
                     <AgentRegistration />
-                    </>
+                </>
             ),
         },
         {
             path: "/agent-login",
             element: (
                 <>
-                <Navbar />
-                <AgentLogin />
+                    <Navbar />
+                    <AgentLogin />
                 </>
-
             ),
         },
         {
             path: "/agent-dashboard",
-            element: (
-                <AgentDashboard />
-            ),
+            element: <AgentDashboard />,
         },
 
         {
@@ -254,9 +253,13 @@ function App() {
                     path: "institutionPage/:id",
                     element: <AdminInstitutionsPage />,
                 },
+                {
+                    path: "manage-admins",
+                    element: <ManageAdmins />,
+                },
             ],
         },
-    ]);
+    ])
 
     return (
         <AuthContext.Provider
@@ -273,7 +276,7 @@ function App() {
                 <RouterProvider router={router} />
             </div>
         </AuthContext.Provider>
-    );
+    )
 }
 
-export default App;
+export default App
