@@ -9,7 +9,7 @@ const jwt = require("jsonwebtoken")
 // Load environment variables
 require("dotenv").config()
 const SALT_ROUNDS = Number.parseInt(process.env.SALT_ROUNDS) || 10
-const JWT_SECRET = process.env.JWT_SECRET
+const JWT_SECRET = process.env.JWT_SECRET_Admin
 const JWT_EXPIRY = process.env.JWT_EXPIRY || "7d"
 
 // Password validation regex
@@ -23,6 +23,20 @@ const generateUserToken = (user) => {
         firstName: user.firstName,
         lastName: user.lastName,
         user: user.user || "user", // Ensure user type is included in token
+    }
+
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY })
+}
+
+// Generate JWT token for admin
+const generateAdminToken = (admin) => {
+    const payload = {
+        userId: admin._id,
+        email: admin.email,
+        firstName: admin.firstName,
+        lastName: admin.lastName,
+        user: "admin", 
+        role: "admin", 
     }
 
     return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY })
@@ -470,6 +484,7 @@ const verifyToken = (req, res) => {
     })
 }
 
+// Add this to the module.exports at the bottom of the file
 module.exports = {
     registerUser,
     loginUser,
@@ -480,4 +495,6 @@ module.exports = {
     updateProfile,
     updatePassword,
     verifyToken,
+    generateUserToken,
+    generateAdminToken, 
 }
