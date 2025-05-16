@@ -11,21 +11,21 @@ import {
   Grid,
   IconButton,
   InputAdornment,
-  Paper,
   TextField,
   Typography,
   CircularProgress,
   Alert,
+  Snackbar,
 } from "@mui/material"
 import {
-  ChatBubbleOutline,
-  Favorite,
   LocationOn,
   Mail,
   Phone,
   Search,
   ChevronLeft,
   ChevronRight,
+  ThumbUpAltOutlined,
+  ThumbUp,
 } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
 import { useState, useRef, useEffect, useContext } from "react"
@@ -42,6 +42,172 @@ const AgentsPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const { LoggedIn } = useContext(AuthContext)
+
+  // Posts state
+  const [posts, setPosts] = useState([])
+  const [loadingPosts, setLoadingPosts] = useState(true)
+  const [postsError, setPostsError] = useState(null)
+
+  // Add a new state variable to store agent information
+  const [agentDetails, setAgentDetails] = useState({})
+
+  // Add state variables for tracking likes
+  const [likingPost, setLikingPost] = useState(null)
+  const [likedPosts, setLikedPosts] = useState({})
+
+  // Alert state
+  const [alertInfo, setAlertInfo] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  })
+
+  // Add a function to fetch agent details for posts
+  const fetchAgentDetails = async (agentId) => {
+    try {
+      // Skip if we already have this agent's details
+      if (agentDetails[agentId]) return
+
+      const response = await fetch(`http://localhost:3001/api/agent/${agentId}`)
+
+      if (!response.ok) {
+        console.error(`Failed to fetch agent details: ${response.status}`)
+        return
+      }
+
+      const data = await response.json()
+
+      // Store agent details in state
+      setAgentDetails((prev) => ({
+        ...prev,
+        [agentId]: data.data,
+      }))
+    } catch (err) {
+      console.error("Error fetching agent details:", err)
+    }
+  }
+
+  // Check if user has already liked posts
+  const checkLikedPosts = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      if (!token || !LoggedIn) return
+
+      // For each post, check if the user has liked it
+      for (const post of posts) {
+        try {
+          const response = await fetch(`http://localhost:3001/api/posts/${post._id}/like-status`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            if (data.data.hasLiked) {
+              setLikedPosts((prev) => ({
+                ...prev,
+                [post._id]: true,
+              }))
+            }
+          }
+        } catch (err) {
+          console.error(`Error checking like status for post ${post._id}:`, err)
+        }
+      }
+    } catch (err) {
+      console.error("Error checking liked posts:", err)
+    }
+  }
+
+  // Handle like with backend API call
+  const handleLike = async (postId) => {
+    try {
+      // Prevent multiple clicks or liking already liked posts
+      if (likingPost === postId || likedPosts[postId]) {
+        if (likedPosts[postId]) {
+          setAlertInfo({
+            open: true,
+            message: "You have already liked this post",
+            severity: "info",
+          })
+        }
+        return
+      }
+
+      setLikingPost(postId)
+
+      // Get token
+      const token = localStorage.getItem("token")
+      if (!token) {
+        setAlertInfo({
+          open: true,
+          message: "You must be logged in to like posts",
+          severity: "error",
+        })
+        setLikingPost(null)
+        return
+      }
+
+      // Optimistically update UI
+      setPosts(posts.map((post) => (post._id === postId ? { ...post, likes: (post.likes || 0) + 1 } : post)))
+      setLikedPosts((prev) => ({ ...prev, [postId]: true }))
+
+      // Make API call to update likes on server
+      const response = await fetch(`http://localhost:3001/api/posts/${postId}/like`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        // If API call fails, revert the optimistic update
+        setPosts(posts.map((post) => (post._id === postId ? { ...post, likes: post.likes - 1 } : post)))
+        setLikedPosts((prev) => ({ ...prev, [postId]: false }))
+
+        setAlertInfo({
+          open: true,
+          message: data.message || "Failed to like post",
+          severity: "error",
+        })
+        return
+      }
+
+      // Update with the actual like count from the server
+      setPosts(posts.map((post) => (post._id === postId ? { ...post, likes: data.data.likes } : post)))
+
+      setAlertInfo({
+        open: true,
+        message: "Post liked successfully",
+        severity: "success",
+      })
+    } catch (err) {
+      console.error("Error liking post:", err)
+      setAlertInfo({
+        open: true,
+        message: "Error liking post. Please try again.",
+        severity: "error",
+      })
+
+      // Revert optimistic update on error
+      setPosts(posts.map((post) => (post._id === postId ? { ...post, likes: post.likes - 1 } : post)))
+      setLikedPosts((prev) => ({ ...prev, [postId]: false }))
+    } finally {
+      setLikingPost(null)
+    }
+  }
+
+  // Handle alert close
+  const handleAlertClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return
+    }
+    setAlertInfo((prev) => ({ ...prev, open: false }))
+  }
 
   // Update container width on mount and resize
   useEffect(() => {
@@ -85,6 +251,50 @@ const AgentsPage = () => {
     fetchAgents()
   }, [])
 
+  // Fetch posts from API
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        setLoadingPosts(true)
+        console.log("Fetching posts from API...")
+
+        const response = await fetch("http://localhost:3001/api/posts")
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          console.error("Error response data:", errorData)
+          throw new Error(`Failed to fetch posts: ${response.status} - ${errorData.error || "Unknown error"}`)
+        }
+
+        const data = await response.json()
+        console.log("Posts fetched successfully:", data)
+        setPosts(data.data)
+
+        // Fetch agent details for each post
+        data.data.forEach((post) => {
+          if (post.agent) {
+            fetchAgentDetails(post.agent)
+          }
+        })
+
+        setLoadingPosts(false)
+      } catch (err) {
+        console.error("Error fetching posts:", err)
+        setPostsError(`Failed to load latest updates: ${err.message}`)
+        setLoadingPosts(false)
+      }
+    }
+
+    fetchPosts()
+  }, [])
+
+  // Check liked posts after posts are loaded and user is logged in
+  useEffect(() => {
+    if (posts.length > 0 && LoggedIn) {
+      checkLikedPosts()
+    }
+  }, [posts, LoggedIn])
+
   // Filter agents based on search term
   useEffect(() => {
     if (searchTerm.trim() === "") {
@@ -104,7 +314,11 @@ const AgentsPage = () => {
     // Check if user is logged in
     if (!LoggedIn) {
       console.log("User not logged in according to AuthContext")
-      alert("Please log in to chat with agents")
+      setAlertInfo({
+        open: true,
+        message: "Please log in to chat with agents",
+        severity: "warning",
+      })
       navigate("/login")
       return
     }
@@ -172,6 +386,16 @@ const AgentsPage = () => {
     return `http://localhost:3001${profilePicture.url}`
   }
 
+  // Format date for display
+  const formatDate = (dateString) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+  }
+
   // Calculate card width based on container width to show exactly 3 cards
   const cardWidth = containerWidth ? (containerWidth - 48) / 3 : 280 // 48px for gaps (16px * 3)
 
@@ -180,43 +404,6 @@ const AgentsPage = () => {
   const canScrollRight = scrollRef.current
     ? scrollRef.current.scrollWidth > scrollRef.current.clientWidth + scrollPosition
     : true
-
-  // Sample posts data for the "Latest Updates" section
-  const posts = [
-    {
-      id: 1,
-      title: "New Scholarship Opportunity",
-      content:
-        "Exciting news! We've partnered with University of Technology to offer 5 full scholarships for international students. Applications open next week.",
-      agent: filteredAgents[0] || { companyName: "Education Consultant", initials: "EC" },
-      category: "Study Abroad",
-      postedAt: "2 days ago",
-      likes: 24,
-      comments: 8,
-    },
-    {
-      id: 2,
-      title: "Study in Canada - Information Session",
-      content:
-        "Join our virtual information session about studying in Canada. Learn about visa requirements, top universities, and cost of living.",
-      agent: filteredAgents[1] || { companyName: "Visa Expert", initials: "VE" },
-      category: "Visa Consulting",
-      postedAt: "3 days ago",
-      likes: 36,
-      comments: 12,
-    },
-    {
-      id: 3,
-      title: "UK Student Visa Updates",
-      content:
-        "Important updates to UK student visa requirements for 2025. New financial requirements and application process changes.",
-      agent: filteredAgents[2] || { companyName: "Global Education", initials: "GE" },
-      category: "Scholarship",
-      postedAt: "5 days ago",
-      likes: 18,
-      comments: 5,
-    },
-  ]
 
   return (
     <Box sx={{ bgcolor: "#ffffff", minHeight: "100vh" }}>
@@ -276,6 +463,7 @@ const AgentsPage = () => {
           </Box>
         </Box>
 
+        {/* Success message */}
         {/* Education Consultant Section */}
         <Box
           sx={{
@@ -536,175 +724,247 @@ const AgentsPage = () => {
             Latest Updates from Agents
           </Typography>
 
-          <Grid container spacing={3}>
-            {posts.map((post) => (
-              <Grid item xs={12} key={post.id}>
-                <Paper
-                  sx={{
-                    p: 3,
-                    bgcolor: "#ffffff",
-                    boxShadow: "0 3px 10px rgba(0,0,0,0.06)",
-                    border: "1px solid rgba(0,0,0,0.08)",
-                    borderRadius: 2,
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                    "&:hover": {
-                      transform: "translateY(-3px)",
-                      boxShadow: "0 6px 15px rgba(0,0,0,0.08)",
-                    },
-                  }}
-                >
-                  <Box sx={{ display: "flex", mb: 3 }}>
-                    <Avatar
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        bgcolor: "#EEF2FF",
-                        color: "#6366F1",
-                        mr: 3,
-                        boxShadow: "0 2px 8px rgba(99, 102, 241, 0.2)",
-                      }}
-                    >
-                      {post.agent.initials || getInitials(post.agent.companyName)}
-                    </Avatar>
-                    <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        {post.agent.companyName}
-                      </Typography>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Typography variant="body2" sx={{ color: "#6B7280" }}>
-                          {post.postedAt}
-                        </Typography>
-                        <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "#9CA3AF" }} />
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: "#6366F1",
-                            fontWeight: 600,
-                            bgcolor: "#EEF2FF",
-                            px: 1.5,
-                            py: 0.3,
-                            borderRadius: 10,
-                            fontSize: "0.75rem",
-                          }}
-                        >
-                          {post.category}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5 }}>
-                    {post.title}
-                  </Typography>
-
-                  <Grid container spacing={3} sx={{ mb: 3 }}>
-                    <Grid item xs={12} md={8}>
-                      <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                        {post.content}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <Box
+          {loadingPosts ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress sx={{ color: "#6366F1" }} />
+            </Box>
+          ) : postsError ? (
+            <Alert severity="error" sx={{ mb: 4 }}>
+              {postsError}
+            </Alert>
+          ) : posts.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Typography variant="h6" color="text.secondary">
+                No updates available at the moment.
+              </Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {posts.slice(0, 3).map((post) => (
+                <Grid item xs={12} key={post._id}>
+                  <Card
+                    sx={{
+                      borderRadius: "16px",
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                      transition: "transform 0.2s, box-shadow 0.2s",
+                      "&:hover": {
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                      },
+                      overflow: "hidden",
+                      p: 3,
+                    }}
+                  >
+                    {/* Header with Company Name and Date */}
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <Avatar
+                        src={
+                          agentDetails[post.agent]?.profilePicture?.url
+                            ? getProfilePictureUrl(agentDetails[post.agent].profilePicture)
+                            : null
+                        }
                         sx={{
-                          height: 180,
-                          bgcolor: "#EEF2FF",
-                          borderRadius: 2,
-                          overflow: "hidden",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          border: "1px solid rgba(99, 102, 241, 0.2)",
+                          width: 48,
+                          height: 48,
+                          mr: 2,
+                          border: "2px solid #f0f0f0",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                         }}
                       >
-                        <Typography variant="body2" sx={{ color: "#6366F1", fontWeight: 500 }}>
-                          {post.category} Image
+                        {getInitials(agentDetails[post.agent]?.companyName || "")}
+                      </Avatar>
+                      <Box>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "1.1rem",
+                            lineHeight: 1.2,
+                            textAlign: "left",
+                          }}
+                        >
+                          {agentDetails[post.agent]?.companyName || "Loading..."}
                         </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
-
-                  <Divider sx={{ mb: 2 }} />
-
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Box sx={{ display: "flex", gap: 3 }}>
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <IconButton size="small" sx={{ color: "#F43F5E", mr: 0.5 }}>
-                          <Favorite fontSize="small" />
-                        </IconButton>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {post.likes}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <IconButton size="small" sx={{ color: "#6366F1", mr: 0.5 }}>
-                          <ChatBubbleOutline fontSize="small" />
-                        </IconButton>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {post.comments}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.875rem" }}>
+                            {formatDate(post.createdAt)}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              ml: 1.5,
+                              color: "#6366F1",
+                              fontWeight: 500,
+                              fontSize: "0.875rem",
+                            }}
+                          >
+                            • {post.category}
+                          </Typography>
+                        </Box>
                       </Box>
                     </Box>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => (post.agent && post.agent._id ? handleMessageAgent(post.agent) : null)}
+
+                    {/* Post Content Section */}
+                    <Box sx={{ mb: 3 }}>
+                      {/* Post Title */}
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontWeight: 700,
+                          mb: 2,
+                          fontSize: "1.5rem",
+                          color: "#333",
+                          lineHeight: 1.3,
+                          textAlign: "left",
+                        }}
+                      >
+                        {post.title}
+                      </Typography>
+
+                      {/* Post Content */}
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          whiteSpace: "pre-line",
+                          mb: 3,
+                          color: "#555",
+                          lineHeight: 1.7,
+                          fontSize: "1rem",
+                          letterSpacing: "0.01em",
+                          textAlign: "left",
+                        }}
+                      >
+                        {post.content}
+                      </Typography>
+                    </Box>
+
+                    {/* Post Image */}
+                    {post.image && post.image.url && (
+                      <Box sx={{ width: "100%", mb: 3 }}>
+                        <img
+                          src={
+                            post.image.url.startsWith("http")
+                              ? post.image.url
+                              : `http://localhost:3001${post.image.url}`
+                          }
+                          alt={post.title}
+                          style={{
+                            width: "100%",
+                            display: "block",
+                            borderRadius: "8px",
+                          }}
+                          onError={(e) => {
+                            console.error("Image failed to load:", post.image.url)
+
+                            // Try multiple possible URL formats
+                            const possibleUrls = [
+                              `http://localhost:3001${post.image.url}`,
+                              `http://localhost:3001/uploads/${post.image.filename}`,
+                              `http://localhost:3001/uploads/posts/${post.image.filename}`,
+                              `http://localhost:3001/uploads/image-${post.image.filename?.split("image-")[1] || ""}`,
+                            ]
+
+                            // Find the current URL in the possible URLs
+                            const currentUrlIndex = possibleUrls.findIndex((url) => url === e.target.src)
+
+                            // Try the next URL if available
+                            if (currentUrlIndex < possibleUrls.length - 1) {
+                              const nextUrl = possibleUrls[currentUrlIndex + 1]
+                              console.log("Trying alternative URL:", nextUrl)
+                              e.target.src = nextUrl
+                            } else {
+                              // If we've tried all URLs, use placeholder
+                              e.target.src = "/placeholder.svg"
+                            }
+                          }}
+                        />
+                      </Box>
+                    )}
+
+                    {/* Post Actions */}
+                    <Divider sx={{ mb: 2 }} />
+                    <Box
                       sx={{
-                        color: "#6366F1",
-                        borderColor: "#6366F1",
-                        "&:hover": {
-                          borderColor: "#4F46E5",
-                          bgcolor: "rgba(99, 102, 241, 0.05)",
-                        },
-                        py: 0.7,
-                        px: 2,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
                       }}
                     >
-                      Contact Agent
-                    </Button>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+                      <Box sx={{ display: "flex", gap: 3 }}>
+                        <Button
+                          startIcon={likedPosts[post._id] ? <ThumbUp /> : <ThumbUpAltOutlined />}
+                          onClick={() => handleLike(post._id)}
+                          disabled={likingPost === post._id}
+                          sx={{
+                            color: likedPosts[post._id] ? "#4F46E5" : "#6366F1",
+                            textTransform: "none",
+                            fontWeight: 500,
+                            "&:hover": {
+                              bgcolor: "rgba(99, 102, 241, 0.08)",
+                            },
+                          }}
+                        >
+                          {post.likes || 0} Likes
+                          {likingPost === post._id && <CircularProgress size={16} sx={{ ml: 1, color: "#6366F1" }} />}
+                        </Button>
+                      </Box>
+                      <Button
+                        variant="outlined"
+                        onClick={() => handleMessageAgent(agentDetails[post.agent])}
+                        sx={{
+                          color: "#6366F1",
+                          borderColor: "#6366F1",
+                          "&:hover": {
+                            borderColor: "#4F46E5",
+                            bgcolor: "rgba(99, 102, 241, 0.05)",
+                          },
+                          py: 0.7,
+                          px: 2,
+                          textTransform: "none",
+                          fontWeight: 500,
+                        }}
+                      >
+                        Send Message
+                      </Button>
+                    </Box>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
 
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-            <Button
-              variant="outlined"
-              sx={{
-                borderColor: "#6366F1",
-                color: "#6366F1",
-                "&:hover": {
-                  borderColor: "#4F46E5",
-                },
-                py: 1,
-                px: 3,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-              }}
-            >
-              Load More Posts
-            </Button>
-          </Box>
-        </Box>
-
-        {/* Simple Footer */}
-        <Divider sx={{ mb: 3 }} />
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            © 2025 Agent Directory. All rights reserved.
-          </Typography>
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <Typography variant="body2" color="#6366F1" sx={{ cursor: "pointer", fontWeight: 500 }}>
-              Terms
-            </Typography>
-            <Typography variant="body2" color="#6366F1" sx={{ cursor: "pointer", fontWeight: 500 }}>
-              Privacy
-            </Typography>
-            <Typography variant="body2" color="#6366F1" sx={{ cursor: "pointer", fontWeight: 500 }}>
-              Contact
-            </Typography>
-          </Box>
+          {posts.length > 3 && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+              <Button
+                variant="outlined"
+                sx={{
+                  borderColor: "#6366F1",
+                  color: "#6366F1",
+                  "&:hover": {
+                    borderColor: "#4F46E5",
+                  },
+                  py: 1,
+                  px: 3,
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                }}
+              >
+                Load More Posts
+              </Button>
+            </Box>
+          )}
         </Box>
       </Container>
+
+      {/* Alert Snackbar */}
+      <Snackbar
+        open={alertInfo.open}
+        autoHideDuration={6000}
+        onClose={handleAlertClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={handleAlertClose} severity={alertInfo.severity} variant="filled" sx={{ width: "100%" }}>
+          {alertInfo.message}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

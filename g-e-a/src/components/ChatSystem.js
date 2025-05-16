@@ -180,11 +180,32 @@ const ChatSystem = () => {
 
                     // Only scroll if we're not scroll-locked
                     if (!isScrollLocked) {
-                        setTimeout(() => {
+                        // Use multiple scroll attempts to ensure it works
+                        const scrollToBottom = () => {
                             if (dialogContentRef.current && activeDialogIdRef.current === data.from._id) {
                                 dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
                             }
-                        }, 100)
+                        }
+
+                        // Immediate attempt
+                        scrollToBottom()
+
+                        // Multiple delayed attempts
+                        setTimeout(scrollToBottom, 10)
+                        setTimeout(scrollToBottom, 50)
+                        setTimeout(scrollToBottom, 100)
+
+                        // Also use MutationObserver to detect when the message is added to DOM
+                        const observer = new MutationObserver(() => {
+                            scrollToBottom()
+                            // Disconnect after a short time
+                            setTimeout(() => observer.disconnect(), 300)
+                        })
+
+                        // Start observing
+                        if (dialogContentRef.current) {
+                            observer.observe(dialogContentRef.current, { childList: true, subtree: true })
+                        }
                     }
 
                     // Mark as read without triggering UI updates
@@ -284,13 +305,13 @@ const ChatSystem = () => {
 
     // Handle scrolling when messages change
     useEffect(() => {
-        if (messagesEndRef.current && messages.length > 0 && showChatBox && !isScrollLocked) {
+        if (showChatBox && messages.length > 0 && !isScrollLocked) {
             // Clear any existing scroll timeout
             if (scrollTimeoutRef.current) {
                 clearTimeout(scrollTimeoutRef.current)
             }
 
-            // Use a more direct approach to scroll to bottom
+            // Use a more reliable approach to scroll to bottom
             const scrollToBottom = () => {
                 if (dialogContentRef.current && activeDialogIdRef.current === currentReceiverId) {
                     dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
@@ -300,10 +321,10 @@ const ChatSystem = () => {
             // Immediate scroll attempt
             scrollToBottom()
 
-            // Also try after a short delay to ensure DOM is updated
+            // Also try after a short delay to ensure DOM is fully updated
             scrollTimeoutRef.current = setTimeout(scrollToBottom, 100)
         }
-    }, [messages, showChatBox, isScrollLocked])
+    }, [messages, showChatBox, isScrollLocked, currentReceiverId])
 
     // Handle chat box opening and closing
     useEffect(() => {
@@ -515,12 +536,25 @@ const ChatSystem = () => {
                 // Set active dialog ID
                 activeDialogIdRef.current = receiverId
 
-                // Directly scroll to bottom after messages are loaded
+                // Force scroll to bottom after messages are loaded with multiple attempts
+                // First attempt - immediate
+                if (dialogContentRef.current && activeDialogIdRef.current === receiverId) {
+                    dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
+                }
+
+                // Second attempt - after a short delay
                 setTimeout(() => {
                     if (dialogContentRef.current && activeDialogIdRef.current === receiverId) {
                         dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
                     }
                 }, 100)
+
+                // Third attempt - after DOM has likely updated
+                setTimeout(() => {
+                    if (dialogContentRef.current && activeDialogIdRef.current === receiverId) {
+                        dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
+                    }
+                }, 300)
 
                 // Update chat users without causing a re-render of the chat box
                 setTimeout(() => {
@@ -580,6 +614,9 @@ const ChatSystem = () => {
     const openChat = (user) => {
         // First close the menu to prevent UI jank
         handleClose()
+
+        // Set a flag to indicate we're opening a new chat
+        const isNewChatOpening = true
 
         // Batch state updates to reduce flickering
         const batchedUpdates = () => {
@@ -730,12 +767,33 @@ const ChatSystem = () => {
                 // Unlock auto-scrolling when sending a message
                 setIsScrollLocked(false)
 
-                // Scroll to bottom after sending
-                setTimeout(() => {
+                // Scroll to bottom after sending with multiple attempts to ensure it works
+                const scrollToBottom = () => {
                     if (dialogContentRef.current && activeDialogIdRef.current === currentReceiverId) {
                         dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
                     }
-                }, 100)
+                }
+
+                // Immediate attempt
+                scrollToBottom()
+
+                // Multiple delayed attempts to ensure it works after DOM updates
+                setTimeout(scrollToBottom, 10)
+                setTimeout(scrollToBottom, 50)
+                setTimeout(scrollToBottom, 100)
+                setTimeout(scrollToBottom, 200)
+
+                // Also add a MutationObserver to detect when the message is actually added to the DOM
+                const observer = new MutationObserver(() => {
+                    scrollToBottom()
+                    // Disconnect after a short time to avoid performance issues
+                    setTimeout(() => observer.disconnect(), 300)
+                })
+
+                // Start observing the chat content for changes
+                if (dialogContentRef.current) {
+                    observer.observe(dialogContentRef.current, { childList: true, subtree: true })
+                }
 
                 // Send to server with explicit content type header
                 const response = await axios.post(`${API_BASE_URL}/api/chat/send`, newMessage, {
@@ -816,6 +874,71 @@ const ChatSystem = () => {
             window.removeEventListener("messageAgent", handleMessageAgentEvent)
         }
     }, [startChatWithAgent])
+
+    // Add this useEffect hook to handle initial scroll position when messages are loaded
+    useEffect(() => {
+        if (showChatBox && messages.length > 0 && dialogContentRef.current) {
+            // Force scroll to bottom with multiple attempts
+            const scrollToBottom = () => {
+                if (dialogContentRef.current && activeDialogIdRef.current === currentReceiverId) {
+                    dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
+                }
+            }
+
+            // Immediate attempt
+            scrollToBottom()
+
+            // Multiple delayed attempts to ensure it works
+            setTimeout(scrollToBottom, 50)
+            setTimeout(scrollToBottom, 150)
+            setTimeout(scrollToBottom, 300)
+        }
+    }, [showChatBox, messages.length, currentReceiverId])
+
+    // Add a dedicated effect to maintain scroll position during updates
+    useEffect(() => {
+        // This function will be called whenever messages change
+        const maintainScrollPosition = () => {
+            if (!dialogContentRef.current || !showChatBox) return
+
+            // Get current scroll info
+            const { scrollTop, scrollHeight, clientHeight } = dialogContentRef.current
+            const isScrolledToBottom = scrollHeight - scrollTop - clientHeight < 30
+
+            // If we're already at the bottom or not scroll-locked, scroll to bottom
+            if (isScrolledToBottom || !isScrollLocked) {
+                const scrollToBottom = () => {
+                    if (dialogContentRef.current && activeDialogIdRef.current === currentReceiverId) {
+                        dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
+                    }
+                }
+
+                // Multiple scroll attempts
+                scrollToBottom()
+                setTimeout(scrollToBottom, 10)
+                setTimeout(scrollToBottom, 50)
+                setTimeout(scrollToBottom, 150)
+            }
+        }
+
+        // Call immediately
+        maintainScrollPosition()
+
+        // Also set up a MutationObserver to detect DOM changes
+        const observer = new MutationObserver(maintainScrollPosition)
+
+        if (dialogContentRef.current && showChatBox) {
+            observer.observe(dialogContentRef.current, {
+                childList: true,
+                subtree: true,
+                characterData: true,
+            })
+        }
+
+        return () => {
+            observer.disconnect()
+        }
+    }, [messages, showChatBox, isScrollLocked, currentReceiverId])
 
     return (
         <ThemeProvider theme={customTheme}>
@@ -1077,11 +1200,31 @@ const ChatSystem = () => {
                 maxWidth={false}
                 BackdropProps={{ invisible: true }}
                 TransitionProps={{
+                    onEnter: () => {
+                        // Reset scroll position when dialog starts to open
+                        if (dialogContentRef.current) {
+                            dialogContentRef.current.scrollTop = 0
+                        }
+                    },
                     onEntered: () => {
-                        // After dialog is fully opened, scroll to bottom using direct DOM manipulation
-                        // Only scroll if this is the active dialog and we're not scroll-locked
-                        if (dialogContentRef.current && activeDialogIdRef.current === currentReceiverId && !isScrollLocked) {
+                        // After dialog is fully opened, force scroll to bottom
+                        if (dialogContentRef.current && activeDialogIdRef.current === currentReceiverId) {
+                            // Multiple scroll attempts to ensure it works
                             dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
+
+                            // Also try after a short delay
+                            setTimeout(() => {
+                                if (dialogContentRef.current && activeDialogIdRef.current === currentReceiverId) {
+                                    dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
+                                }
+                            }, 50)
+
+                            // And again after a longer delay
+                            setTimeout(() => {
+                                if (dialogContentRef.current && activeDialogIdRef.current === currentReceiverId) {
+                                    dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
+                                }
+                            }, 150)
                         }
                     },
                 }}
