@@ -43,7 +43,7 @@ const uploadMultiple = multer({
     },
 }).fields([
     { name: "profilePicture", maxCount: 1 },
-    { name: "documents", maxCount: 10 },
+    { name: "bannerImages", maxCount: 5 },
 ])
 
 const uploadSingle = multer({
