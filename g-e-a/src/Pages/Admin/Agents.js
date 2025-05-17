@@ -51,6 +51,7 @@ import {
     Description,
     Check,
 } from "@mui/icons-material"
+import PageHeader from "../../components/Admin/PageHeader"
 
 function Agents() {
     const [agents, setAgents] = useState([])
@@ -345,12 +346,10 @@ function Agents() {
 
     return (
         <Box sx={{ p: 3 }}>
-            <Typography variant="h4" gutterBottom>
-                Agent Management
-            </Typography>
-            <Typography variant="subtitle1" gutterBottom>
-                Manage educational agents in the system
-            </Typography>
+                        <PageHeader
+                            title="Agent Management"
+                            subtitle="Manage educational agents in the system"
+                        />
 
             <Paper sx={{ width: "100%", mt: 3 }}>
                 <Toolbar sx={{ pl: { sm: 2 }, pr: { xs: 1, sm: 1 } }}>

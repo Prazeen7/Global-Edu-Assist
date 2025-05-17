@@ -8,7 +8,6 @@ import {
   CardContent,
   Container,
   Divider,
-  Grid,
   IconButton,
   InputAdornment,
   TextField,
@@ -26,6 +25,7 @@ import {
   ChevronRight,
   ThumbUpAltOutlined,
   ThumbUp,
+  KeyboardArrowDown,
 } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
 import { useState, useRef, useEffect, useContext } from "react"
@@ -356,6 +356,14 @@ const AgentsPage = () => {
     setSearchTerm(event.target.value)
   }
 
+  // Add this function after the handleSearchChange function
+  const scrollToLatestUpdates = () => {
+    const latestUpdatesSection = document.getElementById("latest-updates")
+    if (latestUpdatesSection) {
+      latestUpdatesSection.scrollIntoView({ behavior: "smooth" })
+    }
+  }
+
   // Extract initials from company name for avatar
   const getInitials = (name) => {
     if (!name) return "AG"
@@ -408,7 +416,7 @@ const AgentsPage = () => {
   return (
     <Box sx={{ bgcolor: "#ffffff", minHeight: "100vh" }}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* Header Section */}
+        {/* Header Section with Explore Agent Updates button */}
         <Box
           sx={{
             display: "flex",
@@ -428,42 +436,34 @@ const AgentsPage = () => {
             </Typography>
           </Box>
 
-          <Box
+          {/* Explore Agent Updates Button - Styled to blend with UI */}
+          <Button
+            variant="contained"
+            onClick={scrollToLatestUpdates}
+            endIcon={<KeyboardArrowDown />}
             sx={{
-              display: "flex",
-              width: { xs: "100%", md: "auto" },
+              bgcolor: "#6366F1",
+              color: "white",
+              fontWeight: 600,
+              py: 1,
+              px: 2.5,
+              borderRadius: 2, // Match other buttons' border radius
+              boxShadow: "0 2px 10px rgba(99, 102, 241, 0.3)",
+              textTransform: "none",
+              fontSize: "0.875rem", // Match other buttons' font size
+              "&:hover": {
+                bgcolor: "#4F46E5",
+                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
+              },
+              alignSelf: { xs: "center", md: "flex-start" },
+              minWidth: { xs: "auto", md: "220px" },
+              height: 40, // Match height of other buttons
             }}
           >
-            <TextField
-              placeholder="Search agents..."
-              size="small"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              sx={{
-                flexGrow: 1,
-                minWidth: { xs: "100%", sm: 250, md: 300 },
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                  height: "100%",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                },
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "rgba(0,0,0,0.15)",
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
-                sx: { py: 1.25 },
-              }}
-            />
-          </Box>
+            Explore Agent Updates
+          </Button>
         </Box>
 
-        {/* Success message */}
         {/* Education Consultant Section */}
         <Box
           sx={{
@@ -536,47 +536,105 @@ const AgentsPage = () => {
           </Box>
         </Box>
 
-        {/* Available Agents Section */}
+        {/* Available Agents Section with Search Bar moved to left of navigation buttons */}
         <Box sx={{ mb: 6 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
             <Typography variant="h5" sx={{ fontWeight: 600 }}>
               Available Agents
             </Typography>
 
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <IconButton
-                onClick={() => handleScroll("left")}
-                disabled={!canScrollLeft}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {/* Search Bar - Moved to left of navigation buttons */}
+              <TextField
+                placeholder="Search agents..."
+                size="small"
+                value={searchTerm}
+                onChange={handleSearchChange}
                 sx={{
-                  bgcolor: "#EEF2FF",
-                  color: "#6366F1",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                  "&:hover": { bgcolor: "#DFE4FF" },
-                  "&.Mui-disabled": {
-                    bgcolor: "#F9FAFB",
-                    color: "rgba(0,0,0,0.26)",
+                  width: { xs: "100%", sm: 220 },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 1,
+                    height: "100%",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                   },
-                }}
-              >
-                <ChevronLeft />
-              </IconButton>
-              <IconButton
-                onClick={() => handleScroll("right")}
-                disabled={!canScrollRight}
-                sx={{
-                  bgcolor: "#EEF2FF",
-                  color: "#6366F1",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                  "&:hover": { bgcolor: "#DFE4FF" },
-                  "&.Mui-disabled": {
-                    bgcolor: "#F9FAFB",
-                    color: "rgba(0,0,0,0.26)",
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "rgba(0,0,0,0.15)",
                   },
+                  display: { xs: "none", sm: "block" },
                 }}
-              >
-                <ChevronRight />
-              </IconButton>
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search fontSize="small" color="action" />
+                    </InputAdornment>
+                  ),
+                  sx: { py: 0.75 },
+                }}
+              />
+
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <IconButton
+                  onClick={() => handleScroll("left")}
+                  disabled={!canScrollLeft}
+                  sx={{
+                    bgcolor: "#EEF2FF",
+                    color: "#6366F1",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    "&:hover": { bgcolor: "#DFE4FF" },
+                    "&.Mui-disabled": {
+                      bgcolor: "#F9FAFB",
+                      color: "rgba(0,0,0,0.26)",
+                    },
+                  }}
+                >
+                  <ChevronLeft />
+                </IconButton>
+                <IconButton
+                  onClick={() => handleScroll("right")}
+                  disabled={!canScrollRight}
+                  sx={{
+                    bgcolor: "#EEF2FF",
+                    color: "#6366F1",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    "&:hover": { bgcolor: "#DFE4FF" },
+                    "&.Mui-disabled": {
+                      bgcolor: "#F9FAFB",
+                      color: "rgba(0,0,0,0.26)",
+                    },
+                  }}
+                >
+                  <ChevronRight />
+                </IconButton>
+              </Box>
             </Box>
+          </Box>
+
+          {/* Mobile Search Bar - Only visible on small screens */}
+          <Box sx={{ mb: 3, display: { xs: "block", sm: "none" } }}>
+            <TextField
+              placeholder="Search agents..."
+              size="small"
+              fullWidth
+              value={searchTerm}
+              onChange={handleSearchChange}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 1,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                },
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "rgba(0,0,0,0.15)",
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search fontSize="small" color="action" />
+                  </InputAdornment>
+                ),
+                sx: { py: 0.75 },
+              }}
+            />
           </Box>
 
           {loading ? (
@@ -626,9 +684,11 @@ const AgentsPage = () => {
                       transform: "translateY(-4px)",
                       boxShadow: "0 6px 15px rgba(0,0,0,0.1)",
                     },
+                    display: "flex",
+                    flexDirection: "column",
                   }}
                 >
-                  <CardContent sx={{ p: 3 }}>
+                  <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", flexGrow: 1 }}>
                     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2 }}>
                       {agent.profilePicture && agent.profilePicture.url ? (
                         <Avatar
@@ -700,7 +760,7 @@ const AgentsPage = () => {
                       onClick={() => handleMessageAgent(agent)}
                       sx={{
                         bgcolor: "#6366F1",
-                        mt: 2,
+                        mt: "auto",
                         py: 1.2,
                         boxShadow: "0 2px 10px rgba(99, 102, 241, 0.3)",
                         "&:hover": {
@@ -719,8 +779,9 @@ const AgentsPage = () => {
         </Box>
 
         {/* Latest Updates Section */}
-        <Box sx={{ mb: 6 }}>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
+        {/* Latest Updates Section - Facebook Style */}
+        <Box id="latest-updates" sx={{ mb: 6 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, textAlign: "left" }}>
             Latest Updates from Agents
           </Typography>
 
@@ -739,216 +800,187 @@ const AgentsPage = () => {
               </Typography>
             </Box>
           ) : (
-            <Grid container spacing={3}>
+            <Box sx={{ maxWidth: "680px", mx: "auto" }}>
               {posts.slice(0, 3).map((post) => (
-                <Grid item xs={12} key={post._id}>
-                  <Card
-                    sx={{
-                      borderRadius: "16px",
-                      boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-                      transition: "transform 0.2s, box-shadow 0.2s",
-                      "&:hover": {
-                        boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-                      },
-                      overflow: "hidden",
-                      p: 3,
-                    }}
-                  >
-                    {/* Header with Company Name and Date */}
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                      <Avatar
-                        src={
-                          agentDetails[post.agent]?.profilePicture?.url
-                            ? getProfilePictureUrl(agentDetails[post.agent].profilePicture)
-                            : null
-                        }
-                        sx={{
-                          width: 48,
-                          height: 48,
-                          mr: 2,
-                          border: "2px solid #f0f0f0",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                        }}
-                      >
-                        {getInitials(agentDetails[post.agent]?.companyName || "")}
-                      </Avatar>
-                      <Box>
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontWeight: 600,
-                            fontSize: "1.1rem",
-                            lineHeight: 1.2,
-                            textAlign: "left",
-                          }}
-                        >
-                          {agentDetails[post.agent]?.companyName || "Loading..."}
-                        </Typography>
-                        <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.875rem" }}>
-                            {formatDate(post.createdAt)}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              ml: 1.5,
-                              color: "#6366F1",
-                              fontWeight: 500,
-                              fontSize: "0.875rem",
-                            }}
-                          >
-                            • {post.category}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Box>
-
-                    {/* Post Content Section */}
-                    <Box sx={{ mb: 3 }}>
-                      {/* Post Title */}
-                      <Typography
-                        variant="h5"
-                        sx={{
-                          fontWeight: 700,
-                          mb: 2,
-                          fontSize: "1.5rem",
-                          color: "#333",
-                          lineHeight: 1.3,
-                          textAlign: "left",
-                        }}
-                      >
-                        {post.title}
-                      </Typography>
-
-                      {/* Post Content */}
-                      <Typography
-                        variant="body1"
-                        sx={{
-                          whiteSpace: "pre-line",
-                          mb: 3,
-                          color: "#555",
-                          lineHeight: 1.7,
-                          fontSize: "1rem",
-                          letterSpacing: "0.01em",
-                          textAlign: "left",
-                        }}
-                      >
-                        {post.content}
-                      </Typography>
-                    </Box>
-
-                    {/* Post Image */}
-                    {post.image && post.image.url && (
-                      <Box sx={{ width: "100%", mb: 3 }}>
-                        <img
-                          src={
-                            post.image.url.startsWith("http")
-                              ? post.image.url
-                              : `http://localhost:3001${post.image.url}`
-                          }
-                          alt={post.title}
-                          style={{
-                            width: "100%",
-                            display: "block",
-                            borderRadius: "8px",
-                          }}
-                          onError={(e) => {
-                            console.error("Image failed to load:", post.image.url)
-
-                            // Try multiple possible URL formats
-                            const possibleUrls = [
-                              `http://localhost:3001${post.image.url}`,
-                              `http://localhost:3001/uploads/${post.image.filename}`,
-                              `http://localhost:3001/uploads/posts/${post.image.filename}`,
-                              `http://localhost:3001/uploads/image-${post.image.filename?.split("image-")[1] || ""}`,
-                            ]
-
-                            // Find the current URL in the possible URLs
-                            const currentUrlIndex = possibleUrls.findIndex((url) => url === e.target.src)
-
-                            // Try the next URL if available
-                            if (currentUrlIndex < possibleUrls.length - 1) {
-                              const nextUrl = possibleUrls[currentUrlIndex + 1]
-                              console.log("Trying alternative URL:", nextUrl)
-                              e.target.src = nextUrl
-                            } else {
-                              // If we've tried all URLs, use placeholder
-                              e.target.src = "/placeholder.svg"
-                            }
-                          }}
-                        />
-                      </Box>
-                    )}
-
-                    {/* Post Actions */}
-                    <Divider sx={{ mb: 2 }} />
-                    <Box
+                <Card
+                  key={post._id}
+                  sx={{
+                    borderRadius: { xs: 0, sm: "8px" },
+                    boxShadow: { xs: "none", sm: "0 1px 2px rgba(0,0,0,0.2)" },
+                    border: { xs: "none", sm: "1px solid rgba(0,0,0,0.1)" },
+                    mb: 3,
+                    overflow: "hidden",
+                    bgcolor: "#ffffff",
+                  }}
+                >
+                  {/* Post Header - Facebook Style */}
+                  <Box sx={{ display: "flex", alignItems: "center", p: 2 }}>
+                    <Avatar
+                      src={
+                        agentDetails[post.agent]?.profilePicture?.url
+                          ? getProfilePictureUrl(agentDetails[post.agent].profilePicture)
+                          : null
+                      }
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
+                        width: 40,
+                        height: 40,
+                        mr: 1.5,
                       }}
                     >
-                      <Box sx={{ display: "flex", gap: 3 }}>
-                        <Button
-                          startIcon={likedPosts[post._id] ? <ThumbUp /> : <ThumbUpAltOutlined />}
-                          onClick={() => handleLike(post._id)}
-                          disabled={likingPost === post._id}
-                          sx={{
-                            color: likedPosts[post._id] ? "#4F46E5" : "#6366F1",
-                            textTransform: "none",
-                            fontWeight: 500,
-                            "&:hover": {
-                              bgcolor: "rgba(99, 102, 241, 0.08)",
-                            },
-                          }}
-                        >
-                          {post.likes || 0} Likes
-                          {likingPost === post._id && <CircularProgress size={16} sx={{ ml: 1, color: "#6366F1" }} />}
-                        </Button>
-                      </Box>
-                      <Button
-                        variant="outlined"
-                        onClick={() => handleMessageAgent(agentDetails[post.agent])}
+                      {getInitials(agentDetails[post.agent]?.companyName || "")}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        variant="subtitle1"
                         sx={{
-                          color: "#6366F1",
-                          borderColor: "#6366F1",
-                          "&:hover": {
-                            borderColor: "#4F46E5",
-                            bgcolor: "rgba(99, 102, 241, 0.05)",
-                          },
-                          py: 0.7,
-                          px: 2,
-                          textTransform: "none",
-                          fontWeight: 500,
+                          fontWeight: 600,
+                          fontSize: "0.95rem",
+                          lineHeight: 1.2,
+                          textAlign: "left",
                         }}
                       >
-                        Send Message
+                        {agentDetails[post.agent]?.companyName || "Loading..."}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.8rem", textAlign: "left" }}>
+                        {formatDate(post.createdAt)} • {post.category}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Post Content - Facebook Style with left alignment */}
+                  {post.title && (
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        px: 2,
+                        pb: 1.5,
+                        fontWeight: 600,
+                        fontSize: "1.1rem",
+                        textAlign: "left",
+                      }}
+                    >
+                      {post.title}
+                    </Typography>
+                  )}
+
+                  {post.content && (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        px: 2,
+                        pb: post.image && post.image.url ? 2 : 0,
+                        fontSize: "0.95rem",
+                        whiteSpace: "pre-line",
+                        textAlign: "left",
+                      }}
+                    >
+                      {post.content}
+                    </Typography>
+                  )}
+
+                  {/* Post Image - Facebook Style (full width) */}
+                  {post.image && post.image.url && (
+                    <Box sx={{ width: "100%" }}>
+                      <img
+                        src={
+                          post.image.url.startsWith("http") ? post.image.url : `http://localhost:3001${post.image.url}`
+                        }
+                        alt={post.title || "Post image"}
+                        style={{
+                          width: "100%",
+                          display: "block",
+                        }}
+                        onError={(e) => {
+                          console.error("Image failed to load:", post.image.url)
+                          const possibleUrls = [
+                            `http://localhost:3001${post.image.url}`,
+                            `http://localhost:3001/uploads/${post.image.filename}`,
+                            `http://localhost:3001/uploads/posts/${post.image.filename}`,
+                            `http://localhost:3001/uploads/image-${post.image.filename?.split("image-")[1] || ""}`,
+                          ]
+                          const currentUrlIndex = possibleUrls.findIndex((url) => url === e.target.src)
+                          if (currentUrlIndex < possibleUrls.length - 1) {
+                            const nextUrl = possibleUrls[currentUrlIndex + 1]
+                            console.log("Trying alternative URL:", nextUrl)
+                            e.target.src = nextUrl
+                          } else {
+                            e.target.src = "/placeholder.svg"
+                          }
+                        }}
+                      />
+                    </Box>
+                  )}
+
+                  {/* Post Actions - Using previous style */}
+                  <Divider sx={{ mt: 2, mb: 2 }} />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      px: 2,
+                      pb: 2,
+                    }}
+                  >
+                    <Box sx={{ display: "flex", gap: 3 }}>
+                      <Button
+                        startIcon={likedPosts[post._id] ? <ThumbUp /> : <ThumbUpAltOutlined />}
+                        onClick={() => handleLike(post._id)}
+                        disabled={likingPost === post._id}
+                        sx={{
+                          color: likedPosts[post._id] ? "#4F46E5" : "#6366F1",
+                          textTransform: "none",
+                          fontWeight: 500,
+                          "&:hover": {
+                            bgcolor: "rgba(99, 102, 241, 0.08)",
+                          },
+                        }}
+                      >
+                        {post.likes || 0} Likes
+                        {likingPost === post._id && <CircularProgress size={16} sx={{ ml: 1, color: "#6366F1" }} />}
                       </Button>
                     </Box>
-                  </Card>
-                </Grid>
+                    <Button
+                      variant="outlined"
+                      onClick={() => handleMessageAgent(agentDetails[post.agent])}
+                      sx={{
+                        color: "#6366F1",
+                        borderColor: "#6366F1",
+                        "&:hover": {
+                          borderColor: "#4F46E5",
+                          bgcolor: "rgba(99, 102, 241, 0.05)",
+                        },
+                        py: 0.7,
+                        px: 2,
+                        textTransform: "none",
+                        fontWeight: 500,
+                      }}
+                    >
+                      Send Message
+                    </Button>
+                  </Box>
+                </Card>
               ))}
-            </Grid>
-          )}
 
-          {posts.length > 3 && (
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-              <Button
-                variant="outlined"
-                sx={{
-                  borderColor: "#6366F1",
-                  color: "#6366F1",
-                  "&:hover": {
-                    borderColor: "#4F46E5",
-                  },
-                  py: 1,
-                  px: 3,
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-                }}
-              >
-                Load More Posts
-              </Button>
+              {posts.length > 3 && (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 2, mb: 4 }}>
+                  <Button
+                    variant="outlined"
+                    sx={{
+                      borderColor: "#6366F1",
+                      color: "#6366F1",
+                      "&:hover": {
+                        borderColor: "#4F46E5",
+                      },
+                      py: 1,
+                      px: 3,
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    Load More Posts
+                  </Button>
+                </Box>
+              )}
             </Box>
           )}
         </Box>

@@ -27,10 +27,11 @@ import {
     InputAdornment,
     IconButton,
 } from "@mui/material"
-import { Edit, Delete, Visibility, VisibilityOff } from "@mui/icons-material"
+import { Edit, Delete, Visibility, VisibilityOff, Add as AddIcon } from "@mui/icons-material"
 import axiosInstance from "../../utils/axiosConfig" // Import the configured axios instance
 import { useNavigate } from "react-router-dom"
 import parseJwt from "../../utils/parseJwt"
+import PageHeader from "../../components/Admin/PageHeader"
 
 // Password regex: at least 8 chars, 1 uppercase, 1 special char
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.{8,})/
@@ -335,14 +336,13 @@ function ManageAdmins() {
 
     return (
         <Box sx={{ p: 3 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                <Typography variant="h4" component="h1">
-                    Manage Admins
-                </Typography>
-                <Button variant="contained" color="primary" onClick={() => setOpenAddDialog(true)}>
-                    Add New Admin
-                </Button>
-            </Box>
+            <PageHeader
+                title="Manage Admins"
+                action={true}
+                actionIcon={<AddIcon />}
+                actionText="Add New Admin"
+                onActionClick={() => setOpenAddDialog(true)}
+            />
 
             {loading ? (
                 <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>

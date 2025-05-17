@@ -76,6 +76,7 @@ export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
 
   const handleForgotPasswordOpen = () => setOpen(true)
   const handleForgotPasswordClose = () => setOpen(false)
@@ -179,14 +180,30 @@ export default function Login() {
       console.error("Login error:", err.response?.data || err.message)
 
       if (err.response?.data) {
-        const { status, error } = err.response.data
+        const { status, error, data } = err.response.data
 
         if (status === "pending") {
           setAlertMessage("Your account is pending approval. Please check your email for updates.")
           setAlertSeverity("info")
         } else if (status === "rejected") {
-          setAlertMessage("Your registration has been rejected. Please check your email for details.")
-          setAlertSeverity("error")
+          // If the agent is rejected, redirect to the resubmission page
+          setRedirecting(true)
+          setAlertMessage("Your registration has been rejected. Redirecting to resubmission page...")
+          setAlertSeverity("warning")
+
+          // Get the agent ID from the response data
+          const agentId = data?._id
+
+          if (agentId) {
+            // Set a timeout to allow the user to see the message before redirecting
+            setTimeout(() => {
+              navigate(`/agent-resubmit/${agentId}`)
+            }, 2000)
+          } else {
+            setAlertMessage("Could not retrieve your agent information. Please contact support.")
+            setAlertSeverity("error")
+            setRedirecting(false)
+          }
         } else {
           setAlertMessage(`Error: ${error || "An error occurred. Please try again later."}`)
           setAlertSeverity("error")
@@ -214,7 +231,15 @@ export default function Login() {
 
           {alertMessage && (
             <Stack sx={{ width: "100%" }} spacing={2}>
-              <Alert severity={alertSeverity}>{alertMessage}</Alert>
+              <Alert severity={alertSeverity}>
+                {alertMessage}
+                {redirecting && (
+                  <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
+                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                    <Typography variant="body2">Redirecting...</Typography>
+                  </Box>
+                )}
+              </Alert>
             </Stack>
           )}
 
@@ -237,6 +262,7 @@ export default function Login() {
                 fullWidth
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={redirecting}
               />
             </FormControl>
             <FormControl sx={{ textAlign: "left" }}>
@@ -252,6 +278,7 @@ export default function Login() {
                 fullWidth
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={redirecting}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -259,6 +286,7 @@ export default function Login() {
                         aria-label="toggle password visibility"
                         onClick={() => setShowPassword(!showPassword)}
                         edge="end"
+                        disabled={redirecting}
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -275,14 +303,21 @@ export default function Login() {
                   color="primary"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={redirecting}
                 />
               }
               label="Remember me"
             />
-            <PrimaryButton type="submit" fullWidth variant="contained" disabled={isLoading}>
+            <PrimaryButton type="submit" fullWidth variant="contained" disabled={isLoading || redirecting}>
               {isLoading ? <CircularProgress size={24} color="inherit" /> : "Login"}
             </PrimaryButton>
-            <Link component="button" onClick={handleForgotPasswordClick} variant="body2" sx={{ alignSelf: "left" }}>
+            <Link
+              component="button"
+              onClick={handleForgotPasswordClick}
+              variant="body2"
+              sx={{ alignSelf: "left" }}
+              disabled={redirecting}
+            >
               Forgot your password?
             </Link>
           </Box>
@@ -295,6 +330,8 @@ export default function Login() {
                 color: "#0078D7",
                 fontWeight: "bold",
                 textDecoration: "none",
+                pointerEvents: redirecting ? "none" : "auto",
+                opacity: redirecting ? 0.7 : 1,
               }}
             >
               Sign up

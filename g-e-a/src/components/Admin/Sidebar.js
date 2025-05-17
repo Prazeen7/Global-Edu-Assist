@@ -136,9 +136,6 @@ function Sidebar() {
         { text: "Institution Management", icon: <BusinessIcon />, path: "/admin/institutions" },
         { text: "Documents Management", icon: <DescriptionIcon />, path: "/admin/documents" },
         { text: "Agent Management", icon: <PeopleIcon />, path: "/admin/agents" },
-        { text: "Landing Page", icon: <HomeIcon />, path: "/admin/landing-page-editor" },
-        { text: "About Section", icon: <ArticleIcon />, path: "/admin/about" },
-        { text: "Settings", icon: <SettingsIcon />, path: "/admin/settings" },
     ]
 
     // Logout function
