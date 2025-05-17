@@ -8,7 +8,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardMedia,
   Divider,
   List,
   ListItem,
@@ -18,6 +17,8 @@ import {
   ThemeProvider,
   createTheme,
   CssBaseline,
+  useMediaQuery,
+  IconButton,
 } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import LooksOneIcon from "@mui/icons-material/LooksOne"
@@ -30,20 +31,39 @@ import PhoneIcon from "@mui/icons-material/Phone"
 import EmailIcon from "@mui/icons-material/Email"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
 import SendIcon from "@mui/icons-material/Send"
-import '../Institutions/institutions.css'
+import BusinessIcon from "@mui/icons-material/Business"
+import EngineeringIcon from "@mui/icons-material/Engineering"
+import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount"
+import LinkedInIcon from "@mui/icons-material/LinkedIn"
+import TwitterIcon from "@mui/icons-material/Twitter"
+import GitHubIcon from "@mui/icons-material/GitHub"
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
+import "../Institutions/institutions.css"
 
 // Create a theme with the brand color
 const theme = createTheme({
   palette: {
     primary: {
       main: "#4f46e5",
+      light: "#6366F1",
+      dark: "#4338CA",
+    },
+    secondary: {
+      main: "#10B981",
+      light: "#34D399",
+      dark: "#059669",
     },
     background: {
-      default: "#ffffff", 
+      default: "#F9FAFB",
+      paper: "#FFFFFF",
+    },
+    text: {
+      primary: "#111827",
+      secondary: "#4B5563",
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
       fontWeight: 800,
     },
@@ -52,6 +72,15 @@ const theme = createTheme({
     },
     h3: {
       fontWeight: 600,
+    },
+    h4: {
+      fontWeight: 600,
+    },
+    h5: {
+      fontWeight: 500,
+    },
+    h6: {
+      fontWeight: 500,
     },
   },
   components: {
@@ -62,6 +91,17 @@ const theme = createTheme({
           textTransform: "none",
           fontWeight: 600,
           padding: "10px 20px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          transition: "all 0.2s ease-in-out",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+          },
+        },
+        contained: {
+          "&:hover": {
+            boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)",
+          },
         },
       },
     },
@@ -69,9 +109,28 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 16,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
         },
       },
     },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          overflow: "hidden",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+        },
+      },
+    },
+    MuiListItem: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
+    },
+  },
+  shape: {
+    borderRadius: 8,
   },
 })
 
@@ -92,42 +151,103 @@ const SectionDivider = styled(Divider)(({ theme }) => ({
 
 const TeamCard = styled(Card)(({ theme }) => ({
   height: "100%",
-  transition: "transform 0.3s ease-in-out",
+  transition: "all 0.3s ease-in-out",
+  overflow: "visible",
   "&:hover": {
-    transform: "scale(1.03)",
+    transform: "translateY(-8px)",
+    boxShadow: "0 12px 28px rgba(0,0,0,0.12)",
   },
 }))
 
 const ObjectiveItem = styled(ListItem)(({ theme }) => ({
   marginBottom: theme.spacing(2),
+  transition: "all 0.2s ease",
+  "&:hover": {
+    backgroundColor: theme.palette.primary.main + "08",
+    transform: "translateX(4px)",
+  },
 }))
 
 const ObjectiveIcon = styled(Avatar)(({ theme }) => ({
   backgroundColor: theme.palette.primary.main + "15",
   color: theme.palette.primary.main,
+  boxShadow: "0 2px 8px rgba(79, 70, 229, 0.2)",
+}))
+
+const TeamMemberAvatar = styled(Box)(({ theme }) => ({
+  width: 100,
+  height: 100,
+  borderRadius: "50%",
+  backgroundColor: theme.palette.primary.main + "15",
+  color: theme.palette.primary.main,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  margin: "0 auto",
+  marginTop: -50,
+  boxShadow: "0 4px 20px rgba(79, 70, 229, 0.25)",
+  border: `4px solid ${theme.palette.background.paper}`,
+}))
+
+const ContactItem = styled(ListItem)(({ theme }) => ({
+  backgroundColor: theme.palette.grey[50],
+  borderRadius: 12,
+  marginBottom: theme.spacing(2),
+  padding: theme.spacing(2),
+  transition: "all 0.2s ease",
+  "&:hover": {
+    backgroundColor: theme.palette.primary.main + "08",
+    transform: "translateX(4px)",
+  },
+}))
+
+const SocialIconButton = styled(IconButton)(({ theme }) => ({
+  backgroundColor: theme.palette.grey[100],
+  marginRight: theme.spacing(1),
+  transition: "all 0.2s ease",
+  "&:hover": {
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.common.white,
+    transform: "translateY(-2px)",
+  },
 }))
 
 export default function AboutPage() {
-  // Team members data
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"))
+
+  // Team members data with icons instead of images
   const teamMembers = [
     {
       name: "John Doe",
       title: "CEO & Founder",
       description: "With over 15 years of industry experience, John leads our company with vision and expertise.",
-      image: "/placeholder.svg?height=200&width=200",
+      icon: <SupervisorAccountIcon sx={{ fontSize: 50 }} />,
+      socialLinks: [
+        { icon: <LinkedInIcon />, url: "#" },
+        { icon: <TwitterIcon />, url: "#" },
+        { icon: <GitHubIcon />, url: "#" },
+      ],
     },
     {
       name: "Jane Smith",
       title: "Operations Director",
       description:
         "Jane ensures our day-to-day operations run smoothly and efficiently to deliver exceptional results.",
-      image: "/placeholder.svg?height=200&width=200",
+      icon: <BusinessIcon sx={{ fontSize: 50 }} />,
+      socialLinks: [
+        { icon: <LinkedInIcon />, url: "#" },
+        { icon: <TwitterIcon />, url: "#" },
+      ],
     },
     {
       name: "Michael Johnson",
       title: "Technical Lead",
       description: "Michael brings innovative technical solutions to our clients with his extensive expertise.",
-      image: "/placeholder.svg?height=200&width=200",
+      icon: <EngineeringIcon sx={{ fontSize: 50 }} />,
+      socialLinks: [
+        { icon: <LinkedInIcon />, url: "#" },
+        { icon: <GitHubIcon />, url: "#" },
+      ],
     },
   ]
 
@@ -154,86 +274,136 @@ export default function AboutPage() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ py: 6 }}>
+      <Box sx={{ py: 8, bgcolor: "background.default" }}>
         <Container maxWidth="lg">
           {/* Page Title */}
-          <Box sx={{ textAlign: "center", mb: 8 }}>
-            <Typography variant="h2" component="h1" gutterBottom>
-              About{" "}
-              <Box component="span" sx={{ color: "primary.main" }}>
-                Us
-              </Box>
+          <Box sx={{ textAlign: "center", mb: 10 }}>
+            <Typography
+              variant="h2"
+              component="h1"
+              gutterBottom
+              sx={{
+                fontSize: { xs: "2.5rem", md: "3.5rem" },
+                background: "linear-gradient(90deg, #4f46e5 0%, #10B981 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                mb: 2,
+              }}
+            >
+              About Us
             </Typography>
-            <Typography variant="h5" color="text.secondary" sx={{ maxWidth: 600, mx: "auto" }}>
+            <Typography
+              variant="h5"
+              color="text.secondary"
+              sx={{
+                maxWidth: 700,
+                mx: "auto",
+                fontSize: { xs: "1.1rem", md: "1.25rem" },
+                lineHeight: 1.6,
+              }}
+            >
               Learn more about our company, our mission, and the team behind our success.
             </Typography>
           </Box>
 
           {/* Who are we section */}
-          <Box sx={{ mb: 8 }}>
+          <Box sx={{ mb: 10 }}>
             <SectionTitle>
-              <Typography variant="h4">Who are we</Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: "text.primary" }}>
+                Who are we
+              </Typography>
               <SectionDivider />
             </SectionTitle>
 
             <Grid container spacing={4} alignItems="center">
               <Grid item xs={12} md={8}>
                 <Paper
-                  elevation={3}
+                  elevation={0}
                   sx={{
                     p: 4,
                     height: "100%",
-                    borderLeft: 4,
+                    borderLeft: 6,
                     borderColor: "primary.main",
+                    position: "relative",
+                    overflow: "hidden",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      background: "linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%)",
+                      zIndex: -1,
+                    },
                   }}
                 >
-                  <Typography variant="body1" paragraph sx={{ fontSize: "1.1rem", lineHeight: 1.6 }}>
+                  <Typography
+                    variant="body1"
+                    paragraph
+                    sx={{ fontSize: "1.1rem", lineHeight: 1.8, color: "text.primary" }}
+                  >
                     We are a dedicated team of professionals committed to providing exceptional service in our industry.
                     Founded in 2010, our organization has grown from a small startup to a leading provider of solutions
                     for our clients worldwide. Our passion for excellence and innovation drives everything we do.
                   </Typography>
-                  <Typography variant="body1" sx={{ fontSize: "1.1rem", lineHeight: 1.6 }}>
+                  <Typography variant="body1" sx={{ fontSize: "1.1rem", lineHeight: 1.8, color: "text.primary" }}>
                     With a focus on quality and customer satisfaction, we strive to exceed expectations in every project
                     we undertake. Our experienced team brings diverse skills and perspectives to tackle complex
                     challenges and deliver outstanding results.
                   </Typography>
+                  <Button variant="outlined" color="primary" sx={{ mt: 3 }} endIcon={<ArrowForwardIcon />}>
+                    Learn more about our story
+                  </Button>
                 </Paper>
               </Grid>
               <Grid item xs={12} md={4}>
                 <Paper
-                  elevation={3}
+                  elevation={0}
                   sx={{
-                    p: 2,
+                    p: 4,
                     overflow: "hidden",
                     transition: "transform 0.3s ease-in-out",
                     "&:hover": {
                       transform: "scale(1.05)",
                     },
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "100%",
+                    background: "linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)",
                   }}
                 >
-                  <Box
-                    component="img"
-                    src="/placeholder.svg?height=400&width=400"
-                    alt="Company image"
-                    sx={{
-                      width: "100%",
-                      height: "auto",
-                      borderRadius: 2,
-                    }}
-                  />
+                  <BusinessIcon sx={{ fontSize: 120, color: "primary.main", mb: 2, opacity: 0.8 }} />
+                  <Typography variant="h6" align="center" sx={{ fontWeight: 600, color: "text.primary" }}>
+                    Established in 2010
+                  </Typography>
+                  <Typography variant="body2" align="center" color="text.secondary" sx={{ mt: 1 }}>
+                    Over a decade of excellence in service
+                  </Typography>
                 </Paper>
               </Grid>
             </Grid>
           </Box>
 
           {/* Our Objectives section */}
-          <Box sx={{ mb: 8 }}>
+          <Box sx={{ mb: 10 }}>
             <SectionTitle>
-              <Typography variant="h4">Our Objectives</Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: "text.primary" }}>
+                Our Objectives
+              </Typography>
               <SectionDivider />
             </SectionTitle>
 
-            <Paper elevation={3} sx={{ p: 4 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 4,
+                background: "linear-gradient(135deg, rgba(79, 70, 229, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%)",
+                border: "1px solid rgba(79, 70, 229, 0.1)",
+              }}
+            >
               <Grid container spacing={3}>
                 {objectives.map((objective, index) => (
                   <Grid item xs={12} md={6} key={index}>
@@ -241,7 +411,13 @@ export default function AboutPage() {
                       <ListItemIcon>
                         <ObjectiveIcon>{objectiveIcons[index]}</ObjectiveIcon>
                       </ListItemIcon>
-                      <ListItemText primary={objective} />
+                      <ListItemText
+                        primary={
+                          <Typography variant="body1" sx={{ fontWeight: 500, color: "text.primary" }}>
+                            {objective}
+                          </Typography>
+                        }
+                      />
                     </ObjectiveItem>
                   </Grid>
                 ))}
@@ -254,52 +430,93 @@ export default function AboutPage() {
             {/* Contact Us section */}
             <Grid item xs={12} md={4}>
               <SectionTitle>
-                <Typography variant="h4">Contact Us</Typography>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: "text.primary" }}>
+                  Contact Us
+                </Typography>
                 <SectionDivider />
               </SectionTitle>
 
-              <Paper elevation={3} sx={{ p: 4, height: "100%" }}>
-                <List sx={{ mb: 2 }}>
-                  <ListItem sx={{ bgcolor: "grey.100", borderRadius: 2, mb: 2, p: 2 }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 4,
+                  height: "100%",
+                  background: "linear-gradient(135deg, rgba(79, 70, 229, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%)",
+                  border: "1px solid rgba(79, 70, 229, 0.1)",
+                }}
+              >
+                <List sx={{ mb: 3 }}>
+                  <ContactItem>
                     <ListItemIcon>
-                      <PhoneIcon color="primary" />
+                      <Avatar sx={{ bgcolor: "primary.main" }}>
+                        <PhoneIcon />
+                      </Avatar>
                     </ListItemIcon>
                     <ListItemText
-                      primary="Contact No."
+                      primary={
+                        <Typography variant="body2" color="text.secondary">
+                          Contact No.
+                        </Typography>
+                      }
                       secondary={
-                        <Typography variant="body1" color="primary.main" fontWeight="bold">
+                        <Typography variant="body1" color="primary.main" fontWeight="bold" sx={{ mt: 0.5 }}>
                           +1 (555) 123-4567
                         </Typography>
                       }
                     />
-                  </ListItem>
+                  </ContactItem>
 
-                  <ListItem sx={{ bgcolor: "grey.100", borderRadius: 2, mb: 2, p: 2 }}>
+                  <ContactItem>
                     <ListItemIcon>
-                      <EmailIcon color="primary" />
+                      <Avatar sx={{ bgcolor: "primary.main" }}>
+                        <EmailIcon />
+                      </Avatar>
                     </ListItemIcon>
                     <ListItemText
-                      primary="Email"
+                      primary={
+                        <Typography variant="body2" color="text.secondary">
+                          Email
+                        </Typography>
+                      }
                       secondary={
-                        <Typography variant="body1" color="primary.main" fontWeight="bold">
+                        <Typography variant="body1" color="primary.main" fontWeight="bold" sx={{ mt: 0.5 }}>
                           info@yourcompany.com
                         </Typography>
                       }
                     />
-                  </ListItem>
+                  </ContactItem>
 
-                  <ListItem sx={{ bgcolor: "grey.100", borderRadius: 2, mb: 2, p: 2 }}>
+                  <ContactItem>
                     <ListItemIcon>
-                      <LocationOnIcon color="primary" />
+                      <Avatar sx={{ bgcolor: "primary.main" }}>
+                        <LocationOnIcon />
+                      </Avatar>
                     </ListItemIcon>
                     <ListItemText
-                      primary="Address"
-                      secondary="123 Business Avenue, Suite 100, Enterprise City, EC 12345"
+                      primary={
+                        <Typography variant="body2" color="text.secondary">
+                          Address
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography variant="body1" color="text.primary" sx={{ mt: 0.5 }}>
+                          123 Business Avenue, Suite 100, Enterprise City, EC 12345
+                        </Typography>
+                      }
                     />
-                  </ListItem>
+                  </ContactItem>
                 </List>
 
-                <Button variant="contained" fullWidth size="large" endIcon={<SendIcon />}>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  endIcon={<SendIcon />}
+                  sx={{
+                    background: "linear-gradient(90deg, #4f46e5 0%, #6366F1 100%)",
+                    py: 1.5,
+                  }}
+                >
                   Send us a message
                 </Button>
               </Paper>
@@ -308,44 +525,54 @@ export default function AboutPage() {
             {/* Our Team section */}
             <Grid item xs={12} md={8}>
               <SectionTitle>
-                <Typography variant="h4">Our Team</Typography>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: "text.primary" }}>
+                  Our Team
+                </Typography>
                 <SectionDivider />
               </SectionTitle>
 
               <Grid container spacing={3}>
                 {teamMembers.map((member, index) => (
                   <Grid item xs={12} sm={6} md={4} key={index}>
-                    <TeamCard elevation={3}>
-                      <CardMedia
-                        component="img"
-                        height="200"
-                        image={member.image}
-                        alt={`${member.name} profile`}
-                        sx={{
-                          position: "relative",
-                          "&::after": {
-                            content: '""',
-                            position: "absolute",
-                            bottom: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "50%",
-                            background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
-                          },
-                        }}
-                      />
-                      <CardContent>
-                        <Typography variant="h6" component="h3" gutterBottom>
-                          {member.name}
-                        </Typography>
-                        <Typography variant="subtitle1" color="primary" gutterBottom fontWeight="medium">
-                          {member.title}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {member.description}
-                        </Typography>
-                      </CardContent>
-                    </TeamCard>
+                    <Box sx={{ position: "relative", pt: 6 }}>
+                      <TeamCard elevation={0}>
+                        <Box
+                          sx={{
+                            height: 80,
+                            background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                          }}
+                        />
+                        <TeamMemberAvatar>{member.icon}</TeamMemberAvatar>
+                        <CardContent sx={{ textAlign: "center", pt: 5 }}>
+                          <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 600 }}>
+                            {member.name}
+                          </Typography>
+                          <Typography
+                            variant="subtitle1"
+                            sx={{
+                              color: "primary.main",
+                              fontWeight: 500,
+                              mb: 2,
+                              background: "linear-gradient(90deg, #4f46e5 0%, #10B981 100%)",
+                              WebkitBackgroundClip: "text",
+                              WebkitTextFillColor: "transparent",
+                            }}
+                          >
+                            {member.title}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            {member.description}
+                          </Typography>
+                          <Box sx={{ mt: 2 }}>
+                            {member.socialLinks.map((link, i) => (
+                              <SocialIconButton key={i} size="small" aria-label="social link" href={link.url}>
+                                {link.icon}
+                              </SocialIconButton>
+                            ))}
+                          </Box>
+                        </CardContent>
+                      </TeamCard>
+                    </Box>
                   </Grid>
                 ))}
               </Grid>

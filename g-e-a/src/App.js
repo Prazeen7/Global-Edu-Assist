@@ -33,6 +33,7 @@ import Profile from "./Pages/profile"
 import AgentRegistration from "./Pages/Agents/Registration/Registration"
 import AgentLogin from "./Pages/Agents/Login/Login"
 import AgentDashboard from "./Pages/Agents/Dashboard/Dashboard"
+import AgentResubmit from "./Pages/Agents/Resubmit"
 
 function App() {
     const [LoggedIn, setLoggedIn] = useState(false)
@@ -220,7 +221,17 @@ function App() {
             path: "/agent-dashboard",
             element: <AgentDashboard />,
         },
-
+        // Add the new route for agent resubmission
+        {
+            path: "/agent-resubmit/:id",
+            element: (
+                <>
+                    <Navbar />
+                    <AgentResubmit />
+                    <Footer />
+                </>
+            ),
+        },
         {
             path: "/admin",
             element: <AdminLogin />,

@@ -36,8 +36,6 @@ import {
     LocationOn as LocationIcon,
     Business as BusinessIcon,
     Edit as EditIcon,
-    Save as SaveIcon,
-    Cancel as CancelIcon,
     Add as AddIcon,
     Delete as DeleteIcon,
     PhotoCamera as PhotoCameraIcon,
@@ -45,7 +43,7 @@ import {
 import axios from "../../utils/axiosConfig"
 import { AuthContext } from "../../Context/context"
 
-// Base URL for API - adjust this to match your server URL
+// Base URL for API
 const API_BASE_URL = "http://localhost:3001"
 
 const ProfileMenu = () => {
@@ -369,42 +367,44 @@ const ProfileMenu = () => {
                 return
             }
 
-            // Create form data for file upload
-            const formDataToSend = new FormData()
-
-            // Add text fields
-            formDataToSend.append("companyName", formData.companyName)
-            formDataToSend.append("email", formData.email)
-            formDataToSend.append("website", formData.website || "")
-            formDataToSend.append("contactNumber", formData.contactNumber || "")
-            formDataToSend.append("headOfficeAddress", formData.headOfficeAddress || "")
-
-            // Add arrays as JSON strings
-            // Make sure to stringify the arrays only once
-            formDataToSend.append("owners", JSON.stringify(formData.owners || []))
-            formDataToSend.append("branches", JSON.stringify(formData.branches || []))
-
-            // Add profile picture if changed
-            if (profilePictureFile) {
-                formDataToSend.append("profilePicture", profilePictureFile)
-            }
-
-            // Log the form data for debugging
-            console.log("Sending form data:", {
+            // First, update the text data using the update-info endpoint
+            const textData = {
                 companyName: formData.companyName,
                 email: formData.email,
-                website: formData.website,
-                owners: JSON.stringify(formData.owners || []),
-                branches: JSON.stringify(formData.branches || []),
-                hasProfilePicture: !!profilePictureFile,
-            })
+                website: formData.website || "",
+                contactNumber: formData.contactNumber || "",
+                headOfficeAddress: formData.headOfficeAddress || "",
+                owners: formData.owners || [],
+                branches: formData.branches || [],
+            }
 
-            // Send update request to API
-            const response = await axios.put(`/agent/${agent._id}/update`, formDataToSend, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            })
+            console.log("Sending text data:", textData)
+
+            // Update text information first
+            const textResponse = await axios.put(`/agent/${agent._id}/update-info`, textData)
+
+            if (!textResponse.data.success) {
+                throw new Error(textResponse.data.message || "Failed to update profile information")
+            }
+
+            // If there's a new profile picture, upload it separately
+            if (profilePictureFile) {
+                const profileFormData = new FormData()
+                profileFormData.append("profilePicture", profilePictureFile)
+
+                const profileResponse = await axios.post(`/agent/${agent._id}/upload-profile`, profileFormData, {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                })
+
+                if (!profileResponse.data.success) {
+                    throw new Error(profileResponse.data.message || "Failed to upload profile picture")
+                }
+            }
+
+            // Get the updated agent data
+            const response = await axios.get(`/agent/${agent._id}`)
 
             if (response.data.success) {
                 // Update local state with response data
@@ -414,24 +414,27 @@ const ProfileMenu = () => {
                 // Update localStorage
                 localStorage.setItem("agentData", JSON.stringify(updatedAgent))
 
+                // Close the dialog
+                setProfileOpen(false)
+
+                // Exit edit mode
+                setEditMode(false)
+                setProfilePictureFile(null)
+
                 // Show success message
                 setSnackbar({
                     open: true,
                     message: "Profile updated successfully",
                     severity: "success",
                 })
-
-                // Exit edit mode
-                setEditMode(false)
-                setProfilePictureFile(null)
             } else {
-                throw new Error(response.data.message || "Failed to update profile")
+                throw new Error(response.data.message || "Failed to retrieve updated profile")
             }
         } catch (error) {
             console.error("Error updating profile:", error)
             setSnackbar({
                 open: true,
-                message: error.response?.data?.message || "Failed to update profile",
+                message: error.response?.data?.message || error.message || "Failed to update profile",
                 severity: "error",
             })
         } finally {
@@ -586,20 +589,7 @@ const ProfileMenu = () => {
                                 <EditIcon />
                             </IconButton>
                         </Tooltip>
-                    ) : (
-                        <Box>
-                            <Tooltip title="Cancel">
-                                <IconButton onClick={handleCancelEdit} color="error" sx={{ mr: 1 }}>
-                                    <CancelIcon />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Save Changes">
-                                <IconButton onClick={handleSaveChanges} color="success" disabled={saving}>
-                                    {saving ? <CircularProgress size={24} /> : <SaveIcon />}
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
-                    )}
+                    ) : null}
                 </DialogTitle>
                 <DialogContent>
                     <Grid container spacing={3}>
@@ -930,16 +920,19 @@ const ProfileMenu = () => {
                 </DialogActions>
             </Dialog>
 
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={handleCloseSnackbar}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            >
-                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} variant="filled" sx={{ width: "100%" }}>
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
+            {/* Use Portal to render the Snackbar outside the DOM hierarchy */}
+            <div style={{ position: "fixed", zIndex: 9999, top: 0, left: 0, right: 0 }}>
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={6000}
+                    onClose={handleCloseSnackbar}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                >
+                    <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} variant="filled" sx={{ width: "100%" }}>
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
+            </div>
         </>
     )
 }
