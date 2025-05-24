@@ -5,7 +5,7 @@ const path = require("path")
 const fs = require("fs")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
-const emailService = require("../services/emailService") // Make sure this import is added
+const emailService = require("../services/emailService") 
 const util = require("util")
 
 // Set upload directory and create if it doesn't exist
@@ -124,7 +124,7 @@ exports.createAgent = async (req, res) => {
                     companyName,
                     owners: JSON.parse(owners || "[]"),
                     email,
-                    password: hashedPassword, // Store the hashed password
+                    password: hashedPassword, 
                     website,
                     contactNumber,
                     headOfficeAddress,
@@ -132,7 +132,7 @@ exports.createAgent = async (req, res) => {
                     documents,
                     profilePicture,
                     status: "pending",
-                    user: "agent", // Set user type to agent
+                    user: "agent", 
                 })
 
                 const savedAgent = await newAgent.save()
@@ -379,7 +379,7 @@ exports.deleteAgent = async (req, res) => {
 const generateAgentToken = (agent) => {
     const payload = {
         id: agent._id,
-        userId: agent._id, // Add userId field for consistency with user tokens
+        userId: agent._id, 
         email: agent.email,
         companyName: agent.companyName,
         role: "agent",
@@ -389,11 +389,11 @@ const generateAgentToken = (agent) => {
     return jwt.sign(
         payload,
         process.env.JWT_SECRET_Agent,
-        { expiresIn: "7d" }, // Token expires in 7 days
+        { expiresIn: "7d" }, 
     )
 }
 
-// Login agent - UPDATED to handle different status responses and generate JWT token
+// Login agent - to handle different status responses and generate JWT token
 exports.loginAgent = async (req, res) => {
     try {
         const { email, password } = req.body
@@ -476,8 +476,8 @@ exports.updateAgentInfo = async (req, res) => {
             website,
             contactNumber,
             headOfficeAddress,
-            status: "pending", // Reset status to pending
-            remarks: undefined, // Clear previous remarks
+            status: "pending", 
+            remarks: undefined,
             updatedAt: new Date(),
         }
 
@@ -579,8 +579,8 @@ exports.updateAgentProfile = async (req, res) => {
                     website,
                     contactNumber,
                     headOfficeAddress,
-                    status: "pending", // Reset status to pending
-                    remarks: undefined, // Clear previous remarks
+                    status: "pending", 
+                    remarks: undefined, 
                     updatedAt: new Date(),
                 }
 
@@ -685,7 +685,6 @@ exports.updateAgentProfile = async (req, res) => {
                     return res.status(500).json({ error: "Failed to update agent" })
                 }
 
-                // Send notification to admin about resubmission
                 try {
                     await emailService.sendAgentResubmissionNotificationToAdmin(updatedAgent.companyName, updatedAgent._id)
                     console.log(`Resubmission notification sent to admin for agent: ${updatedAgent.companyName}`)
@@ -765,8 +764,6 @@ exports.updateAgentProfile = async (req, res) => {
     }
 }
 
-// Add these new functions to your agentController.js file
-
 // Upload profile picture
 exports.uploadProfilePicture = async (req, res) => {
     try {
@@ -815,7 +812,7 @@ exports.uploadProfilePicture = async (req, res) => {
             id,
             {
                 profilePicture,
-                status: "pending", // Reset status to pending
+                status: "pending", 
                 updatedAt: new Date(),
             },
             { new: true },

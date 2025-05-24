@@ -1,37 +1,12 @@
 const Post = require("../models/post")
 const Like = require("../models/like")
+const AgentModel = require ("../models/agents")
 
-// More robust Agent model import
-let AgentModel
-try {
-    // Try different possible model names and paths
-    const possibleModels = [
-        "../models/agents",
-        "../models/agent",
-        "../models/Agent",
-        "./models/agents",
-        "./models/agent",
-        "./models/Agent",
-    ]
-
-    for (const modelPath of possibleModels) {
-        try {
-            AgentModel = require(modelPath)
-            console.log(`Successfully loaded Agent model from: ${modelPath}`)
-            break
-        } catch (err) {
-            // Continue trying other paths
-        }
-    }
-} catch (err) {
-    console.error("Could not load Agent model:", err)
-}
 const path = require("path")
 const fs = require("fs")
 // Import the multer configuration
 const { uploadSingle, handleUploadErrors } = require("../config/multerConfig")
 
-// Add this at the top of your file for better debugging
 const debug = require("debug")("app:postController")
 
 // Create a new post
@@ -47,21 +22,16 @@ exports.createPost = async (req, res) => {
             try {
                 const { title, content, category } = req.body
 
-                // Get agent ID from token - handle both formats
+                // Get agent ID from token
                 const agentId = req.user?.id || req.user?._id || req.user?.userId || req.agent?.id
 
                 if (!agentId) {
                     return res.status(401).json({ error: "Agent ID not found in token" })
                 }
 
-                // Skip agent verification entirely - don't even try to find the agent
-                // This avoids the "Schema hasn't been registered for model 'Agent'" error
-
                 // Prepare image data if uploaded
                 let image = null
                 if (req.file) {
-                    // IMPORTANT: Store the correct path that matches where the file is actually saved
-                    // The file is being saved to /uploads/ directly, not /uploads/posts/
                     image = {
                         url: `/uploads/${req.file.filename}`,
                         filename: req.file.filename,
@@ -79,19 +49,16 @@ exports.createPost = async (req, res) => {
                     category,
                     agent: agentId,
                     image,
-                    likes: 0, // Initialize likes count
+                    likes: 0, 
                 })
 
                 const savedPost = await newPost.save()
-
-                // Return the post without trying to populate agent details
                 res.status(201).json({
                     success: true,
                     message: "Post created successfully",
                     data: savedPost,
                 })
             } catch (error) {
-                // Clean up uploaded file if error occurs
                 if (req.file) {
                     fs.unlinkSync(req.file.path)
                 }
@@ -103,17 +70,13 @@ exports.createPost = async (req, res) => {
     }
 }
 
-// Modify the getAllPosts function to include better error handling
+// get all posts
 exports.getAllPosts = async (req, res) => {
     try {
         debug("Fetching all posts")
-
-        // First try without populate to see if that's causing issues
         const posts = await Post.find().sort({ createdAt: -1 })
 
         debug(`Found ${posts.length} posts`)
-
-        // Return the posts without trying to populate agent details
         res.status(200).json({
             success: true,
             count: posts.length,
@@ -129,7 +92,7 @@ exports.getAllPosts = async (req, res) => {
     }
 }
 
-// Get posts by agent ID (public)
+// Get posts by agent ID 
 exports.getPostsByAgentId = async (req, res) => {
     try {
         const { agentId } = req.params
@@ -200,7 +163,7 @@ exports.getPostById = async (req, res) => {
     }
 }
 
-// Update post (protected)
+// Update post
 exports.updatePost = async (req, res) => {
     try {
         uploadSingle(req, res, async (err) => {
@@ -214,7 +177,7 @@ exports.updatePost = async (req, res) => {
                 const { id } = req.params
                 const { title, content, category } = req.body
 
-                // Get agent ID from token - handle both formats
+                // Get agent ID from token
                 const agentId = req.user.id || req.user._id || req.user.userId || req.agent?.id
 
                 if (!agentId) {
@@ -240,14 +203,14 @@ exports.updatePost = async (req, res) => {
                     updatedAt: new Date(),
                 }
 
-                // Handle image update if present
+                // Handle image update 
                 if (req.file) {
                     // Remove old image file if it exists
                     if (post.image && post.image.filename) {
                         try {
                             // Extract the file path from the URL
                             const oldFilePath = post.image.url.startsWith("/")
-                                ? post.image.url.substring(1) // Remove leading slash
+                                ? post.image.url.substring(1) 
                                 : post.image.url
 
                             if (fs.existsSync(oldFilePath)) {
@@ -255,7 +218,7 @@ exports.updatePost = async (req, res) => {
                             }
                         } catch (err) {
                             console.error("Error removing old image:", err)
-                            // Continue even if old file removal fails
+                        
                         }
                     }
 
@@ -289,12 +252,12 @@ exports.updatePost = async (req, res) => {
     }
 }
 
-// Delete post (protected)
+// Delete post 
 exports.deletePost = async (req, res) => {
     try {
         const { id } = req.params
 
-        // Get agent ID from token - handle both formats
+        // Get agent ID from token 
         const agentId = req.user.id || req.user._id || req.user.userId || req.agent?.id
 
         if (!agentId) {
@@ -317,7 +280,7 @@ exports.deletePost = async (req, res) => {
             try {
                 // Extract the file path from the URL
                 const filePath = post.image.url.startsWith("/")
-                    ? post.image.url.substring(1) // Remove leading slash
+                    ? post.image.url.substring(1) 
                     : post.image.url
 
                 if (fs.existsSync(filePath)) {
@@ -325,7 +288,7 @@ exports.deletePost = async (req, res) => {
                 }
             } catch (err) {
                 console.error("Error removing image file:", err)
-                // Continue even if file removal fails
+                
             }
         }
 
@@ -344,12 +307,12 @@ exports.deletePost = async (req, res) => {
     }
 }
 
-// Like post (updated to prevent multiple likes)
+// Like post 
 exports.likePost = async (req, res) => {
     try {
         const { id } = req.params
 
-        // Get user ID from token - handle both formats
+        // Get user ID from token
         const userId = req.user?.id || req.user?._id || req.user?.userId || req.agent?.id
 
         if (!userId) {
@@ -406,7 +369,7 @@ exports.checkLikeStatus = async (req, res) => {
     try {
         const { id } = req.params
 
-        // Get user ID from token - handle both formats
+        // Get user ID from token
         const userId = req.user?.id || req.user?._id || req.user?.userId || req.agent?.id
 
         if (!userId) {
