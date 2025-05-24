@@ -8,7 +8,6 @@ const authRoutes = require("./routes/authRoutes")
 const userRoutes = require("./routes/userRoutes")
 const documentRoutes = require("./routes/documentRoutes")
 const institutionRoutes = require("./routes/institutionRoutes")
-const programRoutes = require("./routes/programRoutes")
 const agentRoutes = require("./routes/agentRoutes")
 const { uploadSingle } = require("./config/multerConfig")
 const progressRoutes = require("./routes/progressRoutes")
@@ -41,7 +40,6 @@ const io = socketIo(server, {
 
 // Socket.io connection handling
 io.on("connection", (socket) => {
-    console.log("New client connected:", socket.id)
 
     // Track connected users
     let currentUserId = null
@@ -57,8 +55,6 @@ io.on("connection", (socket) => {
     socket.on("mark_messages_read", (data) => {
         console.log("Manual mark messages read:", data)
 
-        // Emit to all clients that messages have been read
-        // Make sure to include both senderId and receiverId for proper client-side handling
         io.emit("messages_read", {
             senderId: data.senderId,
             receiverId: data.receiverId,
@@ -102,7 +98,6 @@ app.use("/api", authRoutes)
 app.use("/api", userRoutes)
 app.use("/api", documentRoutes)
 app.use("/api", institutionRoutes)
-app.use("/api", programRoutes)
 app.use("/api", agentRoutes)
 app.use("/api/progress", progressRoutes)
 app.use("/api/chat", chatRoutes)

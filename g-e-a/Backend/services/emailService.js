@@ -35,7 +35,7 @@ exports.sendPasswordResetEmail = async (email, otp) => {
     await transporter.sendMail(mailOptions)
 }
 
-// New function for agent registration pending approval email
+// function for agent registration pending approval email
 exports.sendAgentPendingEmail = async (email, agentName) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -62,7 +62,7 @@ Global Edu Assist`,
     await transporter.sendMail(mailOptions)
 }
 
-// New function for agent approval email
+// function for agent approval email
 exports.sendAgentApprovalEmail = async (email, agentName) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -90,7 +90,7 @@ Global Edu Assist`,
     await transporter.sendMail(mailOptions)
 }
 
-// Updated function for agent rejection email with resubmission link
+// agent rejection email with resubmission link
 exports.sendAgentRejectionEmail = async (email, agentName, reason, agentId) => {
     const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000"
     const resubmitLink = `${baseUrl}/agent-resubmit/${agentId}`
@@ -127,7 +127,7 @@ Global Edu Assist`,
     await transporter.sendMail(mailOptions)
 }
 
-// New function to notify admins when an agent resubmits their application
+// function to notify admins when an agent resubmits their application
 exports.sendAgentResubmissionNotificationToAdmin = async (agentName, agentId) => {
     const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER
     const baseUrl = process.env.ADMIN_URL || "http://localhost:3000/admin"

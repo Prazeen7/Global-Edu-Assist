@@ -17,24 +17,20 @@ exports.forgotPassword = async (req, res) => {
             return res.status(400).json({ error: "Email is required" })
         }
 
-        // Find agent by email
         const agent = await AgentModel.findOne({ email })
 
         if (!agent) {
             return res.status(404).json({ error: "No agent found with this email address" })
         }
 
-        // Generate OTP
         const otp = generateOTP()
         const otpExpiry = new Date()
-        otpExpiry.setMinutes(otpExpiry.getMinutes() + 10) // OTP valid for 10 minutes
+        otpExpiry.setMinutes(otpExpiry.getMinutes() + 10)
 
-        // Save OTP to agent document
         agent.otp = otp
         agent.otpExpiry = otpExpiry
         await agent.save()
 
-        // Send OTP via email
         await emailService.sendPasswordResetEmail(email, otp)
 
         res.status(200).json({
@@ -58,14 +54,12 @@ exports.verifyOTP = async (req, res) => {
             return res.status(400).json({ error: "Email and OTP are required" })
         }
 
-        // Find agent by email
         const agent = await AgentModel.findOne({ email })
 
         if (!agent) {
             return res.status(404).json({ error: "No agent found with this email address" })
         }
 
-        // Check if OTP matches and is not expired
         if (agent.otp !== otp) {
             return res.status(400).json({ error: "Invalid OTP" })
         }
@@ -95,14 +89,12 @@ exports.resetPassword = async (req, res) => {
             return res.status(400).json({ error: "Email, OTP, and new password are required" })
         }
 
-        // Find agent by email
-        const agent = await AgentModel.findOne({ email })
+        const agent = await AgentModel.findOne({ email }).select("+password +status")
 
         if (!agent) {
             return res.status(404).json({ error: "No agent found with this email address" })
         }
 
-        // Verify OTP again for security
         if (agent.otp !== otp) {
             return res.status(400).json({ error: "Invalid OTP" })
         }
@@ -111,19 +103,17 @@ exports.resetPassword = async (req, res) => {
             return res.status(400).json({ error: "OTP has expired. Please request a new one." })
         }
 
-        // Password validation
         if (newPassword.length < 8) {
             return res.status(400).json({ error: "Password must be at least 8 characters long" })
         }
 
-        // Hash the new password
         const saltRounds = 10
         const hashedPassword = await bcrypt.hash(newPassword, saltRounds)
 
-        // Update password and clear OTP fields
         agent.password = hashedPassword
         agent.otp = undefined
         agent.otpExpiry = undefined
+        // Preserve the existing status (e.g., "approved") instead of resetting to "pending"
         await agent.save()
 
         res.status(200).json({

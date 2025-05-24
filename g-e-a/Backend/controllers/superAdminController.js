@@ -5,7 +5,7 @@ const bcrypt = require("bcrypt")
 exports.getAllAdmins = async (req, res) => {
     try {
         console.log("Getting all admins")
-        const admins = await AdminModel.find({}, { password: 0 }) // Exclude password field
+        const admins = await AdminModel.find({}, { password: 0 }) 
         console.log(`Found ${admins.length} admins`)
         res.status(200).json(admins)
     } catch (error) {

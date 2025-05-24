@@ -75,15 +75,10 @@ router.get("/getAgent", getAllAgents)
 router.get("/agent/:id", getAgentById)
 router.get("/availAgent", availAgent)
 
-// Make sure the route paths match what your frontend is expecting
-// Update the password reset routes to include the correct prefix if needed:
-
 // Password reset routes
 router.post("/api/agent/forgot-password", forgotPassword)
 router.post("/api/agent/verify-otp", verifyOTP)
 router.post("/api/agent/reset-password", resetPassword)
-
-// Or if your API is configured differently, adjust accordingly
 
 // Admin protected routes
 router.put("/agent/:id/status", updateAgentStatus)
