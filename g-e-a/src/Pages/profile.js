@@ -1,6 +1,6 @@
-import { useState, useEffect, useContext } from "react"
-import { AuthContext } from "../Context/context"
-import axios from "axios"
+import { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../Context/context";
+import axiosConfig from "../utils/axiosConfig"; 
 import {
     Alert,
     Avatar,
@@ -19,19 +19,19 @@ import {
     IconButton,
     Tooltip,
     InputAdornment,
-} from "@mui/material"
-import { styled } from "@mui/material/styles"
-import PhotoCameraIcon from "@mui/icons-material/PhotoCamera"
-import SaveIcon from "@mui/icons-material/Save"
-import EditIcon from "@mui/icons-material/Edit"
-import CancelIcon from "@mui/icons-material/Cancel"
-import Visibility from "@mui/icons-material/Visibility"
-import VisibilityOff from "@mui/icons-material/VisibilityOff"
-import LockIcon from "@mui/icons-material/Lock"
-import Loading from "../components/Loading"
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import SaveIcon from "@mui/icons-material/Save";
+import EditIcon from "@mui/icons-material/Edit";
+import CancelIcon from "@mui/icons-material/Cancel";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import LockIcon from "@mui/icons-material/Lock";
+import Loading from "../components/Loading";
 
 // Brand color
-const brandColor = "#4f46e5"
+const brandColor = "#4f46e5";
 
 // Styled components
 const VisuallyHiddenInput = styled("input")({
@@ -44,7 +44,7 @@ const VisuallyHiddenInput = styled("input")({
     left: 0,
     whiteSpace: "nowrap",
     width: 1,
-})
+});
 
 const ProfileAvatar = styled(Avatar)(({ theme }) => ({
     width: 150,
@@ -59,7 +59,7 @@ const ProfileAvatar = styled(Avatar)(({ theme }) => ({
     "&:hover": {
         transform: "scale(1.05)",
     },
-}))
+}));
 
 const ProfileCard = styled(Card)(({ theme }) => ({
     borderRadius: 16,
@@ -68,7 +68,7 @@ const ProfileCard = styled(Card)(({ theme }) => ({
     position: "relative",
     border: "none",
     background: theme.palette.background.paper,
-}))
+}));
 
 const AvatarWrapper = styled(Box)(({ theme }) => ({
     position: "relative",
@@ -77,7 +77,7 @@ const AvatarWrapper = styled(Box)(({ theme }) => ({
     flexDirection: "column",
     alignItems: "center",
     marginTop: theme.spacing(-8),
-}))
+}));
 
 const UploadButton = styled(IconButton)(({ theme }) => ({
     position: "absolute",
@@ -91,7 +91,7 @@ const UploadButton = styled(IconButton)(({ theme }) => ({
     "& .MuiSvgIcon-root": {
         fontSize: "1.5rem",
     },
-}))
+}));
 
 const EditButton = styled(Button)(({ theme }) => ({
     backgroundColor: brandColor,
@@ -106,7 +106,7 @@ const EditButton = styled(Button)(({ theme }) => ({
         backgroundColor: "#4338ca",
         boxShadow: theme.shadows[2],
     },
-}))
+}));
 
 const PrimaryButton = styled(Button)(({ theme }) => ({
     backgroundColor: brandColor,
@@ -123,7 +123,7 @@ const PrimaryButton = styled(Button)(({ theme }) => ({
     "&.Mui-disabled": {
         backgroundColor: "#c7d2fe",
     },
-}))
+}));
 
 const InfoItem = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(3),
@@ -135,7 +135,7 @@ const InfoItem = styled(Paper)(({ theme }) => ({
         borderColor: brandColor,
         boxShadow: theme.shadows[1],
     },
-}))
+}));
 
 const InfoLabel = styled(Typography)(({ theme }) => ({
     fontWeight: 500,
@@ -144,25 +144,25 @@ const InfoLabel = styled(Typography)(({ theme }) => ({
     marginBottom: theme.spacing(1),
     textTransform: "uppercase",
     letterSpacing: "0.5px",
-}))
+}));
 
 const InfoValue = styled(Typography)(({ theme }) => ({
     fontSize: "1.125rem",
     fontWeight: 600,
     color: theme.palette.text.primary,
-}))
+}));
 
 const PageTitle = styled(Typography)(({ theme }) => ({
     color: brandColor,
     fontWeight: 700,
     fontSize: "2rem",
     marginBottom: theme.spacing(1),
-}))
+}));
 
 const PageSubtitle = styled(Typography)(({ theme }) => ({
     color: theme.palette.text.secondary,
     fontSize: "1rem",
-}))
+}));
 
 const HeaderContainer = styled(Box)(({ theme }) => ({
     display: "flex",
@@ -171,7 +171,7 @@ const HeaderContainer = styled(Box)(({ theme }) => ({
     marginBottom: theme.spacing(6),
     paddingBottom: theme.spacing(3),
     borderBottom: `1px solid ${theme.palette.divider}`,
-}))
+}));
 
 const ChangePasswordButton = styled(Button)(({ theme }) => ({
     color: brandColor,
@@ -183,243 +183,256 @@ const ChangePasswordButton = styled(Button)(({ theme }) => ({
         backgroundColor: "#eef2ff",
         borderColor: brandColor,
     },
-}))
+}));
 
 const Profile = () => {
-    const { UserAvatar, setUserAvatar } = useContext(AuthContext)
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [editMode, setEditMode] = useState(false)
+    const { UserAvatar, setUserAvatar } = useContext(AuthContext);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [editMode, setEditMode] = useState(false);
     const [profileData, setProfileData] = useState({
         firstName: "",
         lastName: "",
         email: "",
         contactNumber: "",
-    })
-    const [profilePicture, setProfilePicture] = useState(null)
-    const [previewUrl, setPreviewUrl] = useState("")
-    const [showCurrentPassword, setShowCurrentPassword] = useState(false)
-    const [showNewPassword, setShowNewPassword] = useState(false)
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-    const [changePassword, setChangePassword] = useState(false)
+    });
+    const [profilePicture, setProfilePicture] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState("");
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [changePassword, setChangePassword] = useState(false);
     const [passwordData, setPasswordData] = useState({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
-    })
+    });
 
     // Form validation states
-    const [firstNameError, setFirstNameError] = useState(false)
-    const [firstNameErrorMessage, setFirstNameErrorMessage] = useState("")
-    const [lastNameError, setLastNameError] = useState(false)
-    const [lastNameErrorMessage, setLastNameErrorMessage] = useState("")
-    const [contactNumberError, setContactNumberError] = useState(false)
-    const [contactNumberErrorMessage, setContactNumberErrorMessage] = useState("")
-    const [passwordError, setPasswordError] = useState(false)
-    const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
+    const [firstNameError, setFirstNameError] = useState(false);
+    const [firstNameErrorMessage, setFirstNameErrorMessage] = useState("");
+    const [lastNameError, setLastNameError] = useState(false);
+    const [lastNameErrorMessage, setLastNameErrorMessage] = useState("");
+    const [contactNumberError, setContactNumberError] = useState(false);
+    const [contactNumberErrorMessage, setContactNumberErrorMessage] = useState("");
+    const [passwordError, setPasswordError] = useState(false);
+    const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
 
     // Alert states
-    const [alertMessage, setAlertMessage] = useState("")
-    const [alertSeverity, setAlertSeverity] = useState(null)
+    const [alertMessage, setAlertMessage] = useState("");
+    const [alertSeverity, setAlertSeverity] = useState(null);
 
     const fetchUserProfile = async () => {
         try {
-            setLoading(true)
-            const token = localStorage.getItem("token")
-            const response = await axios.get("http://localhost:3001/api/auth/profile", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
+            setLoading(true);
+            // Use the configured axios 
+            const response = await axiosConfig.get("/auth/profile");
 
-            const { data } = response.data
+            const { data } = response.data;
             setProfileData({
                 firstName: data.firstName,
                 lastName: data.lastName,
                 email: data.email,
                 contactNumber: data.contactNumber || "",
-            })
+            });
 
             if (data.profilePicture) {
-                setPreviewUrl(data.profilePicture)
+                setPreviewUrl(data.profilePicture);
             }
 
-            setUserAvatar(data.firstName)
+            setUserAvatar(data.firstName);
         } catch (error) {
-            console.error("Error fetching profile:", error)
-            setAlertMessage(error.response?.data?.message || "Failed to load profile data")
-            setAlertSeverity("error")
+            console.error("Error fetching profile:", error);
+            setAlertMessage(error.response?.data?.message || "Failed to load profile data");
+            setAlertSeverity("error");
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
-        fetchUserProfile()
-    }, [])
+        fetchUserProfile();
+    }, []);
 
     useEffect(() => {
         if (alertMessage) {
             const timer = setTimeout(() => {
-                setAlertMessage("")
-                setAlertSeverity(null)
-            }, 3000)
-            return () => clearTimeout(timer)
+                setAlertMessage("");
+                setAlertSeverity(null);
+            }, 3000);
+            return () => clearTimeout(timer);
         }
-    }, [alertMessage])
+    }, [alertMessage]);
+
+    useEffect(() => {
+        if (firstNameError || lastNameError || contactNumberError || passwordError) {
+            const timer = setTimeout(() => {
+                setFirstNameError(false);
+                setFirstNameErrorMessage("");
+                setLastNameError(false);
+                setLastNameErrorMessage("");
+                setContactNumberError(false);
+                setContactNumberErrorMessage("");
+                setPasswordError(false);
+                setPasswordErrorMessage("");
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [firstNameError, lastNameError, contactNumberError, passwordError]);
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target
+        const { name, value } = e.target;
         setProfileData({
             ...profileData,
             [name]: value,
-        })
-    }
+        });
+    };
 
     const handlePasswordChange = (e) => {
-        const { name, value } = e.target
+        const { name, value } = e.target;
         setPasswordData({
             ...passwordData,
             [name]: value,
-        })
-    }
+        });
+    };
 
     const handleFileChange = (e) => {
-        const file = e.target.files[0]
+        const file = e.target.files[0];
         if (file) {
             if (file.size > 5 * 1024 * 1024) {
-                setAlertMessage("File size exceeds 5MB limit")
-                setAlertSeverity("error")
-                return
+                setAlertMessage("File size exceeds 5MB limit");
+                setAlertSeverity("error");
+                return;
             }
 
             if (!file.type.startsWith("image/")) {
-                setAlertMessage("Only image files are allowed")
-                setAlertSeverity("error")
-                return
+                setAlertMessage("Only image files are allowed");
+                setAlertSeverity("error");
+                return;
             }
 
-            setProfilePicture(file)
+            setProfilePicture(file);
 
-            const reader = new FileReader()
+            const reader = new FileReader();
             reader.onloadend = () => {
-                setPreviewUrl(reader.result)
-            }
-            reader.readAsDataURL(file)
+                setPreviewUrl(reader.result);
+            };
+            reader.readAsDataURL(file);
         }
-    }
+    };
 
     const validateInputs = () => {
-        let isValid = true
+        let isValid = true;
 
         if (!profileData.firstName.trim()) {
-            setFirstNameError(true)
-            setFirstNameErrorMessage("First name is required")
-            isValid = false
+            setFirstNameError(true);
+            setFirstNameErrorMessage("First name is required");
+            isValid = false;
         } else {
-            setFirstNameError(false)
-            setFirstNameErrorMessage("")
+            setFirstNameError(false);
+            setFirstNameErrorMessage("");
         }
 
         if (!profileData.lastName.trim()) {
-            setLastNameError(true)
-            setLastNameErrorMessage("Last name is required")
-            isValid = false
+            setLastNameError(true);
+            setLastNameErrorMessage("Last name is required");
+            isValid = false;
         } else {
-            setLastNameError(false)
-            setLastNameErrorMessage("")
+            setLastNameError(false);
+            setLastNameErrorMessage("");
         }
 
         if (profileData.contactNumber && !/^\+?[0-9\s-]{10,15}$/.test(profileData.contactNumber)) {
-            setContactNumberError(true)
-            setContactNumberErrorMessage("Please enter a valid contact number")
-            isValid = false
+            setContactNumberError(true);
+            setContactNumberErrorMessage("Please enter a valid contact number");
+            isValid = false;
         } else {
-            setContactNumberError(false)
-            setContactNumberErrorMessage("")
+            setContactNumberError(false);
+            setContactNumberErrorMessage("");
         }
 
         if (changePassword) {
-            const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.{8,})/
+            const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.{8,})/;
             if (!passwordData.currentPassword) {
-                setPasswordError(true)
-                setPasswordErrorMessage("Current password is required")
-                isValid = false
+                setPasswordError(true);
+                setPasswordErrorMessage("Current password is required");
+                isValid = false;
             } else if (!passwordData.newPassword || !passwordRegex.test(passwordData.newPassword)) {
-                setPasswordError(true)
+                setPasswordError(true);
                 setPasswordErrorMessage(
                     "New password must be at least 8 characters long, contain one uppercase letter and one special character"
-                )
-                isValid = false
+                );
+                isValid = false;
             } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-                setPasswordError(true)
-                setPasswordErrorMessage("Passwords do not match")
-                isValid = false
+                setPasswordError(true);
+                setPasswordErrorMessage("Passwords do not match");
+                isValid = false;
             } else {
-                setPasswordError(false)
-                setPasswordErrorMessage("")
+                setPasswordError(false);
+                setPasswordErrorMessage("");
             }
         }
 
-        return isValid
-    }
+        return isValid;
+    };
 
     const handleSubmit = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
 
         if (!validateInputs()) {
-            return
+            return;
         }
 
-        setSaving(true)
+        setSaving(true);
 
         try {
-            const token = localStorage.getItem("token")
-            const formData = new FormData()
-            formData.append("firstName", profileData.firstName)
-            formData.append("lastName", profileData.lastName)
-            formData.append("contactNumber", profileData.contactNumber)
+            const formData = new FormData();
+            formData.append("firstName", profileData.firstName);
+            formData.append("lastName", profileData.lastName);
+            formData.append("contactNumber", profileData.contactNumber);
 
             if (profilePicture) {
-                formData.append("profilePicture", profilePicture)
+                // Use "image" as the field name to match the multer config
+                formData.append("image", profilePicture);
             }
 
-            // Update profile
-            const profileResponse = await axios.put("http://localhost:3001/api/auth/profile", formData, {
+            // Log the form data for debugging
+            console.log("Form data entries:");
+            for (let [key, value] of formData.entries()) {
+                if (key === "image") {
+                    console.log(`${key}: [File] ${value.name}, ${value.type}, ${value.size} bytes`);
+                } else {
+                    console.log(`${key}: ${value}`);
+                }
+            }
+
+            // Update profile using the configured axios
+            const profileResponse = await axiosConfig.put("/auth/profile", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
-                    Authorization: `Bearer ${token}`,
                 },
-            })
+            });
 
-            // Update password if requested
+            // Update password if requested 
             if (changePassword) {
                 try {
-                    const passwordResponse = await axios.put(
-                        "http://localhost:3001/api/auth/password",
-                        {
-                            currentPassword: passwordData.currentPassword,
-                            newPassword: passwordData.newPassword,
-                        },
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
-                        }
-                    )
-                    setAlertMessage(passwordResponse.data.message || "Password updated successfully")
-                    setAlertSeverity("success")
+                    const passwordResponse = await axiosConfig.put("/auth/password", {
+                        currentPassword: passwordData.currentPassword,
+                        newPassword: passwordData.newPassword,
+                    });
+                    setAlertMessage(passwordResponse.data.message || "Password updated successfully");
+                    setAlertSeverity("success");
                 } catch (passwordError) {
-                    const errorMessage = passwordError.response?.data?.message || "Failed to update password"
+                    const errorMessage = passwordError.response?.data?.message || "Failed to update password";
                     if (passwordError.response?.status === 400 && errorMessage.includes("Current password")) {
-                        setPasswordError(true)
-                        setPasswordErrorMessage(errorMessage)
+                        setPasswordError(true);
+                        setPasswordErrorMessage(errorMessage);
                     } else {
-                        setAlertMessage(`Error: ${errorMessage}`)
-                        setAlertSeverity("error")
+                        setAlertMessage(`Error: ${errorMessage}`);
+                        setAlertSeverity("error");
                     }
-                    setSaving(false)
-                    return
+                    setSaving(false);
+                    return;
                 }
             }
 
@@ -429,7 +442,7 @@ const Profile = () => {
                     profileResponse.data.data.profilePicture.startsWith("http")
                         ? profileResponse.data.data.profilePicture
                         : `${window.location.origin}${profileResponse.data.data.profilePicture}`
-                )
+                );
             }
 
             // Update profile data
@@ -438,7 +451,7 @@ const Profile = () => {
                 firstName: profileResponse.data.data.firstName,
                 lastName: profileResponse.data.data.lastName,
                 contactNumber: profileResponse.data.data.contactNumber || "",
-            }))
+            }));
 
             // Reset password fields
             if (changePassword) {
@@ -446,66 +459,66 @@ const Profile = () => {
                     currentPassword: "",
                     newPassword: "",
                     confirmPassword: "",
-                })
-                setChangePassword(false)
+                });
+                setChangePassword(false);
             }
 
-            setAlertMessage(profileResponse.data.message || "Profile updated successfully")
-            setAlertSeverity("success")
-            setUserAvatar(profileResponse.data.data.firstName)
-            setEditMode(false)
+            setAlertMessage(profileResponse.data.message || "Profile updated successfully");
+            setAlertSeverity("success");
+            setUserAvatar(profileResponse.data.data.firstName);
+            setEditMode(false);
         } catch (error) {
-            console.error("Error updating profile:", error)
-            const errorMessage = error.response?.data?.message || "Failed to update profile"
-            setAlertMessage(`Error: ${errorMessage}`)
-            setAlertSeverity("error")
+            console.error("Error updating profile:", error);
+            const errorMessage = error.response?.data?.message || "Failed to update profile";
+            setAlertMessage(`Error: ${errorMessage}`);
+            setAlertSeverity("error");
         } finally {
-            setSaving(false)
+            setSaving(false);
         }
-    }
+    };
 
     const toggleEditMode = () => {
-        setEditMode(!editMode)
-        setChangePassword(false)
-        setPasswordError(false)
-        setPasswordErrorMessage("")
-    }
+        setEditMode(!editMode);
+        setChangePassword(false);
+        setPasswordError(false);
+        setPasswordErrorMessage("");
+    };
 
     const cancelEdit = () => {
-        fetchUserProfile()
-        setProfilePicture(null)
-        setEditMode(false)
-        setChangePassword(false)
+        fetchUserProfile();
+        setProfilePicture(null);
+        setEditMode(false);
+        setChangePassword(false);
         setPasswordData({
             currentPassword: "",
             newPassword: "",
             confirmPassword: "",
-        })
-        setShowCurrentPassword(false)
-        setShowNewPassword(false)
-        setShowConfirmPassword(false)
-    }
+        });
+        setShowCurrentPassword(false);
+        setShowNewPassword(false);
+        setShowConfirmPassword(false);
+    };
 
     const toggleCurrentPasswordVisibility = () => {
-        setShowCurrentPassword(!showCurrentPassword)
-    }
+        setShowCurrentPassword(!showCurrentPassword);
+    };
 
     const toggleNewPasswordVisibility = () => {
-        setShowNewPassword(!showNewPassword)
-    }
+        setShowNewPassword(!showNewPassword);
+    };
 
     const toggleConfirmPasswordVisibility = () => {
-        setShowConfirmPassword(!showConfirmPassword)
-    }
+        setShowConfirmPassword(!showConfirmPassword);
+    };
 
     const handleChangePasswordClick = () => {
-        setChangePassword(!changePassword)
-        setPasswordError(false)
-        setPasswordErrorMessage("")
-    }
+        setChangePassword(!changePassword);
+        setPasswordError(false);
+        setPasswordErrorMessage("");
+    };
 
     if (loading) {
-        return <Loading />
+        return <Loading />;
     }
 
     return (
@@ -800,7 +813,7 @@ const Profile = () => {
                 </CardContent>
             </ProfileCard>
         </Container>
-    )
-}
+    );
+};
 
-export default Profile
+export default Profile;

@@ -53,7 +53,7 @@ const StyledTableHeader = styled(TableRow)(({ theme }) => ({
   },
 }))
 
-// Update the AgentCard styled component to have fixed width
+// Agebt Card
 const AgentCard = styled(Card)(({ theme }) => ({
   width: "100%",
   height: "100%",
@@ -68,6 +68,68 @@ const AgentCard = styled(Card)(({ theme }) => ({
     boxShadow: "0 10px 15px rgba(0, 0, 0, 0.1)",
   },
 }))
+
+// Function to format keys into a human-readable format
+const formatKey = (key) => {
+  const keyMap = {
+    incomeSources: 'Income Sources',
+    sponsors: 'Sponsors',
+    minSponsorCount: 'Minimum Sponsor Count',
+    minIncomeAmount: 'Minimum Income Amount',
+    banks: 'Banks',
+    previousVisaRefusal: 'Previous Visa Refusal',
+    levelChangeAfterRefusal: 'Level Change After Refusal',
+  };
+
+  // Return mapped key if it exists, otherwise format the key manually
+  if (keyMap[key]) {
+    return keyMap[key];
+  }
+
+  // Convert camelCase or snake_case to title case
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/_/g, ' ')
+    .replace(/\w+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .trim();
+};
+
+// Function to format values based on their type and content
+const formatValue = (key, value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) =>
+      typeof item === 'string'
+        ? item
+          .toLowerCase()
+          .replace(/\b\w/g, (char) => char.toUpperCase())
+        : item.toString()
+    );
+  }
+
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+
+  if (key === 'minIncomeAmount') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(Number(value));
+  }
+
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'yes' || value.toLowerCase() === 'no') {
+      return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+    }
+    return value
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  return value.toString();
+};
+
 
 export default function InstitutionPage() {
   const { id } = useParams()
@@ -148,7 +210,7 @@ export default function InstitutionPage() {
   const startBannerInterval = () => {
     bannerIntervalRef.current = setInterval(() => {
       setCurrentBannerIndex((prev) => (prev + 1) % (institution?.bannerImages?.length || 1))
-    }, 5000)
+    }, 3000)
   }
 
   useEffect(() => {
@@ -706,7 +768,7 @@ export default function InstitutionPage() {
           {/* Render additional documents in cards */}
           {institution?.documents && (
             <Box sx={{ mt: 4 }}>
-              <Typography variant="h6" sx={{ mb: 3, color: "#4f46e5", fontWeight: 600 }}>
+              <Typography variant="h6" sx={{ mb: 3, color: '#4f46e5', fontWeight: 600 }}>
                 Additional Documents
               </Typography>
               <Grid container spacing={3}>
@@ -714,40 +776,40 @@ export default function InstitutionPage() {
                   <Grid item xs={12} sm={6} md={4} key={idx}>
                     <Card
                       sx={{
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
                         borderRadius: 2,
                         boxShadow: 3,
-                        transition: "transform 0.2s, boxShadow 0.2s",
-                        "&:hover": {
-                          transform: "scale(1.02)",
+                        transition: 'transform 0.2s, boxShadow 0.2s',
+                        '&:hover': {
+                          transform: 'scale(1.02)',
                           boxShadow: 6,
                         },
                       }}
                     >
                       <CardContent>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 500, color: "#1e293b", mb: 1 }}>
-                          {key.replace(/_/g, " ")}
+                        <Typography variant="subtitle1" sx={{ fontWeight: 500, color: '#1e293b', mb: 1 }}>
+                          {formatKey(key)}
                         </Typography>
                         {Array.isArray(value) ? (
                           <List dense>
-                            {value.map((item, itemIndex) => (
+                            {formatValue(key, value).map((item, itemIndex) => (
                               <ListItem key={itemIndex} sx={{ py: 0.5, px: 1 }}>
                                 <ListItemText
                                   primary={item}
                                   primaryTypographyProps={{
-                                    fontWeight: "medium",
-                                    color: "text.primary",
+                                    fontWeight: 'medium',
+                                    color: 'text.primary',
                                   }}
                                 />
                               </ListItem>
                             ))}
                           </List>
                         ) : (
-                          <Typography variant="body2" sx={{ color: "#64748b" }}>
-                            {value.toString()}
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            {formatValue(key, value)}
                           </Typography>
                         )}
                       </CardContent>
@@ -1013,23 +1075,15 @@ export default function InstitutionPage() {
                           <Typography variant="body2" color="text.secondary" gutterBottom>
                             ✉️ {agent?.head_office?.email}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
-                            🌐{" "}
-                            <a
-                              href={agent?.head_office?.web}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ color: "#4f46e5", textDecoration: "none" }}
-                            >
-                              Visit Website
-                            </a>
-                          </Typography>
                         </Box>
                       </CardContent>
                       <Box sx={{ p: 2, flexShrink: 0 }}>
                         <Button
                           variant="contained"
                           fullWidth
+                          href={agent?.head_office?.web}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           sx={{
                             backgroundColor: "#4f46e5",
                             borderRadius: 2,
@@ -1041,7 +1095,7 @@ export default function InstitutionPage() {
                             },
                           }}
                         >
-                          CONTACT AGENT
+                          VISIT WEBSITE
                         </Button>
                       </Box>
                     </AgentCard>

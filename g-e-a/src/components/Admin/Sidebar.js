@@ -1,5 +1,3 @@
-"use client"
-
 import { useContext, useState, useEffect } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { styled, useTheme } from "@mui/material/styles"

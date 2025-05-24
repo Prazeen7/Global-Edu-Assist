@@ -1,18 +1,20 @@
 import React from 'react';
+import { Twitter, Facebook, LinkedIn, GitHub } from '@mui/icons-material';
 import logo from '../images/Logo.png';
 import './Footer.css';
 
 const Footer = () => {
     return (
-        <footer className="footer-container">
+        <footer className="footer-container" role="contentinfo">
             <div className="footer-content">
                 {/* Company Info */}
                 <div className="company-info">
                     <div className="logo-wrapper">
-                        <img 
-                            src={logo} 
-                            alt="Global Edu Assist Logo" 
-                            className="company-logo" 
+                        <img
+                            src={logo}
+                            alt="Global Edu Assist Logo"
+                            className="company-logo"
+                            loading="lazy"
                         />
                         <h3 className="company-text">Global Edu Assist</h3>
                     </div>
@@ -24,10 +26,16 @@ const Footer = () => {
                 {/* Quick Links */}
                 <div className="quick-links">
                     <h4 className="links-heading">Quick Links</h4>
-                    <ul className="links-list">
-                        {['About Us', 'Courses', 'Blog', 'Contact'].map((item) => (
+                    <ul className="links-list" role="navigation" aria-label="Quick Links">
+                        {['About', 'Programs', 'Institutions', 'Agents'].map((item) => (
                             <li className="link-item" key={item}>
-                                <a href="/">{item}</a>
+                                <a
+                                    href={`/${item.toLowerCase().replace(' ', '-')}`}
+                                    className="link"
+                                    aria-label={`${item} page`}
+                                >
+                                    {item}
+                                </a>
                             </li>
                         ))}
                     </ul>
@@ -36,20 +44,22 @@ const Footer = () => {
                 {/* Social Media */}
                 <div className="social-links">
                     <h4 className="social-heading">Follow Us</h4>
-                    <div className="social-icons">
+                    <div className="social-icons" role="navigation" aria-label="Social Media Links">
                         {[
-                            { name: 'Twitter', icon: 'twitter' },
-                            { name: 'Facebook', icon: 'facebook' },
-                            { name: 'LinkedIn', icon: 'linkedin' },
-                            { name: 'GitHub', icon: 'github' }
+                            { name: 'Twitter', icon: <Twitter />, url: 'https://twitter.com' },
+                            { name: 'Facebook', icon: <Facebook />, url: 'https://facebook.com' },
+                            { name: 'LinkedIn', icon: <LinkedIn />, url: 'https://linkedin.com' },
+                            { name: 'GitHub', icon: <GitHub />, url: 'https://github.com' },
                         ].map((platform) => (
-                            <a 
-                                key={platform.icon}
-                                href="/"
+                            <a
+                                key={platform.name}
+                                href={platform.url}
                                 className="social-item"
-                                aria-label={`${platform.icon} link`}
+                                aria-label={`Follow us on ${platform.name}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
                             >
-                                <i className={`fab fa-${platform.icon}`} />
+                                {platform.icon}
                                 <span className="social-text">{platform.name}</span>
                             </a>
                         ))}
@@ -60,10 +70,6 @@ const Footer = () => {
             {/* Copyright */}
             <div className="copyright-section">
                 <p>© 2025 Global Edu Assist. All rights reserved.</p>
-                <p className="copyright-links">
-                    <a href="/privacy">Privacy Policy</a> | 
-                    <a href="/terms">Terms of Service</a>
-                </p>
             </div>
         </footer>
     );

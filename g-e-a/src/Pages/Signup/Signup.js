@@ -182,6 +182,8 @@ export default function Signup() {
       .post('http://localhost:3001/api/registerUser', data)
       .then((result) => {
         setIsLoading(false);
+        setAlertSeverity("success");
+        setAlertMessage("Successfully Registered")
         // Navigate to verify-email page with the email
         navigate('/verify-email', { 
           state: { 

@@ -5,7 +5,7 @@ import Box from '@mui/material/Box';
 
 // Styled component with optional size and color props
 const StyledCircularProgress = styled(CircularProgress)(({ theme, size, color }) => ({
-    color: color || theme.palette.primary.main,
+    color: color || '#4f46e5', 
     width: size || 24,
     height: size || 24,
 }));

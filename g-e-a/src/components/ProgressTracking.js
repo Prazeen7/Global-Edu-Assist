@@ -207,7 +207,6 @@ export default function ProgressTracker() {
             setLoading(true)
             setError(null)
 
-            // Use axiosInstance which includes the auth token
             const response = await axiosInstance.get(`/progress/${userId}`)
 
             if (response.data.success) {

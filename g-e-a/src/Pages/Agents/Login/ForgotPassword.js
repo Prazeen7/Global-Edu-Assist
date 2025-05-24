@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import PropTypes from "prop-types"
 import {
@@ -19,7 +17,6 @@ import {
 import { styled } from "@mui/material/styles"
 import axios from "../../../utils/axiosConfig"
 
-// Brand color to match your existing UI
 const BRAND_COLOR = "#4f46e5"
 
 const PrimaryButton = styled(Button)(({ theme }) => ({

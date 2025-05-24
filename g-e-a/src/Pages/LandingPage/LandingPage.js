@@ -18,25 +18,29 @@ import Bestfit from '../../images/BestFit.png';
 import CostAnalysisImg from '../../images/financial.jpg';
 import ThingsToConsider from '../../images/thingsToConsider.png';
 import '../Institutions/institutions.css'
+import { useNavigate } from 'react-router-dom';
 
 const cardsData = [
     {
         image: FinancialImg,
-        title: "Check Financial Eligibility",
+        title: "Financially tailored programs",
         content:
-            "Assess your financial readiness with our comprehensive evaluation tool. Get personalized insights into funding options and budget planning.",
+            "Find programs that match your financial situation using our advanced filtering tool for personalized and budget-friendly options.",
+        path: "/programs"
     },
     {
         image: Bestfit,
         title: "Find Your Best Fit",
         content:
             "Discover universities and programs that match your academic profile and career aspirations through our intelligent matching system.",
+        path: "/programs"
     },
     {
         image: CostAnalysisImg,
         title: "Cost Analysis",
         content:
             "Detailed breakdown of tuition fees, living expenses, and hidden costs. Interactive calculators for accurate financial planning.",
+        path: "/login"
     },
 ];
 
@@ -56,6 +60,7 @@ const keyPoints = [
 ];
 
 export default function LandingPage() {
+    const navigate = useNavigate();
     const theme = useTheme();
     const brandColor = "#4f46e5";
 
@@ -65,6 +70,10 @@ export default function LandingPage() {
             behavior: "smooth",
         });
     }, []);
+
+    const handleCardClick = (path) => {
+        navigate(path);
+    };
 
     return (
         <Box component="main">
@@ -97,19 +106,9 @@ export default function LandingPage() {
                                         variant="contained"
                                         size="large"
                                         sx={{ backgroundColor: brandColor, '&:hover': { backgroundColor: brandColor } }}
+                                        onClick={() => navigate('/signup')}
                                     >
-                                        Start Free Assessment
-                                    </Button>
-                                    <Button
-                                        variant="outlined"
-                                        size="large"
-                                        sx={{
-                                            borderColor: brandColor,
-                                            color: brandColor,
-                                            '&:hover': { borderColor: brandColor, backgroundColor: `${brandColor}10` },
-                                        }}
-                                    >
-                                        Learn More
+                                        Start Your Journey
                                     </Button>
                                 </Box>
                             </Box>
@@ -162,12 +161,13 @@ export default function LandingPage() {
                         {cardsData.map((card, index) => (
                             <Grid key={index} item xs={12} sm={6} md={4}>
                                 <Card
+                                    onClick={() => handleCardClick(card.path)}
                                     sx={{
-                                        height: 400, 
+                                        height: 400,
                                         display: 'flex',
                                         flexDirection: 'column',
                                         transition: 'transform 0.3s, box-shadow 0.3s',
-                                        '&:hover': { transform: 'translateY(-4px)', boxShadow: 3 },
+                                        '&:hover': { transform: 'translateY(-4px)', boxShadow: 3, cursor: 'pointer' },
                                     }}
                                 >
                                     <CardMedia
@@ -271,19 +271,9 @@ export default function LandingPage() {
                             variant="contained"
                             size="large"
                             sx={{ backgroundColor: brandColor, '&:hover': { backgroundColor: brandColor } }}
+                            onClick={() => navigate('/signup')}
                         >
                             Get Started
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            size="large"
-                            sx={{
-                                borderColor: brandColor,
-                                color: brandColor,
-                                '&:hover': { borderColor: brandColor, backgroundColor: `${brandColor}10` },
-                            }}
-                        >
-                            Contact Us
                         </Button>
                     </Box>
                 </Container>

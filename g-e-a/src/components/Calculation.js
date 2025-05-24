@@ -1,5 +1,7 @@
-// Calculation.js
 import { useState, useEffect } from "react";
+
+// Constant for currency conversion (AUD to NPR)
+const AUD_TO_NPR = 90;
 
 export const useCalculation = () => {
     // English Proficiency
@@ -30,7 +32,14 @@ export const useCalculation = () => {
     // Visa Stage
     const [medicalProvider, setMedicalProvider] = useState("Norvic");
 
-    // Get exam fee based on selected type
+    // Utility function to parse numeric inputs safely
+    const parseNumber = (value) => {
+        if (value === "" || value == null) return 0;
+        const num = parseFloat(value);
+        return isNaN(num) ? 0 : num;
+    };
+
+    // Get exam fee based on selected type (in NPR)
     const getExamFee = () => {
         switch (examType) {
             case "ielts-paper":
@@ -38,49 +47,53 @@ export const useCalculation = () => {
             case "ielts-computer":
                 return 28800;
             case "pte":
-                return 200 * 130;
+                return 200 * AUD_TO_NPR;
             case "toefl":
-                return 195 * 130;
+                return 195 * AUD_TO_NPR;
             default:
                 return 0;
         }
     };
 
-    // Calculate bank processing fee
+    // Calculate bank processing fee (percentage of loan amount)
     const getBankProcessingFee = () => {
-        return loanAmount * (bankProcessingRate / 100);
+        const loan = parseNumber(loanAmount);
+        const rate = parseNumber(bankProcessingRate);
+        return loan * (rate / 100);
     };
 
-    // Calculate monthly installment
+    // Calculate monthly installment (EMI) for the loan
     const getMonthlyInstallment = () => {
-        if (disbursementAmount <= 0 || interestRate <= 0) return 0;
-    
-        // Convert annual interest rate to monthly and decimal format
-        const monthlyInterestRate = (interestRate / 100) / 12;
-        
-        // Convert repayment period to months 
-        const loanTermMonths = 15 * 12; 
-        
-        // Standard EMI formula
-        const emi = (disbursementAmount * 
-                    monthlyInterestRate * 
-                    Math.pow(1 + monthlyInterestRate, loanTermMonths)) / 
-                    (Math.pow(1 + monthlyInterestRate, loanTermMonths) - 1);
-    
-        return emi;
+        const disbursement = parseNumber(disbursementAmount);
+        const rate = parseNumber(interestRate);
+        if (disbursement <= 0 || rate <= 0) return 0;
+
+        // Convert annual interest rate to monthly decimal
+        const monthlyInterestRate = (rate / 100) / 12;
+        // Assume 15-year loan term
+        const loanTermMonths = 15 * 12;
+
+        // EMI formula: P * r * (1+r)^n / ((1+r)^n - 1)
+        const emi =
+            (disbursement *
+                monthlyInterestRate *
+                Math.pow(1 + monthlyInterestRate, loanTermMonths)) /
+            (Math.pow(1 + monthlyInterestRate, loanTermMonths) - 1);
+
+        return isNaN(emi) ? 0 : emi;
     };
 
-    // Calculate translation cost
+    // Calculate translation cost (NPR 400 per page)
     const getTranslationCost = () => {
-        return translationPages * 400;
+        return parseNumber(translationPages) * 400;
     };
 
-    // Calculate notary cost
+    // Calculate notary cost (NPR 10 per page)
     const getNotaryCost = () => {
-        return notaryPages * 10;
+        return parseNumber(notaryPages) * 10;
     };
 
-    // Calculate engineering costs
+    // Calculate engineering costs (fixed costs for valuations and reports)
     const getEngineeringCost = () => {
         let cost = 0;
         if (bankValuation) cost += 10000;
@@ -89,54 +102,75 @@ export const useCalculation = () => {
         return cost;
     };
 
-    // Calculate NOC cost
+    // Calculate NOC cost (NPR 2000 per program)
     const getNocCost = () => {
-        return nocPrograms * 2000;
+        return parseNumber(nocPrograms) * 2000;
     };
 
-    // Calculate education tax
+    // Calculate education tax (3% of tuition fee)
     const getEducationTax = () => {
-        return tuitionFee * 0.03;
+        return parseNumber(tuitionFee) * 0.03;
     };
 
-    // Calculate medical cost
+    // Calculate medical cost based on provider (in NPR)
     const getMedicalCost = () => {
-        return medicalProvider === "Norvic" ? 10000 : 70 * 130; 
+        return medicalProvider === "Norvic" ? 10000 : 70 * AUD_TO_NPR;
     };
 
-    // Calculate total cost - modified to exclude tuition fee if bank loan is provided
+    // Calculate total cost, excluding tuition fee if loan is provided
     const getTotalCost = () => {
-        const englishCosts = englishClassCost + getExamFee();
+        const englishCosts = parseNumber(englishClassCost) + getExamFee();
         const gsCosts =
-            getBankProcessingFee() + getTranslationCost() + getNotaryCost() + getEngineeringCost() + getNocCost();
-
-        // If loan amount is provided, exclude tuition fee from total
+            getBankProcessingFee() +
+            getTranslationCost() +
+            getNotaryCost() +
+            getEngineeringCost() +
+            getNocCost();
         const coeCosts =
-            loanAmount > 0
-                ? paymentCompanyFee + healthCareCost * 130 // Exclude tuition fee and education tax
-                : tuitionFee + getEducationTax() + paymentCompanyFee + healthCareCost * 90;
+            parseNumber(loanAmount) > 0
+                ? parseNumber(paymentCompanyFee) +
+                parseNumber(healthCareCost) * AUD_TO_NPR
+                : parseNumber(tuitionFee) +
+                getEducationTax() +
+                parseNumber(paymentCompanyFee) +
+                parseNumber(healthCareCost) * AUD_TO_NPR;
+        const visaCosts =
+            1610 * AUD_TO_NPR + 3575 + getMedicalCost();
 
-        const visaCosts = 1610 * 90 + 3575 + getMedicalCost(); // Convert AUD to NPR for visa fee
-
-        return englishCosts + applicationCost + gsCosts + coeCosts + visaCosts;
+        return (
+            englishCosts +
+            parseNumber(applicationCost) +
+            gsCosts +
+            coeCosts +
+            visaCosts
+        );
     };
 
-    // Calculate category subtotals - modified to handle loan amount logic
+    // Calculate subtotal for each category
     const getCategoryTotal = (category) => {
         switch (category) {
             case "english":
-                return englishClassCost + getExamFee();
+                return parseNumber(englishClassCost) + getExamFee();
             case "offer":
-                return applicationCost;
+                return parseNumber(applicationCost);
             case "gs":
-                return getBankProcessingFee() + getTranslationCost() + getNotaryCost() + getEngineeringCost() + getNocCost();
+                return (
+                    getBankProcessingFee() +
+                    getTranslationCost() +
+                    getNotaryCost() +
+                    getEngineeringCost() +
+                    getNocCost()
+                );
             case "coe":
-                // If loan amount is provided, exclude tuition fee from COE stage total
-                return loanAmount > 0
-                    ? paymentCompanyFee + healthCareCost * 130 // Exclude tuition fee and education tax
-                    : tuitionFee + getEducationTax() + paymentCompanyFee + healthCareCost * 90;
+                return parseNumber(loanAmount) > 0
+                    ? parseNumber(paymentCompanyFee) +
+                    parseNumber(healthCareCost) * AUD_TO_NPR
+                    : parseNumber(tuitionFee) +
+                    getEducationTax() +
+                    parseNumber(paymentCompanyFee) +
+                    parseNumber(healthCareCost) * AUD_TO_NPR;
             case "visa":
-                return 1610 * 90 + 3575 + getMedicalCost();
+                return 1610 * AUD_TO_NPR + 3575 + getMedicalCost();
             default:
                 return 0;
         }

@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useContext, useRef } from "react"
 import {
     Avatar,
