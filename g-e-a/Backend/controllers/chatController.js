@@ -3,11 +3,6 @@ const User = require("../models/user")
 const Agent = require("../models/agents")
 const mongoose = require("mongoose")
 
-// Add this at the top of your file to check if models are loading correctly
-console.log("Loading ChatMessage model:", !!ChatMessage)
-console.log("Loading User model:", !!User)
-console.log("Loading Agent model:", !!Agent)
-
 // Helper function to determine if an ID belongs to a user or agent
 const determineUserType = async (id) => {
     try {
@@ -92,18 +87,18 @@ exports.getChatUsers = async (req, res) => {
                 lastMessage:
                     lastMessage.content.length > 20 ? lastMessage.content.substring(0, 20) + "..." : lastMessage.content,
                 time: timeAgo,
-                timestamp: lastMessage.createdAt, // Include the actual timestamp for client-side time ago calculations
+                timestamp: lastMessage.createdAt, 
                 hasUnread: unreadCount > 0,
                 unreadCount: unreadCount,
-                status: "offline", // You can implement online status tracking if needed
-                userType: userType.model, // Add the user type to help frontend distinguish
+                status: "offline", 
+                userType: userType.model, 
             })
         }
 
         return res.status(200).json({
             success: true,
             chatUsers,
-            currentUserType: currentUser.model, // Send the current user's type to the frontend
+            currentUserType: currentUser.model,
         })
     } catch (error) {
         console.error("Error getting chat users:", error)
@@ -148,20 +143,18 @@ exports.getMessages = async (req, res) => {
         // Get the io instance
         const io = req.app.get("io")
 
-        // Add this code to notify the sender that their messages have been read
         if (io && updatedMessages.modifiedCount > 0) {
             console.log(
                 `Emitting messages_read event: sender=${receiverId}, receiver=${senderId}, count=${updatedMessages.modifiedCount}`,
             )
 
-            // Emit an event to update the read status for this specific conversation
-            // Include both senderId and receiverId to help clients identify which messages to update
+            // Emit an event
             io.emit("messages_read", {
                 senderId: receiverId,
                 receiverId: senderId,
             })
 
-            // Also emit an event to update the chat list for both users
+            // emit an event to update the chat list for both users
             io.emit("update_chat_list", { userId: senderId })
             io.emit("update_chat_list", { userId: receiverId })
         }
@@ -176,7 +169,7 @@ exports.getMessages = async (req, res) => {
                 sender: isSender ? "me" : "other",
                 content: msg.content,
                 time: formatMessageDate(msg.createdAt),
-                timestamp: msg.createdAt, // Include the actual timestamp
+                timestamp: msg.createdAt, 
                 meta: msg.meta,
                 senderModel: msg.senderModel,
                 receiverModel: msg.receiverModel,
@@ -250,10 +243,10 @@ exports.sendMessage = async (req, res) => {
             // Format the message for real-time delivery
             const formattedMessage = {
                 id: newMessage._id,
-                sender: "other", // For the receiver, this message is from "other"
+                sender: "other", 
                 content: newMessage.content,
                 time: formatMessageDate(newMessage.createdAt),
-                timestamp: newMessage.createdAt, // Include the actual timestamp
+                timestamp: newMessage.createdAt,
                 senderModel: newMessage.senderModel,
                 receiverModel: newMessage.receiverModel,
                 read: newMessage.read,

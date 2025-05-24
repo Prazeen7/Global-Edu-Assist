@@ -35,7 +35,7 @@ const AgentSchema = new mongoose.Schema({
         required: true,
         trim: true,
         minlength: [8, "Password must be at least 8 characters long"],
-        select: false, // Don't return password in queries by default
+        select: false, 
     },
     website: {
         type: String,

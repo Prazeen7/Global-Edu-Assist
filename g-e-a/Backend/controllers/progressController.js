@@ -1,10 +1,5 @@
 const ProgressTracking = require("../models/progressTracking")
 
-/**
- * Initialize progress tracking for a user
- * @route POST /api/progress/initialize
- * @access Private
- */
 const initializeProgress = async (req, res) => {
     try {
         const { userId, userName } = req.body
@@ -60,11 +55,6 @@ const initializeProgress = async (req, res) => {
     }
 }
 
-/**
- * Get progress for a user
- * @route GET /api/progress/:userId
- * @access Private
- */
 const getProgress = async (req, res) => {
     try {
         const { userId } = req.params
@@ -109,11 +99,6 @@ const getProgress = async (req, res) => {
     }
 }
 
-/**
- * Update progress for a specific stage
- * @route PUT /api/progress/:userId/update
- * @access Private
- */
 const updateStageProgress = async (req, res) => {
     try {
         const { userId } = req.params
@@ -212,11 +197,6 @@ const updateStageProgress = async (req, res) => {
     }
 }
 
-/**
- * Reset progress for a user
- * @route POST /api/progress/:userId/reset
- * @access Private
- */
 const resetProgress = async (req, res) => {
     try {
         const { userId } = req.params
@@ -271,11 +251,6 @@ const resetProgress = async (req, res) => {
     }
 }
 
-/**
- * Mark progress tracking as complete
- * @route POST /api/progress/:userId/complete
- * @access Private
- */
 const completeProgress = async (req, res) => {
     try {
         const { userId } = req.params
@@ -328,11 +303,6 @@ const completeProgress = async (req, res) => {
     }
 }
 
-/**
- * Deselect all items in a specific stage
- * @route POST /api/progress/:userId/deselect/:stage
- * @access Private
- */
 const deselectAllStageItems = async (req, res) => {
     try {
         const { userId, stage } = req.params

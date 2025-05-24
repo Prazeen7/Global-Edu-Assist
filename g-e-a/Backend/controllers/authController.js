@@ -1,5 +1,6 @@
-const AdminModel = require("../models/admin")
-const UserModel = require("../models/user")
+const AdminModel = require('../models/admin');
+const AgentModel = require('../models/agents');
+const UserModel = require('../models/user');
 const Jwt = require("jsonwebtoken")
 const bcrypt = require("bcrypt")
 const otpGenerator = require("otp-generator")
@@ -129,72 +130,6 @@ const adminLogin = async (req, res) => {
     }
 }
 
-// Verify token and return user data
-const verifyToken = (req, res) => {
-    try {
-        // The user object is already attached to req by the authMiddleware
-        const { userId, user, superAdmin } = req.user
-
-        // Find the user in the database to get the most up-to-date information
-        if (user === "admin") {
-            // For admin users, fetch from AdminModel
-            AdminModel.findById(userId)
-                .select("-password") // Exclude password
-                .then((adminData) => {
-                    if (!adminData) {
-                        return res.status(404).json({ success: false, message: "Admin not found" })
-                    }
-
-                    // Return the admin data including superAdmin status
-                    return res.status(200).json({
-                        success: true,
-                        message: "Token is valid",
-                        user: {
-                            userId: adminData._id,
-                            firstName: adminData.firstName,
-                            lastName: adminData.lastName,
-                            email: adminData.email,
-                            user: "admin",
-                            superAdmin: adminData.superAdmin || false,
-                        },
-                    })
-                })
-                .catch((err) => {
-                    console.error("Error fetching admin data:", err)
-                    return res.status(500).json({ success: false, message: "Error fetching user data" })
-                })
-        } else {
-            // For regular users, fetch from UserModel
-            UserModel.findById(userId)
-                .select("-password") // Exclude password
-                .then((userData) => {
-                    if (!userData) {
-                        return res.status(404).json({ success: false, message: "User not found" })
-                    }
-
-                    // Return the user data
-                    return res.status(200).json({
-                        success: true,
-                        message: "Token is valid",
-                        user: {
-                            userId: userData._id,
-                            firstName: userData.firstName,
-                            lastName: userData.lastName,
-                            email: userData.email,
-                            user: "user",
-                        },
-                    })
-                })
-                .catch((err) => {
-                    console.error("Error fetching user data:", err)
-                    return res.status(500).json({ success: false, message: "Error fetching user data" })
-                })
-        }
-    } catch (err) {
-        console.error("Token verification error:", err)
-        return res.status(500).json({ success: false, message: "Server error" })
-    }
-}
 
 // Forgot password - Send OTP
 const forgotPassword = async (req, res) => {
@@ -303,5 +238,4 @@ module.exports = {
     forgotPassword,
     verifyOTP,
     resetPassword,
-    verifyToken,
 }

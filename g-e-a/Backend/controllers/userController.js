@@ -22,7 +22,7 @@ const generateUserToken = (user) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        user: user.user || "user", // Ensure user type is included in token
+        user: user.user || "user", 
     }
 
     return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY })
@@ -90,7 +90,7 @@ const registerUser = async (req, res) => {
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS)
 
-        // Generate OTP and set expiration (10 minutes from now)
+        // Generate OTP and set expiration 
         const otp = generateOTP()
         const otpExpiry = new Date(Date.now() + 10 * 60 * 1000)
 
@@ -122,74 +122,6 @@ const registerUser = async (req, res) => {
             success: false,
             message: "Registration failed",
             error: err.message,
-        })
-    }
-}
-
-// Login user
-const loginUser = async (req, res) => {
-    const { email, password } = req.body
-
-    try {
-        // Validate input
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: "Email and password are required",
-            })
-        }
-
-        // Find user by email
-        const user = await UserModel.findOne({ email })
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            })
-        }
-
-        // Check if user is verified
-        if (!user.isVerified) {
-            return res.status(403).json({
-                success: false,
-                message: "Email not verified. Please verify your email before logging in.",
-            })
-        }
-
-        // Verify password
-        const isMatch = await bcrypt.compare(password, user.password)
-        if (!isMatch) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid credentials",
-            })
-        }
-
-        // Generate JWT token
-        const token = generateUserToken(user)
-
-        // Log token payload for debugging
-        const tokenPayload = jwt.decode(token)
-        console.log("Token payload:", tokenPayload)
-
-        res.status(200).json({
-            success: true,
-            message: "Login successful",
-            token,
-            user: {
-                id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                user: user.user || "user",
-            },
-        })
-    } catch (error) {
-        console.error("Login error:", error)
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-            error: error.message,
         })
     }
 }
@@ -317,7 +249,6 @@ const getProfile = async (req, res) => {
     try {
         // Log the request user info for debugging
         console.log("User in request:", req.user)
-        console.log("User type in request:", req.userType)
 
         const userId = req.user.userId
         if (!userId) {
@@ -352,7 +283,7 @@ const getProfile = async (req, res) => {
                 profilePicture: profilePictureUrl,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt,
-                user: user.user || "user", // Include user type in response
+                user: user.user || "user", 
             },
         })
     } catch (error) {
@@ -368,36 +299,52 @@ const getProfile = async (req, res) => {
 // Update user profile
 const updateProfile = async (req, res) => {
     try {
-        const userId = req.user.userId
-        const { firstName, lastName, contactNumber } = req.body
+        const userId = req.user.userId;
+        const { firstName, lastName, contactNumber } = req.body;
 
-        const user = await UserModel.findById(userId)
+        console.log("Update profile request:", {
+            userId,
+            body: req.body,
+            file: req.file ? req.file.filename : 'No file uploaded'
+        });
+
+        const user = await UserModel.findById(userId);
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: "User not found",
-            })
+            });
         }
 
-        user.firstName = firstName || user.firstName
-        user.lastName = lastName || user.lastName
-        user.contactNumber = contactNumber || user.contactNumber
+        user.firstName = firstName || user.firstName;
+        user.lastName = lastName || user.lastName;
+        user.contactNumber = contactNumber || user.contactNumber;
 
         if (req.file) {
+            // If there's an existing profile picture, delete it
             if (user.profilePicture) {
-                const oldImagePath = path.join(__dirname, "../Uploads", user.profilePicture)
-                if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath)
+                try {
+                    const oldImagePath = path.join(__dirname, "../uploads", user.profilePicture.split('/').pop());
+                    if (fs.existsSync(oldImagePath)) {
+                        fs.unlinkSync(oldImagePath);
+                        console.log(`Deleted old profile picture: ${oldImagePath}`);
+                    }
+                } catch (error) {
+                    console.error("Error deleting old profile picture:", error);
+                    // Continue with the update even if file deletion fails
                 }
             }
-            user.profilePicture = req.file.filename
+            
+            // Save the new profile picture path
+            user.profilePicture = req.file.filename;
+            console.log(`Saved new profile picture: ${req.file.filename}`);
         }
 
-        await user.save()
+        await user.save();
 
         const profilePictureUrl = user.profilePicture
-            ? `${req.protocol}://${req.get("host")}/Uploads/${user.profilePicture}`
-            : null
+            ? `${req.protocol}://${req.get("host")}/uploads/${user.profilePicture}`
+            : null;
 
         res.status(200).json({
             success: true,
@@ -410,17 +357,18 @@ const updateProfile = async (req, res) => {
                 profilePicture: profilePictureUrl,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt,
-                user: user.user || "user", // Include user type in response
+                user: user.user || "user",
             },
-        })
+        });
     } catch (error) {
+        console.error("Error in updateProfile:", error);
         res.status(500).json({
             success: false,
             message: "Server error",
             error: error.message,
-        })
+        });
     }
-}
+};
 
 // Update user password
 const updatePassword = async (req, res) => {
@@ -468,9 +416,8 @@ const updatePassword = async (req, res) => {
     }
 }
 
-// Verify token endpoint (useful for client-side token validation)
+// Verify token endpoint 
 const verifyToken = (req, res) => {
-    // If middleware passed, token is valid
     return res.status(200).json({
         success: true,
         message: "Token is valid",
@@ -484,10 +431,8 @@ const verifyToken = (req, res) => {
     })
 }
 
-// Add this to the module.exports at the bottom of the file
 module.exports = {
     registerUser,
-    loginUser,
     verifyUserEmail,
     resendVerificationOTP,
     getAllUsers,
