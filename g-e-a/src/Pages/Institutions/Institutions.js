@@ -65,7 +65,7 @@ export default function InstitutionsPage() {
             
             setAllLocations(locations);
             setError(null);
-            setCurrentPage(1); // Reset to page 1 when new data is fetched
+            setCurrentPage(1); 
         } catch (error) {
             if (error.response && error.response.status === 404) {
                 setInstitutions([]);

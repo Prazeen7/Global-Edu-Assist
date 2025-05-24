@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import "./App.css"
 import Navbar from "./components/NavBar"
@@ -28,7 +26,7 @@ import Footer from "./components/Footer"
 import ProtectedRoute from "./components/ProctectedRoute/ProtectedRoute"
 import AuthRoute from "./components/ProctectedRoute/AuthRoute"
 import Verify from "./components/verify"
-import { validateToken, isTokenExpired } from "./utils/utils"
+import { verifyTokenWithServer } from "./utils/authService"
 import Profile from "./Pages/profile"
 import AgentRegistration from "./Pages/Agents/Registration/Registration"
 import AgentLogin from "./Pages/Agents/Login/Login"
@@ -38,115 +36,112 @@ import AgentResubmit from "./Pages/Agents/Resubmit"
 function App() {
     const [LoggedIn, setLoggedIn] = useState(false)
     const [UserAvatar, setUserAvatar] = useState("")
-    const [UserType, setUserType] = useState("u")
+    const [UserType, setUserType] = useState("u") // Default to user
     const [isLoading, setIsLoading] = useState(true)
+    const [userData, setUserData] = useState(null)
 
     useEffect(() => {
-        const token = localStorage.getItem("token")
-        const userAvatar = localStorage.getItem("userAvatar")
-        const userType = localStorage.getItem("userType")
+        const verifyUserAuthentication = async () => {
+            try {
+                // Get the token verification result from the server
+                const result = await verifyTokenWithServer();
 
-        if (token) {
-            const { isValid } = validateToken(token)
-            const expired = isTokenExpired(token)
+                if (result.isValid) {
+                    // Token is valid according to the server
+                    const { userType, userData } = result;
 
-            if (isValid && !expired) {
-                setLoggedIn(true)
-                setUserAvatar(userAvatar || "")
-                setUserType(userType || "u")
-            } else {
-                // Clear invalid/expired token
-                localStorage.removeItem("token")
-                localStorage.removeItem("userAvatar")
-                localStorage.removeItem("userType")
-                setLoggedIn(false)
+                    // Update state with user information
+                    setLoggedIn(true);
+                    setUserType(userType);
+                    setUserData(userData);
+
+                    // Get avatar from localStorage or use default
+                    const userAvatar = localStorage.getItem("userAvatar") || "";
+                    setUserAvatar(userAvatar);
+
+                    // Update localStorage with the correct user type from server
+                    localStorage.setItem("userType", userType);
+
+                    console.log(`User authenticated as: ${userType}`);
+                } else {
+                    // Token is invalid or verification failed
+                    console.error("Authentication failed:", result.error);
+
+                    // Clear any stored auth data
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("userAvatar");
+                    localStorage.removeItem("userType");
+
+                    setLoggedIn(false);
+                    setUserType("u"); // Reset to default
+                    setUserData(null);
+                }
+            } catch (error) {
+                console.error("Error during authentication:", error);
+                setLoggedIn(false);
+                setUserType("u"); // Reset to default
+                setUserData(null);
+            } finally {
+                setIsLoading(false);
             }
-        }
-        setIsLoading(false)
-    }, [])
+        };
+
+        verifyUserAuthentication();
+    }, []);
 
     if (isLoading) {
-        return <div>Loading...</div>
+        return <div>Loading...</div>;
     }
 
     // Create routes using React Router
     const router = createBrowserRouter([
+        // Routes only for regular users and unauthenticated visitors
         {
             path: "/",
             element: (
-                <>
+                <ProtectedRoute allowUnauthenticated allowUserOnly>
                     <Navbar />
                     <LandingPage />
-                    <Footer />
-                </>
-            ),
-        },
-        {
-            path: "/profile",
-            element: (
-                <>
-                    <Navbar />
-                    <Profile />
-                    <Footer />
-                </>
-            ),
-        },
-        {
-            path: "/about",
-            element: (
-                <>
-                    <Navbar />
-                    <About />
-                    <Footer />
-                </>
-            ),
-        },
-        {
-            path: "/institutions",
-            element: (
-                <>
-                    <Navbar />
-                    <Institutions />
-                    <Footer />
-                </>
-            ),
-        },
-        {
-            path: "/programs",
-            element: (
-                <>
-                    <Navbar />
-                    <Destinations />
-                    <Footer />
-                </>
-            ),
-        },
-        {
-            path: "/documents",
-            element: (
-                <>
-                    <Navbar />
-                    <Documents />
-                    <Footer />
-                </>
-            ),
-        },
-        {
-            path: "/cost-estimation",
-            element: (
-                <ProtectedRoute>
-                    <Navbar />
-                    <Estimation />
                     <Footer />
                 </ProtectedRoute>
             ),
         },
         {
-            path: "/progress-tracking",
+            path: "/about",
             element: (
-                <ProtectedRoute>
+                <ProtectedRoute allowUnauthenticated allowUserOnly>
                     <Navbar />
-                    <ProgressTracking />
+                    <About />
+                    <Footer />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: "/institutions",
+            element: (
+                <ProtectedRoute allowUnauthenticated allowUserOnly>
+                    <Navbar />
+                    <Institutions />
+                    <Footer />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: "/programs",
+            element: (
+                <ProtectedRoute allowUnauthenticated allowUserOnly>
+                    <Navbar />
+                    <Destinations />
+                    <Footer />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: "/documents",
+            element: (
+                <ProtectedRoute allowUnauthenticated allowUserOnly>
+                    <Navbar />
+                    <Documents />
                     <Footer />
                 </ProtectedRoute>
             ),
@@ -154,13 +149,25 @@ function App() {
         {
             path: "/agents",
             element: (
-                <>
+                <ProtectedRoute allowUnauthenticated allowUserOnly>
                     <Navbar />
                     <Agents />
                     <Footer />
-                </>
+                </ProtectedRoute>
             ),
         },
+        {
+            path: "/institutionPage/:id",
+            element: (
+                <ProtectedRoute allowUnauthenticated allowUserOnly>
+                    <Navbar />
+                    <InstitutionPage />
+                    <Footer />
+                </ProtectedRoute>
+            ),
+        },
+
+        // Authentication Routes - Accessible to unauthenticated visitors
         {
             path: "/login",
             element: (
@@ -188,50 +195,77 @@ function App() {
                 </AuthRoute>
             ),
         },
+
+        // User-only Routes
         {
-            path: "/institutionPage/:id",
+            path: "/profile",
             element: (
-                <>
+                <ProtectedRoute isUserRoute>
                     <Navbar />
-                    <InstitutionPage />
+                    <Profile />
                     <Footer />
-                </>
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: "/cost-estimation",
+            element: (
+                <ProtectedRoute isUserRoute>
+                    <Navbar />
+                    <Estimation />
+                    <Footer />
+                </ProtectedRoute>
+            ),
+        },
+        {
+            path: "/progress-tracking",
+            element: (
+                <ProtectedRoute isUserRoute>
+                    <Navbar />
+                    <ProgressTracking />
+                    <Footer />
+                </ProtectedRoute>
             ),
         },
 
+        // Agent-only Routes
         {
             path: "/agent-registration",
             element: (
-                <>
+                <AuthRoute>
                     <Navbar />
                     <AgentRegistration />
-                </>
+                </AuthRoute>
             ),
         },
         {
             path: "/agent-login",
             element: (
-                <>
+                <AuthRoute>
                     <Navbar />
                     <AgentLogin />
-                </>
+                </AuthRoute>
             ),
         },
         {
             path: "/agent-dashboard",
-            element: <AgentDashboard />,
+            element: (
+                <ProtectedRoute isAgentRoute>
+                    <AgentDashboard />
+                </ProtectedRoute>
+            ),
         },
-        // Add the new route for agent resubmission
         {
             path: "/agent-resubmit/:id",
             element: (
-                <>
-                    <Navbar />
+                    <><Navbar />
                     <AgentResubmit />
-                    <Footer />
-                </>
+                    <Footer /></>
+
             ),
         },
+
+        // Admin-only Routes
         {
             path: "/admin",
             element: <AdminLogin />,
@@ -270,7 +304,7 @@ function App() {
                 },
             ],
         },
-    ])
+    ]);
 
     return (
         <AuthContext.Provider
@@ -281,13 +315,15 @@ function App() {
                 setUserAvatar,
                 UserType,
                 setUserType,
+                userData,
+                setUserData
             }}
         >
             <div className="App">
                 <RouterProvider router={router} />
             </div>
         </AuthContext.Provider>
-    )
+    );
 }
 
-export default App
+export default App;

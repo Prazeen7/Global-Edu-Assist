@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Box, Card, CardContent, CardHeader, Typography, Checkbox, Button, Chip, Collapse } from "@mui/material"
 import { styled } from "@mui/material/styles"

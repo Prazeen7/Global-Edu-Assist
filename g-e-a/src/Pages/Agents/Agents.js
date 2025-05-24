@@ -1,5 +1,3 @@
-"use client"
-
 import {
   Avatar,
   Box,
@@ -47,11 +45,12 @@ const AgentsPage = () => {
   const [posts, setPosts] = useState([])
   const [loadingPosts, setLoadingPosts] = useState(true)
   const [postsError, setPostsError] = useState(null)
+  const [visiblePosts, setVisiblePosts] = useState(3) // Track number of posts to display
 
-  // Add a new state variable to store agent information
+  // Agent details state
   const [agentDetails, setAgentDetails] = useState({})
 
-  // Add state variables for tracking likes
+  // Like state
   const [likingPost, setLikingPost] = useState(null)
   const [likedPosts, setLikedPosts] = useState({})
 
@@ -62,22 +61,16 @@ const AgentsPage = () => {
     severity: "success",
   })
 
-  // Add a function to fetch agent details for posts
+  // Fetch agent details
   const fetchAgentDetails = async (agentId) => {
     try {
-      // Skip if we already have this agent's details
       if (agentDetails[agentId]) return
-
       const response = await fetch(`http://localhost:3001/api/agent/${agentId}`)
-
       if (!response.ok) {
         console.error(`Failed to fetch agent details: ${response.status}`)
         return
       }
-
       const data = await response.json()
-
-      // Store agent details in state
       setAgentDetails((prev) => ({
         ...prev,
         [agentId]: data.data,
@@ -87,28 +80,20 @@ const AgentsPage = () => {
     }
   }
 
-  // Check if user has already liked posts
+  // Check liked posts
   const checkLikedPosts = async () => {
     try {
       const token = localStorage.getItem("token")
       if (!token || !LoggedIn) return
-
-      // For each post, check if the user has liked it
       for (const post of posts) {
         try {
           const response = await fetch(`http://localhost:3001/api/posts/${post._id}/like-status`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           })
-
           if (response.ok) {
             const data = await response.json()
             if (data.data.hasLiked) {
-              setLikedPosts((prev) => ({
-                ...prev,
-                [post._id]: true,
-              }))
+              setLikedPosts((prev) => ({ ...prev, [post._id]: true }))
             }
           }
         } catch (err) {
@@ -120,10 +105,9 @@ const AgentsPage = () => {
     }
   }
 
-  // Handle like with backend API call
+  // Handle like
   const handleLike = async (postId) => {
     try {
-      // Prevent multiple clicks or liking already liked posts
       if (likingPost === postId || likedPosts[postId]) {
         if (likedPosts[postId]) {
           setAlertInfo({
@@ -134,10 +118,7 @@ const AgentsPage = () => {
         }
         return
       }
-
       setLikingPost(postId)
-
-      // Get token
       const token = localStorage.getItem("token")
       if (!token) {
         setAlertInfo({
@@ -148,12 +129,8 @@ const AgentsPage = () => {
         setLikingPost(null)
         return
       }
-
-      // Optimistically update UI
       setPosts(posts.map((post) => (post._id === postId ? { ...post, likes: (post.likes || 0) + 1 } : post)))
       setLikedPosts((prev) => ({ ...prev, [postId]: true }))
-
-      // Make API call to update likes on server
       const response = await fetch(`http://localhost:3001/api/posts/${postId}/like`, {
         method: "POST",
         headers: {
@@ -161,14 +138,10 @@ const AgentsPage = () => {
           Authorization: `Bearer ${token}`,
         },
       })
-
       const data = await response.json()
-
       if (!response.ok) {
-        // If API call fails, revert the optimistic update
         setPosts(posts.map((post) => (post._id === postId ? { ...post, likes: post.likes - 1 } : post)))
         setLikedPosts((prev) => ({ ...prev, [postId]: false }))
-
         setAlertInfo({
           open: true,
           message: data.message || "Failed to like post",
@@ -176,10 +149,7 @@ const AgentsPage = () => {
         })
         return
       }
-
-      // Update with the actual like count from the server
       setPosts(posts.map((post) => (post._id === postId ? { ...post, likes: data.data.likes } : post)))
-
       setAlertInfo({
         open: true,
         message: "Post liked successfully",
@@ -192,8 +162,6 @@ const AgentsPage = () => {
         message: "Error liking post. Please try again.",
         severity: "error",
       })
-
-      // Revert optimistic update on error
       setPosts(posts.map((post) => (post._id === postId ? { ...post, likes: post.likes - 1 } : post)))
       setLikedPosts((prev) => ({ ...prev, [postId]: false }))
     } finally {
@@ -203,40 +171,30 @@ const AgentsPage = () => {
 
   // Handle alert close
   const handleAlertClose = (event, reason) => {
-    if (reason === "clickaway") {
-      return
-    }
+    if (reason === "clickaway") return
     setAlertInfo((prev) => ({ ...prev, open: false }))
   }
 
-  // Update container width on mount and resize
+  // Update container width
   useEffect(() => {
     const updateWidth = () => {
-      if (scrollRef.current) {
-        setContainerWidth(scrollRef.current.offsetWidth)
-      }
+      if (scrollRef.current) setContainerWidth(scrollRef.current.offsetWidth)
     }
-
     updateWidth()
     window.addEventListener("resize", updateWidth)
     return () => window.removeEventListener("resize", updateWidth)
   }, [])
 
-  // Fetch agents from API
+  // Fetch agents
   useEffect(() => {
     const fetchAgents = async () => {
       try {
         setLoading(true)
-        // Use the correct API endpoint with the base URL
         const response = await fetch("http://localhost:3001/api/getAgent")
-
         if (!response.ok) {
-          throw new Error(`Failed to fetch agents: ${response.status} ${response.statusText}`)
+          throw new Error(`Failed to fetch agents: ${response.status}`)
         }
-
         const data = await response.json()
-
-        // Filter only approved agents for public display
         const approvedAgents = data.data.filter((agent) => agent.status === "approved")
         setAgents(approvedAgents)
         setFilteredAgents(approvedAgents)
@@ -247,36 +205,24 @@ const AgentsPage = () => {
         setLoading(false)
       }
     }
-
     fetchAgents()
   }, [])
 
-  // Fetch posts from API
+  // Fetch posts
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         setLoadingPosts(true)
-        console.log("Fetching posts from API...")
-
         const response = await fetch("http://localhost:3001/api/posts")
-
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
-          console.error("Error response data:", errorData)
           throw new Error(`Failed to fetch posts: ${response.status} - ${errorData.error || "Unknown error"}`)
         }
-
         const data = await response.json()
-        console.log("Posts fetched successfully:", data)
         setPosts(data.data)
-
-        // Fetch agent details for each post
         data.data.forEach((post) => {
-          if (post.agent) {
-            fetchAgentDetails(post.agent)
-          }
+          if (post.agent) fetchAgentDetails(post.agent)
         })
-
         setLoadingPosts(false)
       } catch (err) {
         console.error("Error fetching posts:", err)
@@ -284,18 +230,15 @@ const AgentsPage = () => {
         setLoadingPosts(false)
       }
     }
-
     fetchPosts()
   }, [])
 
-  // Check liked posts after posts are loaded and user is logged in
+  // Check liked posts
   useEffect(() => {
-    if (posts.length > 0 && LoggedIn) {
-      checkLikedPosts()
-    }
+    if (posts.length > 0 && LoggedIn) checkLikedPosts()
   }, [posts, LoggedIn])
 
-  // Filter agents based on search term
+  // Filter agents
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredAgents(agents)
@@ -309,11 +252,9 @@ const AgentsPage = () => {
     }
   }, [searchTerm, agents])
 
-  // Function to handle starting a chat with an agent
+  // Handle message agent
   const handleMessageAgent = (agent) => {
-    // Check if user is logged in
     if (!LoggedIn) {
-      console.log("User not logged in according to AuthContext")
       setAlertInfo({
         open: true,
         message: "Please log in to chat with agents",
@@ -322,92 +263,53 @@ const AgentsPage = () => {
       navigate("/login")
       return
     }
-
-    // Check if agent exists and has an _id
     if (!agent || !agent._id) {
       console.error("Invalid agent data:", agent)
       return
     }
-
-    console.log("Dispatching messageAgent event for agent:", agent.companyName)
-    // Dispatch a custom event that the ChatSystem component listens for
-    const messageAgentEvent = new CustomEvent("messageAgent", {
-      detail: { agent },
-    })
+    const messageAgentEvent = new CustomEvent("messageAgent", { detail: { agent } })
     window.dispatchEvent(messageAgentEvent)
   }
 
+  // Handle scroll
   const handleScroll = (direction) => {
     if (scrollRef.current) {
-      const cardWidth = containerWidth / 3 // Width of each card (3 cards per view)
+      const cardWidth = containerWidth / 3
       const scrollAmount = direction === "left" ? -cardWidth : cardWidth
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" })
-
-      // Update scroll position for button visibility
       setTimeout(() => {
-        if (scrollRef.current) {
-          setScrollPosition(scrollRef.current.scrollLeft)
-        }
+        if (scrollRef.current) setScrollPosition(scrollRef.current.scrollLeft)
       }, 300)
     }
   }
 
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value)
-  }
+  // Handle search
+  const handleSearchChange = (event) => setSearchTerm(event.target.value)
 
-  // Add this function after the handleSearchChange function
+  // Scroll to latest updates
   const scrollToLatestUpdates = () => {
     const latestUpdatesSection = document.getElementById("latest-updates")
-    if (latestUpdatesSection) {
-      latestUpdatesSection.scrollIntoView({ behavior: "smooth" })
-    }
+    if (latestUpdatesSection) latestUpdatesSection.scrollIntoView({ behavior: "smooth" })
   }
 
-  // Extract initials from company name for avatar
-  const getInitials = (name) => {
-    if (!name) return "AG"
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .substring(0, 2)
-      .toUpperCase()
+  // Handle load more posts
+  const handleLoadMore = () => {
+    setVisiblePosts((prev) => prev + 3)
   }
 
-  // Format address for display
-  const formatAddress = (address) => {
-    if (!address) return "Address not available"
-    return address.length > 60 ? `${address.substring(0, 60)}...` : address
-  }
+  // Utility functions
+  const getInitials = (name) => (name ? name.split(" ").map((word) => word[0]).join("").substring(0, 2).toUpperCase() : "AG")
+  const formatAddress = (address) => (address ? (address.length > 60 ? `${address.substring(0, 60)}...` : address) : "Address not available")
+  const getProfilePictureUrl = (profilePicture) =>
+    profilePicture && profilePicture.url
+      ? profilePicture.url.startsWith("http")
+        ? profilePicture.url
+        : `http://localhost:3001${profilePicture.url}`
+      : null
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
 
-  // Fix profile picture URL to use the correct base URL
-  const getProfilePictureUrl = (profilePicture) => {
-    if (!profilePicture || !profilePicture.url) return null
-
-    // If the URL is already absolute, use it as is
-    if (profilePicture.url.startsWith("http")) {
-      return profilePicture.url
-    }
-
-    // Otherwise, construct the full URL with the correct base
-    return `http://localhost:3001${profilePicture.url}`
-  }
-
-  // Format date for display
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
-  }
-
-  // Calculate card width based on container width to show exactly 3 cards
-  const cardWidth = containerWidth ? (containerWidth - 48) / 3 : 280 // 48px for gaps (16px * 3)
-
-  // Check if we can scroll in a direction
+  const cardWidth = containerWidth ? (containerWidth - 48) / 3 : 280
   const canScrollLeft = scrollPosition > 0
   const canScrollRight = scrollRef.current
     ? scrollRef.current.scrollWidth > scrollRef.current.clientWidth + scrollPosition
@@ -416,7 +318,7 @@ const AgentsPage = () => {
   return (
     <Box sx={{ bgcolor: "#ffffff", minHeight: "100vh" }}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* Header Section with Explore Agent Updates button */}
+        {/* Header Section */}
         <Box
           sx={{
             display: "flex",
@@ -435,8 +337,6 @@ const AgentsPage = () => {
               Connect with experienced education consultants to guide your journey
             </Typography>
           </Box>
-
-          {/* Explore Agent Updates Button - Styled to blend with UI */}
           <Button
             variant="contained"
             onClick={scrollToLatestUpdates}
@@ -447,17 +347,14 @@ const AgentsPage = () => {
               fontWeight: 600,
               py: 1,
               px: 2.5,
-              borderRadius: 2, // Match other buttons' border radius
+              borderRadius: 2,
               boxShadow: "0 2px 10px rgba(99, 102, 241, 0.3)",
               textTransform: "none",
-              fontSize: "0.875rem", // Match other buttons' font size
-              "&:hover": {
-                bgcolor: "#4F46E5",
-                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
-              },
+              fontSize: "0.875rem",
+              "&:hover": { bgcolor: "#4F46E5", boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)" },
               alignSelf: { xs: "center", md: "flex-start" },
               minWidth: { xs: "auto", md: "220px" },
-              height: 40, // Match height of other buttons
+              height: 40,
             }}
           >
             Explore Agent Updates
@@ -484,14 +381,7 @@ const AgentsPage = () => {
           <Typography variant="h6" sx={{ color: "#4b5563", fontWeight: 600, mb: { xs: 2, sm: 0 } }}>
             Are you an education consultant?
           </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              flexDirection: { xs: "column", sm: "row" },
-              width: { xs: "100%", sm: "auto" },
-            }}
-          >
+          <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" }, width: { xs: "100%", sm: "auto" } }}>
             <Button
               variant="contained"
               sx={{
@@ -504,10 +394,7 @@ const AgentsPage = () => {
                 textTransform: "none",
                 fontSize: "0.875rem",
                 boxShadow: "0 2px 10px rgba(99, 102, 241, 0.3)",
-                "&:hover": {
-                  bgcolor: "#4F46E5",
-                  boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
-                },
+                "&:hover": { bgcolor: "#4F46E5", boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)" },
               }}
               onClick={() => navigate("/agent-login")}
             >
@@ -524,10 +411,7 @@ const AgentsPage = () => {
                 borderRadius: 2,
                 textTransform: "none",
                 fontSize: "0.875rem",
-                "&:hover": {
-                  borderColor: "#4F46E5",
-                  bgcolor: "rgba(99, 102, 241, 0.05)",
-                },
+                "&:hover": { borderColor: "#4F46E5", bgcolor: "rgba(99, 102, 241, 0.05)" },
               }}
               onClick={() => navigate("/agent-registration")}
             >
@@ -536,15 +420,11 @@ const AgentsPage = () => {
           </Box>
         </Box>
 
-        {/* Available Agents Section with Search Bar moved to left of navigation buttons */}
+        {/* Available Agents Section */}
         <Box sx={{ mb: 6 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              Available Agents
-            </Typography>
-
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>Available Agents</Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              {/* Search Bar - Moved to left of navigation buttons */}
               <TextField
                 placeholder="Search agents..."
                 size="small"
@@ -552,26 +432,12 @@ const AgentsPage = () => {
                 onChange={handleSearchChange}
                 sx={{
                   width: { xs: "100%", sm: 220 },
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 1,
-                    height: "100%",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                  },
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(0,0,0,0.15)",
-                  },
+                  "& .MuiOutlinedInput-root": { borderRadius: 1, height: "100%", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" },
+                  "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(0,0,0,0.15)" },
                   display: { xs: "none", sm: "block" },
                 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search fontSize="small" color="action" />
-                    </InputAdornment>
-                  ),
-                  sx: { py: 0.75 },
-                }}
+                InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" color="action" /></InputAdornment>, sx: { py: 0.75 } }}
               />
-
               <Box sx={{ display: "flex", gap: 1 }}>
                 <IconButton
                   onClick={() => handleScroll("left")}
@@ -581,10 +447,7 @@ const AgentsPage = () => {
                     color: "#6366F1",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                     "&:hover": { bgcolor: "#DFE4FF" },
-                    "&.Mui-disabled": {
-                      bgcolor: "#F9FAFB",
-                      color: "rgba(0,0,0,0.26)",
-                    },
+                    "&.Mui-disabled": { bgcolor: "#F9FAFB", color: "rgba(0,0,0,0.26)" },
                   }}
                 >
                   <ChevronLeft />
@@ -597,10 +460,7 @@ const AgentsPage = () => {
                     color: "#6366F1",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                     "&:hover": { bgcolor: "#DFE4FF" },
-                    "&.Mui-disabled": {
-                      bgcolor: "#F9FAFB",
-                      color: "rgba(0,0,0,0.26)",
-                    },
+                    "&.Mui-disabled": { bgcolor: "#F9FAFB", color: "rgba(0,0,0,0.26)" },
                   }}
                 >
                   <ChevronRight />
@@ -608,8 +468,6 @@ const AgentsPage = () => {
               </Box>
             </Box>
           </Box>
-
-          {/* Mobile Search Bar - Only visible on small screens */}
           <Box sx={{ mb: 3, display: { xs: "block", sm: "none" } }}>
             <TextField
               placeholder="Search agents..."
@@ -618,38 +476,21 @@ const AgentsPage = () => {
               value={searchTerm}
               onChange={handleSearchChange}
               sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                },
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "rgba(0,0,0,0.15)",
-                },
+                "& .MuiOutlinedInput-root": { borderRadius: 1, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" },
+                "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(0,0,0,0.15)" },
               }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
-                sx: { py: 0.75 },
-              }}
+              InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" color="action" /></InputAdornment>, sx: { py: 0.75 } }}
             />
           </Box>
-
           {loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
               <CircularProgress sx={{ color: "#6366F1" }} />
             </Box>
           ) : error ? (
-            <Alert severity="error" sx={{ mb: 4 }}>
-              {error}
-            </Alert>
+            <Alert severity="error" sx={{ mb: 4 }}>{error}</Alert>
           ) : filteredAgents.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 8 }}>
-              <Typography variant="h6" color="text.secondary">
-                No agents found matching your search criteria.
-              </Typography>
+              <Typography variant="h6" color="text.secondary">No agents found matching your search criteria.</Typography>
             </Box>
           ) : (
             <Box
@@ -659,11 +500,9 @@ const AgentsPage = () => {
                 overflowX: "auto",
                 gap: 3,
                 pb: 2,
-                scrollbarWidth: "none", // Hide scrollbar for Firefox
-                msOverflowStyle: "none", // Hide scrollbar for IE/Edge
-                "&::-webkit-scrollbar": {
-                  display: "none", // Hide scrollbar for Chrome/Safari
-                },
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                "&::-webkit-scrollbar": { display: "none" },
               }}
               onScroll={(e) => setScrollPosition(e.target.scrollLeft)}
             >
@@ -680,10 +519,7 @@ const AgentsPage = () => {
                     border: "1px solid rgba(0,0,0,0.08)",
                     borderRadius: 2,
                     transition: "transform 0.2s, box-shadow 0.2s",
-                    "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: "0 6px 15px rgba(0,0,0,0.1)",
-                    },
+                    "&:hover": { transform: "translateY(-4px)", boxShadow: "0 6px 15px rgba(0,0,0,0.1)" },
                     display: "flex",
                     flexDirection: "column",
                   }}
@@ -694,12 +530,7 @@ const AgentsPage = () => {
                         <Avatar
                           src={getProfilePictureUrl(agent.profilePicture)}
                           alt={agent.companyName}
-                          sx={{
-                            width: 80,
-                            height: 80,
-                            mb: 2,
-                            boxShadow: "0 2px 8px rgba(99, 102, 241, 0.2)",
-                          }}
+                          sx={{ width: 80, height: 80, mb: 2, boxShadow: "0 2px 8px rgba(99, 102, 241, 0.2)" }}
                         />
                       ) : (
                         <Avatar
@@ -717,28 +548,15 @@ const AgentsPage = () => {
                           {getInitials(agent.companyName)}
                         </Avatar>
                       )}
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {agent.companyName}
-                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>{agent.companyName}</Typography>
                       <Typography
                         variant="body2"
-                        sx={{
-                          color: "#6366F1",
-                          mb: 1,
-                          fontWeight: 600,
-                          bgcolor: "#EEF2FF",
-                          px: 2,
-                          py: 0.5,
-                          borderRadius: 10,
-                          mt: 1,
-                        }}
+                        sx={{ color: "#6366F1", mb: 1, fontWeight: 600, bgcolor: "#EEF2FF", px: 2, py: 0.5, borderRadius: 10, mt: 1 }}
                       >
                         Education Consultant
                       </Typography>
                     </Box>
-
                     <Divider sx={{ mb: 2 }} />
-
                     <Box sx={{ mb: 2 }}>
                       <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                         <Mail fontSize="small" sx={{ color: "#6366F1", mr: 1 }} />
@@ -753,7 +571,6 @@ const AgentsPage = () => {
                         <Typography variant="body2">{formatAddress(agent.headOfficeAddress)}</Typography>
                       </Box>
                     </Box>
-
                     <Button
                       variant="contained"
                       fullWidth
@@ -763,10 +580,7 @@ const AgentsPage = () => {
                         mt: "auto",
                         py: 1.2,
                         boxShadow: "0 2px 10px rgba(99, 102, 241, 0.3)",
-                        "&:hover": {
-                          bgcolor: "#4F46E5",
-                          boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
-                        },
+                        "&:hover": { bgcolor: "#4F46E5", boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)" },
                       }}
                     >
                       Message Agent
@@ -779,29 +593,23 @@ const AgentsPage = () => {
         </Box>
 
         {/* Latest Updates Section */}
-        {/* Latest Updates Section - Facebook Style */}
         <Box id="latest-updates" sx={{ mb: 6 }}>
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, textAlign: "left" }}>
             Latest Updates from Agents
           </Typography>
-
           {loadingPosts ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
               <CircularProgress sx={{ color: "#6366F1" }} />
             </Box>
           ) : postsError ? (
-            <Alert severity="error" sx={{ mb: 4 }}>
-              {postsError}
-            </Alert>
+            <Alert severity="error" sx={{ mb: 4 }}>{postsError}</Alert>
           ) : posts.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 8 }}>
-              <Typography variant="h6" color="text.secondary">
-                No updates available at the moment.
-              </Typography>
+              <Typography variant="h6" color="text.secondary">No updates available at the moment.</Typography>
             </Box>
           ) : (
             <Box sx={{ maxWidth: "680px", mx: "auto" }}>
-              {posts.slice(0, 3).map((post) => (
+              {posts.slice(0, visiblePosts).map((post) => (
                 <Card
                   key={post._id}
                   sx={{
@@ -813,7 +621,6 @@ const AgentsPage = () => {
                     bgcolor: "#ffffff",
                   }}
                 >
-                  {/* Post Header - Facebook Style */}
                   <Box sx={{ display: "flex", alignItems: "center", p: 2 }}>
                     <Avatar
                       src={
@@ -821,23 +628,14 @@ const AgentsPage = () => {
                           ? getProfilePictureUrl(agentDetails[post.agent].profilePicture)
                           : null
                       }
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        mr: 1.5,
-                      }}
+                      sx={{ width: 40, height: 40, mr: 1.5 }}
                     >
                       {getInitials(agentDetails[post.agent]?.companyName || "")}
                     </Avatar>
                     <Box sx={{ flex: 1 }}>
                       <Typography
                         variant="subtitle1"
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: "0.95rem",
-                          lineHeight: 1.2,
-                          textAlign: "left",
-                        }}
+                        sx={{ fontWeight: 600, fontSize: "0.95rem", lineHeight: 1.2, textAlign: "left" }}
                       >
                         {agentDetails[post.agent]?.companyName || "Loading..."}
                       </Typography>
@@ -846,52 +644,29 @@ const AgentsPage = () => {
                       </Typography>
                     </Box>
                   </Box>
-
-                  {/* Post Content - Facebook Style with left alignment */}
                   {post.title && (
                     <Typography
                       variant="h6"
-                      sx={{
-                        px: 2,
-                        pb: 1.5,
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        textAlign: "left",
-                      }}
+                      sx={{ px: 2, pb: 1.5, fontWeight: 600, fontSize: "1.1rem", textAlign: "left" }}
                     >
                       {post.title}
                     </Typography>
                   )}
-
                   {post.content && (
                     <Typography
                       variant="body1"
-                      sx={{
-                        px: 2,
-                        pb: post.image && post.image.url ? 2 : 0,
-                        fontSize: "0.95rem",
-                        whiteSpace: "pre-line",
-                        textAlign: "left",
-                      }}
+                      sx={{ px: 2, pb: post.image && post.image.url ? 2 : 0, fontSize: "0.95rem", whiteSpace: "pre-line", textAlign: "left" }}
                     >
                       {post.content}
                     </Typography>
                   )}
-
-                  {/* Post Image - Facebook Style (full width) */}
                   {post.image && post.image.url && (
                     <Box sx={{ width: "100%" }}>
                       <img
-                        src={
-                          post.image.url.startsWith("http") ? post.image.url : `http://localhost:3001${post.image.url}`
-                        }
+                        src={post.image.url.startsWith("http") ? post.image.url : `http://localhost:3001${post.image.url}`}
                         alt={post.title || "Post image"}
-                        style={{
-                          width: "100%",
-                          display: "block",
-                        }}
+                        style={{ width: "100%", display: "block" }}
                         onError={(e) => {
-                          console.error("Image failed to load:", post.image.url)
                           const possibleUrls = [
                             `http://localhost:3001${post.image.url}`,
                             `http://localhost:3001/uploads/${post.image.filename}`,
@@ -900,9 +675,7 @@ const AgentsPage = () => {
                           ]
                           const currentUrlIndex = possibleUrls.findIndex((url) => url === e.target.src)
                           if (currentUrlIndex < possibleUrls.length - 1) {
-                            const nextUrl = possibleUrls[currentUrlIndex + 1]
-                            console.log("Trying alternative URL:", nextUrl)
-                            e.target.src = nextUrl
+                            e.target.src = possibleUrls[currentUrlIndex + 1]
                           } else {
                             e.target.src = "/placeholder.svg"
                           }
@@ -910,18 +683,8 @@ const AgentsPage = () => {
                       />
                     </Box>
                   )}
-
-                  {/* Post Actions - Using previous style */}
                   <Divider sx={{ mt: 2, mb: 2 }} />
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      px: 2,
-                      pb: 2,
-                    }}
-                  >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 2, pb: 2 }}>
                     <Box sx={{ display: "flex", gap: 3 }}>
                       <Button
                         startIcon={likedPosts[post._id] ? <ThumbUp /> : <ThumbUpAltOutlined />}
@@ -931,9 +694,7 @@ const AgentsPage = () => {
                           color: likedPosts[post._id] ? "#4F46E5" : "#6366F1",
                           textTransform: "none",
                           fontWeight: 500,
-                          "&:hover": {
-                            bgcolor: "rgba(99, 102, 241, 0.08)",
-                          },
+                          "&:hover": { bgcolor: "rgba(99, 102, 241, 0.08)" },
                         }}
                       >
                         {post.likes || 0} Likes
@@ -946,10 +707,7 @@ const AgentsPage = () => {
                       sx={{
                         color: "#6366F1",
                         borderColor: "#6366F1",
-                        "&:hover": {
-                          borderColor: "#4F46E5",
-                          bgcolor: "rgba(99, 102, 241, 0.05)",
-                        },
+                        "&:hover": { borderColor: "#4F46E5", bgcolor: "rgba(99, 102, 241, 0.05)" },
                         py: 0.7,
                         px: 2,
                         textTransform: "none",
@@ -961,17 +719,15 @@ const AgentsPage = () => {
                   </Box>
                 </Card>
               ))}
-
-              {posts.length > 3 && (
+              {posts.length > visiblePosts && (
                 <Box sx={{ display: "flex", justifyContent: "center", mt: 2, mb: 4 }}>
                   <Button
                     variant="outlined"
+                    onClick={handleLoadMore}
                     sx={{
                       borderColor: "#6366F1",
                       color: "#6366F1",
-                      "&:hover": {
-                        borderColor: "#4F46E5",
-                      },
+                      "&:hover": { borderColor: "#4F46E5" },
                       py: 1,
                       px: 3,
                       boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
@@ -985,8 +741,6 @@ const AgentsPage = () => {
           )}
         </Box>
       </Container>
-
-      {/* Alert Snackbar */}
       <Snackbar
         open={alertInfo.open}
         autoHideDuration={6000}

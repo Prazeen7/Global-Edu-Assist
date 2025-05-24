@@ -43,6 +43,7 @@ import TabPanel from "../../components/TabPanel";
 import axios from "axios";
 import '../Institutions/institutions.css';
 import SearchBar from "../../components/SearchBar";
+import Loading from "../../components/Loading";
 
 // Shuffle cards
 const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
@@ -252,7 +253,7 @@ export default function Programs() {
         fetchData();
     }, []);
 
-    // Parse GPA from string
+    // Parse GPA from string 
     const parseGPA = (gpaString) => {
         if (!gpaString) return 0;
         const gpaMatch = gpaString.match(/\d+(\.\d+)?/);
@@ -753,7 +754,7 @@ export default function Programs() {
                         {/* Loading State */}
                         {loading && (
                             <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-                                <CircularProgress />
+                                <Loading />
                             </Box>
                         )}
 

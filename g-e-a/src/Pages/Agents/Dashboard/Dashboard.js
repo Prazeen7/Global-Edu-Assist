@@ -1,5 +1,3 @@
-"use client"
-
 import { ThemeProvider, createTheme } from "@mui/material/styles"
 import { AppBar, Toolbar, Typography, Box, Container, CssBaseline } from "@mui/material"
 import ChatSystem from "../../../components/ChatSystem"

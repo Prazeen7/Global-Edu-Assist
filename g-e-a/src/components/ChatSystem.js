@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useCallback, useContext, useRef } from "react"
 import axios from "axios"
 import { AuthContext } from "../Context/context"
@@ -100,9 +98,9 @@ const ChatSystem = () => {
     const [loading, setLoading] = useState(false)
     const [currentUserId, setCurrentUserId] = useState("")
     const [currentUserName, setCurrentUserName] = useState("")
-    const [currentUserType, setCurrentUserType] = useState("user") // Default to "user"
+    const [currentUserType, setCurrentUserType] = useState("user") 
     const [currentReceiverId, setCurrentReceiverId] = useState("")
-    const [currentReceiverType, setCurrentReceiverType] = useState("") // "user" or "agent"
+    const [currentReceiverType, setCurrentReceiverType] = useState("") 
     const [searchTerm, setSearchTerm] = useState("")
     const [pendingAgent, setPendingAgent] = useState(null)
     const [socket, setSocket] = useState(null)
@@ -122,7 +120,7 @@ const ChatSystem = () => {
     const currentReceiverIdRef = useRef("")
     const chatOpenedRef = useRef(false)
     const messagesLoadedRef = useRef(false)
-    const activeDialogIdRef = useRef(null) // Add a ref to track the active dialog
+    const activeDialogIdRef = useRef(null) 
 
     // Initialize socket connection
     useEffect(() => {
@@ -167,20 +165,15 @@ const ChatSystem = () => {
     useEffect(() => {
         if (socket && currentUserId) {
             socket.emit("join", currentUserId)
-            console.log(`User ${currentUserId} joined their room with socket ${socket.id}`)
 
             // Listen for new messages
             socket.on("newMessage", (data) => {
-                console.log("New message received:", data)
 
                 // If chat is open with the sender, add message to chat
                 if (showChatBox && currentReceiverIdRef.current === data.from._id) {
-                    // Update messages in a single operation to prevent flickering
                     setMessages((prevMessages) => [...prevMessages, data.message])
 
-                    // Only scroll if we're not scroll-locked
                     if (!isScrollLocked) {
-                        // Use multiple scroll attempts to ensure it works
                         const scrollToBottom = () => {
                             if (dialogContentRef.current && activeDialogIdRef.current === data.from._id) {
                                 dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight
@@ -263,7 +256,6 @@ const ChatSystem = () => {
             // Listen for chat list update event with debouncing
             socket.on("update_chat_list", (data) => {
                 if (data.userId === currentUserId) {
-                    // Debounce updates to prevent flickering
                     if (chatUpdateTimeoutRef.current) {
                         clearTimeout(chatUpdateTimeoutRef.current)
                     }
@@ -276,7 +268,6 @@ const ChatSystem = () => {
 
             // Listen for chat list updates with debouncing
             socket.on("updateChatList", () => {
-                // Debounce updates to prevent flickering
                 if (chatUpdateTimeoutRef.current) {
                     clearTimeout(chatUpdateTimeoutRef.current)
                 }

@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import {
     Box,
@@ -28,7 +26,7 @@ import {
     IconButton,
 } from "@mui/material"
 import { Edit, Delete, Visibility, VisibilityOff, Add as AddIcon } from "@mui/icons-material"
-import axiosInstance from "../../utils/axiosConfig" // Import the configured axios instance
+import axiosInstance from "../../utils/axiosConfig" 
 import { useNavigate } from "react-router-dom"
 import parseJwt from "../../utils/parseJwt"
 import PageHeader from "../../components/Admin/PageHeader"
@@ -90,7 +88,7 @@ function ManageAdmins() {
             return
         }
 
-        // If we get here, user is a super admin, so fetch admins
+        // fetch super admins
         fetchAdmins()
     }, [navigate])
 
@@ -100,7 +98,6 @@ function ManageAdmins() {
             setLoading(true)
             console.log("Fetching admins from backend...")
 
-            // Use the axios instance with the correct baseURL
             const response = await axiosInstance.get("/admin/admins")
 
             console.log("Admins data received:", response.data)
@@ -183,7 +180,6 @@ function ManageAdmins() {
         if (!validateForm()) return
 
         try {
-            // Use the axios instance with the correct baseURL
             const response = await axiosInstance.post("/admin/admins", {
                 firstName: newAdmin.firstName,
                 lastName: newAdmin.lastName,
@@ -232,7 +228,6 @@ function ManageAdmins() {
                 updateData.password = editAdmin.password
             }
 
-            // Use the axios instance with the correct baseURL
             const response = await axiosInstance.put(`/admin/admins/${editAdmin._id}`, updateData)
 
             setOpenEditDialog(false)
@@ -249,7 +244,6 @@ function ManageAdmins() {
 
     const handleDeleteAdmin = async () => {
         try {
-            // Use the axios instance with the correct baseURL
             const response = await axiosInstance.delete(`/admin/admins/${selectedAdmin._id}`)
 
             setOpenDeleteDialog(false)

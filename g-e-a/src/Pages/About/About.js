@@ -253,12 +253,12 @@ export default function AboutPage() {
 
   // Objectives data
   const objectives = [
-    "To provide exceptional service and solutions to our clients",
-    "To maintain the highest standards of quality and professionalism",
-    "To foster innovation and continuous improvement in our processes",
-    "To build lasting relationships with our clients and partners",
-    "To contribute positively to the communities we serve",
-    "To create a supportive and collaborative work environment",
+    "Help students explore and compare institutions, programs, and locations based on their academic and personal preferences.",
+    "Provide detailed information about each institution, including scholarships, requirements, tuition fees, and required documentation",
+    "Enable students to use advanced search filters to refine options by program level, fees, GPA, English proficiency, and more.",
+    "Offer clear and accessible documentation guidance to support students during their application process.",
+    "Allow students to estimate total costs from application submission to visa approval.",
+    "Facilitate seamless communication between students and agents through an in-platform messaging system.",
   ]
 
   // Icons for objectives
@@ -284,7 +284,7 @@ export default function AboutPage() {
               gutterBottom
               sx={{
                 fontSize: { xs: "2.5rem", md: "3.5rem" },
-                background: "linear-gradient(90deg, #4f46e5 0%, #10B981 100%)",
+                background: "#4f46e5",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 mb: 2,
@@ -343,18 +343,14 @@ export default function AboutPage() {
                     paragraph
                     sx={{ fontSize: "1.1rem", lineHeight: 1.8, color: "text.primary" }}
                   >
-                    We are a dedicated team of professionals committed to providing exceptional service in our industry.
-                    Founded in 2010, our organization has grown from a small startup to a leading provider of solutions
-                    for our clients worldwide. Our passion for excellence and innovation drives everything we do.
+                    We are a comprehensive digital platform designed to empower prospective international students by simplifying their 
+                    journey from exploring academic opportunities to achieving visa approval. Our system serves as a bridge between students 
+                    and educational institutions, offering curated access to programs, scholarships, estimated costs, and application 
+                    requirements. By integrating advanced search tools, cost estimators, real-time guidance, and communication features, 
+                    we help students make informed decisions tailored to their academic goals, financial capacity, and personal preferences. 
+                    At the same time, we provide a space for verified educational agents to share services, facilitating trusted connections 
+                    between students and expert guidance throughout their journey.
                   </Typography>
-                  <Typography variant="body1" sx={{ fontSize: "1.1rem", lineHeight: 1.8, color: "text.primary" }}>
-                    With a focus on quality and customer satisfaction, we strive to exceed expectations in every project
-                    we undertake. Our experienced team brings diverse skills and perspectives to tackle complex
-                    challenges and deliver outstanding results.
-                  </Typography>
-                  <Button variant="outlined" color="primary" sx={{ mt: 3 }} endIcon={<ArrowForwardIcon />}>
-                    Learn more about our story
-                  </Button>
                 </Paper>
               </Grid>
               <Grid item xs={12} md={4}>
@@ -506,19 +502,6 @@ export default function AboutPage() {
                     />
                   </ContactItem>
                 </List>
-
-                <Button
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  endIcon={<SendIcon />}
-                  sx={{
-                    background: "linear-gradient(90deg, #4f46e5 0%, #6366F1 100%)",
-                    py: 1.5,
-                  }}
-                >
-                  Send us a message
-                </Button>
               </Paper>
             </Grid>
 

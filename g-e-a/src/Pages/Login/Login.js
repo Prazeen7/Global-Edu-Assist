@@ -24,6 +24,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom"
 import axios from "../../utils/axiosConfig"
 import { AuthContext } from "../../Context/context"
 import "../Institutions/institutions.css"
+import { verifyTokenWithServer } from "../../utils/authService"
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -85,7 +86,7 @@ export default function Login() {
   // Get the redirectTo from location state, default to home page if not provided
   const redirectTo = location.state?.redirectTo || "/"
 
-  const { setLoggedIn, setUserAvatar, setUserType } = useContext(AuthContext)
+  const { setLoggedIn, setUserAvatar, setUserType, setUserData } = useContext(AuthContext)
 
   useEffect(() => {
     localStorage.removeItem("token")
@@ -166,7 +167,10 @@ export default function Login() {
         const newToken = result.data.auth
         localStorage.setItem("token", newToken)
         localStorage.setItem("userAvatar", result.data.firstName)
-        localStorage.setItem("userType", result.data.user)
+
+        // Store the user type from the response
+        const userType = result.data.user || "user"
+        localStorage.setItem("userType", userType)
 
         if (rememberMe) {
           localStorage.setItem("rememberedEmail", email)
@@ -174,25 +178,45 @@ export default function Login() {
           localStorage.removeItem("rememberedEmail")
         }
 
-        setLoggedIn(true)
-        setUserAvatar(result.data.firstName)
-        setUserType(result.data.user)
+        // Verify the token with the server to get complete user data
+        const verificationResult = await verifyTokenWithServer()
 
-        setAlertMessage("Logged in successfully.")
-        setAlertSeverity("success")
+        if (verificationResult.isValid) {
+          // Update context with user information from server verification
+          setLoggedIn(true)
+          setUserAvatar(result.data.firstName)
+          setUserType(verificationResult.userType)
+          setUserData(verificationResult.userData)
 
+          setAlertMessage("Logged in successfully.")
+          setAlertSeverity("success")
 
-        // Add a slight delay to ensure state updates before navigation
-        setTimeout(() => {
-          navigate(redirectTo)
-        }, 100)
+          // Redirect based on user type
+          setTimeout(() => {
+            if (verificationResult.userType === "admin") {
+              navigate("/admin/dashboard")
+            } else if (verificationResult.userType === "agent") {
+              navigate("/agent-dashboard")
+            } else {
+              // For regular users, redirect to the requested page or home
+              navigate(redirectTo)
+            }
+          }, 100)
+        } else {
+          // Token verification failed
+          setAlertMessage("Authentication failed. Please try again.")
+          setAlertSeverity("error")
+          localStorage.removeItem("token")
+          localStorage.removeItem("userType")
+          localStorage.removeItem("userAvatar")
+        }
       } else if (result.data.requiresVerification) {
         console.log("Redirecting to OTP verification:", email)
         navigate("/verify-email", {
           state: {
             email,
             message: "Please verify your email with the OTP sent to your inbox.",
-            redirectTo: redirectTo, 
+            redirectTo: redirectTo,
           },
         })
       } else {
@@ -213,7 +237,7 @@ export default function Login() {
           state: {
             email,
             message: "Please verify your email with the OTP sent to your inbox.",
-            redirectTo: redirectTo, 
+            redirectTo: redirectTo,
           },
         })
       }

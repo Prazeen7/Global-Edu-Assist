@@ -1,5 +1,3 @@
-"use client"
-
 import { ListItem, ListItemIcon, ListItemText, ListItemButton } from "@mui/material"
 import { SupervisorAccount } from "@mui/icons-material"
 import { Link, useLocation } from "react-router-dom"

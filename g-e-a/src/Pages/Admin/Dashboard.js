@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import axios from "../../utils/axiosConfig"
 import Grid from "@mui/material/Grid"
