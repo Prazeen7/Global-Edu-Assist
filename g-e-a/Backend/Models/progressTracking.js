@@ -23,7 +23,7 @@ const checklistItemSchema = new mongoose.Schema({
         default: true,
     },
     children: {
-        type: [mongoose.Schema.Types.Mixed], // Allow for nested items
+        type: [mongoose.Schema.Types.Mixed], 
         default: [],
     },
 })
@@ -32,7 +32,7 @@ const checklistItemSchema = new mongoose.Schema({
 const progressTrackingSchema = new mongoose.Schema(
     {
         userId: {
-            type: String, // Changed from ObjectId to String
+            type: String, 
             required: true,
             unique: true,
         },

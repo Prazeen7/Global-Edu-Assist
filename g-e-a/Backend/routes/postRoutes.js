@@ -15,7 +15,6 @@ const {
 const { handleUploadErrors } = require("../config/multerConfig")
 const verifyToken = require("../middleware/authMiddleware")
 
-// Wrap route handlers with try-catch for better error handling
 const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next)
 }
