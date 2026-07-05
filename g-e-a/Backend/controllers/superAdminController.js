@@ -136,3 +136,61 @@ exports.removeAdmin = async (req, res) => {
         res.status(500).json({ message: "Error removing admin", error: error.message })
     }
 }
+
+exports.createInitialSuperAdmin = async () => {
+    try {
+        console.log("🔍 createInitialSuperAdmin function started...")
+        
+        const adminEmail = process.env.SUPER_ADMIN_EMAIL || "prajin.singh9@gmail.com";
+        const adminPassword = process.env.SUPER_ADMIN_PASSWORD || "GEA@123456";
+        
+        console.log(`📧 Checking for admin with email: ${adminEmail}`)
+        
+        // Check if admin already exists
+        const existingAdmin = await AdminModel.findOne({ email: adminEmail });
+        console.log("🔍 Existing admin found:", existingAdmin ? "Yes" : "No")
+        
+        if (existingAdmin) {
+            console.log("ℹ️ Super admin already exists")
+            return { 
+                success: true, 
+                message: "Super admin already exists",
+                email: adminEmail 
+            };
+        }
+
+        console.log("🔄 Creating new super admin...")
+        
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(adminPassword, salt);
+        console.log("✅ Password hashed")
+
+        // Create super admin
+        const superAdmin = new AdminModel({
+            firstName: "Prajin",
+            lastName: "Singh",
+            email: adminEmail,
+            password: hashedPassword,
+            user: "admin",
+            superAdmin: true,
+        });
+
+        console.log("📝 Saving admin to database...")
+        await superAdmin.save();
+        console.log("✅ Super admin saved successfully!")
+
+        return { 
+            success: true, 
+            message: "Super admin created successfully",
+            email: adminEmail 
+        };
+    } catch (error) {
+        console.error("❌ Error creating initial super admin:", error)
+        return { 
+            success: false, 
+            message: "Error creating super admin",
+            error: error.message 
+        };
+    }
+}

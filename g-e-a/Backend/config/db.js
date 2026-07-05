@@ -1,11 +1,13 @@
 // Import mongoose for MongoDB
 const mongoose = require("mongoose");
 
+require("dotenv").config();
+
 // Connect to MongoDB database
 const connectDB = async () => {
     try {
         // Connect to local MongoDB with database name 'gea'
-        await mongoose.connect("mongodb://127.0.0.1:27017/gea");
+        await mongoose.connect(process.env.MONGODB_URI);
         console.log("MongoDB connected");
     } catch (err) {
         // Log error and exit if connection fails
