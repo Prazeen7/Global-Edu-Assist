@@ -21,7 +21,7 @@ app.use(express.json())
 
 // CORS Configuration
 const corsOptions = {
-    origin: "http://localhost:5173",
+    origin: "https://global-edu-assist.vercel.app",
     credentials: true,
     optionsSuccessStatus: 200,
 }
@@ -105,7 +105,7 @@ app.use("/api/chat", chatRoutes)
 app.use("/api/posts", postRoutes)
 app.use("/api/admin", adminRoutes)
 
-const createSuperAdmin = async () => {
+const createSuperAdmin = async() => {
     try {
         console.log("🔄 Starting super admin creation...")
 
@@ -153,7 +153,7 @@ const createSuperAdmin = async () => {
 }
 
 // Start Server
-mongoose.connection.once('open', async () => {
+mongoose.connection.once('open', async() => {
     console.log("✅ MongoDB connection is open and ready")
 
     // Create super admin
