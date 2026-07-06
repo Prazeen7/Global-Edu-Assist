@@ -1,4 +1,5 @@
-Backend/.env
-Backend/uploads/
-Backend/node_modules/
-Frontend/node_modules/
+g-e-a/Backend/.env
+g-e-a/Backend/uploads/
+g-e-a/Backend/node_modules/
+g-e-a/Frontend/node_modules/
+g-e-a/Frontend/dist/

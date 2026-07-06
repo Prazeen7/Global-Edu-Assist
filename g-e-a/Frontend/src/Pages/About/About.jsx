@@ -19,6 +19,8 @@ import {
   CssBaseline,
   useMediaQuery,
   IconButton,
+  Alert,
+  AlertTitle,
 } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import LooksOneIcon from "@mui/icons-material/LooksOne"
@@ -38,6 +40,7 @@ import LinkedInIcon from "@mui/icons-material/LinkedIn"
 import TwitterIcon from "@mui/icons-material/Twitter"
 import GitHubIcon from "@mui/icons-material/GitHub"
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
+import InfoIcon from "@mui/icons-material/Info"
 import "../Institutions/institutions.css"
 
 // Create a theme with the brand color
@@ -212,6 +215,36 @@ const SocialIconButton = styled(IconButton)(({ theme }) => ({
   },
 }))
 
+// Styled Disclaimer component that blends with the page
+const DisclaimerPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  marginBottom: theme.spacing(6),
+  borderRadius: 16,
+  background: `linear-gradient(135deg, ${theme.palette.grey[50]} 0%, ${theme.palette.grey[100]} 100%)`,
+  border: `1px solid ${theme.palette.grey[200]}`,
+  borderLeft: `6px solid ${theme.palette.primary.main}`,
+  position: "relative",
+  overflow: "hidden",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: "200px",
+    height: "200px",
+    background: `radial-gradient(circle, ${theme.palette.primary.main}03 0%, transparent 70%)`,
+    borderRadius: "50%",
+    transform: "translate(50%, -50%)",
+  },
+}))
+
+const DisclaimerIcon = styled(InfoIcon)(({ theme }) => ({
+  color: theme.palette.primary.main,
+  fontSize: 28,
+  marginRight: theme.spacing(1.5),
+  opacity: 0.8,
+}))
+
 export default function AboutPage() {
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"))
 
@@ -276,6 +309,64 @@ export default function AboutPage() {
       <CssBaseline />
       <Box sx={{ py: 8, bgcolor: "background.default" }}>
         <Container maxWidth="lg">
+          {/* Blended Disclaimer - Left Aligned */}
+          <DisclaimerPaper elevation={0}>
+            <Box sx={{ display: "flex", alignItems: "flex-start", textAlign: "left" }}>
+              <DisclaimerIcon />
+              <Box sx={{ flex: 1 }}>
+                <Typography 
+                  variant="subtitle1" 
+                  sx={{ 
+                    fontWeight: 700, 
+                    color: "primary.main",
+                    mb: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  ℹ️ Development & Demonstration Purposes Only
+                </Typography>
+                <Typography variant="body2" sx={{ color: "text.secondary", mb: 1, lineHeight: 1.8 }}>
+                  This website is an independent software demonstration created solely for educational and portfolio purposes. References to real educational institutions are made only for illustrative purposes and do not imply any affiliation, endorsement, partnership, or representation by those institutions. Unless otherwise stated, information displayed on this website may be incomplete, outdated, simulated, or fictional and should not be relied upon for academic, financial, immigration, or application decisions. Users should consult the official websites of the respective institutions for accurate and current information.
+                </Typography>
+                <Box component="ul" sx={{ 
+                  pl: 2, 
+                  mb: 1.5, 
+                  color: "text.secondary",
+                  '& li': { 
+                    mb: 0.5,
+                    fontSize: '0.875rem',
+                    lineHeight: 1.6,
+                  }
+                }}>
+                  <li>Program details, course offerings, and academic requirements</li>
+                  <li>Tuition fees, scholarship amounts, and cost estimates</li>
+                  <li>Application deadlines, documentation requirements, and procedures</li>
+                  <li>Contact information, agent profiles, and service offerings</li>
+                  <li>Any other specific data or content displayed on the platform</li>
+                </Box>
+                <Typography variant="body2" sx={{ 
+                  fontWeight: 600, 
+                  color: "primary.dark",
+                  mb: 1,
+                  lineHeight: 1.8,
+                }}>
+                  This information should <strong>NOT be considered accurate, current, or reliable</strong> for any real-world decision-making.
+                </Typography>
+                <Typography variant="caption" sx={{ 
+                  color: "text.secondary", 
+                  display: "block",
+                  fontStyle: "italic",
+                  lineHeight: 1.6,
+                }}>
+                  No real-world services, transactions, or representations are facilitated through this platform. For accurate and up-to-date information, 
+                  please refer to official institutional websites and authorized representatives.
+                </Typography>
+              </Box>
+            </Box>
+          </DisclaimerPaper>
+
           {/* Page Title */}
           <Box sx={{ textAlign: "center", mb: 10 }}>
             <Typography
@@ -351,6 +442,22 @@ export default function AboutPage() {
                     At the same time, we provide a space for verified educational agents to share services, facilitating trusted connections 
                     between students and expert guidance throughout their journey.
                   </Typography>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      mt: 2, 
+                      p: 2, 
+                      bgcolor: "primary.main",
+                      color: "white",
+                      borderRadius: 2,
+                      display: "block",
+                      fontStyle: "italic",
+                      textAlign: "left",
+                    }}
+                  >
+                    <strong>Note:</strong> This is a conceptual description for demonstration purposes only. 
+                    The platform described is a prototype and not currently operational.
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={12} md={4}>
@@ -373,10 +480,10 @@ export default function AboutPage() {
                 >
                   <BusinessIcon sx={{ fontSize: 120, color: "primary.main", mb: 2, opacity: 0.8 }} />
                   <Typography variant="h6" align="center" sx={{ fontWeight: 600, color: "text.primary" }}>
-                    Established in 2010
+                    Demo Prototype
                   </Typography>
                   <Typography variant="body2" align="center" color="text.secondary" sx={{ mt: 1 }}>
-                    Over a decade of excellence in service
+                    For development & testing purposes only
                   </Typography>
                 </Paper>
               </Grid>
@@ -502,6 +609,22 @@ export default function AboutPage() {
                     />
                   </ContactItem>
                 </List>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    mt: 2,
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: "grey.50",
+                    border: "1px solid",
+                    borderColor: "grey.200",
+                    textAlign: "left",
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    <strong>ℹ️ Demo contact details:</strong> This information is fictional and for demonstration purposes only.
+                  </Typography>
+                </Paper>
               </Paper>
             </Grid>
 
@@ -553,6 +676,20 @@ export default function AboutPage() {
                               </SocialIconButton>
                             ))}
                           </Box>
+                          <Paper
+                            elevation={0}
+                            sx={{
+                              mt: 2,
+                              p: 1,
+                              bgcolor: "grey.50",
+                              borderRadius: 1,
+                              display: "inline-block",
+                            }}
+                          >
+                            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                              (Demo Profile)
+                            </Typography>
+                          </Paper>
                         </CardContent>
                       </TeamCard>
                     </Box>
@@ -561,6 +698,38 @@ export default function AboutPage() {
               </Grid>
             </Grid>
           </Grid>
+
+          {/* Footer Disclaimer - Blended Design */}
+          <Paper
+            elevation={0}
+            sx={{
+              mt: 8,
+              pt: 4,
+              pb: 3,
+              px: 3,
+              borderTop: "2px solid",
+              borderColor: "primary.main",
+              borderTopColor: "primary.main",
+              borderRadius: 0,
+              textAlign: "left",
+              bgcolor: "transparent",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+              <InfoIcon sx={{ color: "primary.main", fontSize: 24, mt: 0.5, opacity: 0.7 }} />
+              <Box>
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", lineHeight: 1.8 }}>
+                  <strong>Legal Notice:</strong> This website is a mockup/demonstration project. While real institution names may be referenced, 
+                  all specific data, content, and information presented are fictitious and intended solely for development, testing, 
+                  and portfolio purposes. No real-world services, transactions, or representations are made. For accurate information, 
+                  please refer to official institutional sources.
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                  © 2026 Demo Project - All Rights Reserved
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
         </Container>
       </Box>
     </ThemeProvider>

@@ -179,44 +179,86 @@ exports.getAllAgents = async (req, res) => {
 
 exports.availAgent = async (req, res) => {
     try {
-        // Get approved agents from the main AgentModel (agents with status 'approved')
-        const agents = await AgentModel.find({ status: 'approved' })
+        // 1. Get approved agents from the main AgentModel (registration/login model)
+        const registeredAgents = await AgentModel.find({ status: 'approved' })
             .select('companyName profilePicture email website contactNumber headOfficeAddress branches')
             .lean();
 
-        // If no approved agents found, try the old AvailAgent model as fallback
-        if (agents.length === 0) {
-            const oldAgents = await AvailAgent.find();
-            return res.json(oldAgents);
-        }
+        // 2. Get agents from the AvailAgent model (general info model)
+        const availAgents = await AvailAgent.find().lean();
 
-        // Transform to match expected format if needed
-        const formattedAgents = agents.map(agent => ({
-            _id: agent._id,
-            agent_name: agent.companyName,
-            head_office: {
-                location: agent.headOfficeAddress || '',
-                address: agent.headOfficeAddress || '',
-                tel: agent.contactNumber || '',
-                email: agent.email || '',
-                web: agent.website || '',
-                avatar: agent.profilePicture?.url || agent.profilePicture || ''
-            },
-            other_locations: agent.branches?.map(branch => ({
-                location: branch.location || '',
-                address: branch.address || '',
-                tel: branch.contactNumber || '',
-                email: branch.email || '',
-                web: branch.website || ''
-            })) || []
-        }));
+        const formattedAgents = [];
 
+        // 3. Process registered agents (from AgentModel - Oli & Associates)
+        registeredAgents.forEach(agent => {
+            if (agent.companyName) {
+                // Format branches to match other_locations structure
+                const otherLocations = agent.branches?.map(branch => ({
+                    location: branch.location || '',
+                    address: branch.address || '',
+                    tel: branch.contactNumber || '',
+                    email: branch.email || '',
+                    web: branch.website || ''
+                })) || [];
+
+                formattedAgents.push({
+                    [agent.companyName]: {
+                        head_office: {
+                            location: agent.headOfficeAddress || '',
+                            address: agent.headOfficeAddress || '',
+                            tel: agent.contactNumber || '',
+                            email: agent.email || '',
+                            web: agent.website || '',
+                            avatar: agent.profilePicture?.url || agent.profilePicture || ''
+                        },
+                        other_locations: otherLocations
+                    }
+                });
+            }
+        });
+
+        // 4. Process avail agents (from AvailAgent - IDP Education)
+        availAgents.forEach(agent => {
+            // Get all keys except _id, __v, etc.
+            const keys = Object.keys(agent).filter(key => !['_id', '__v', 'createdAt', 'updatedAt'].includes(key));
+            
+            keys.forEach(agentName => {
+                // Check if agent already exists in formattedAgents
+                const alreadyExists = formattedAgents.some(a => a[agentName]);
+                
+                if (!alreadyExists) {
+                    const agentData = agent[agentName];
+                    
+                    if (agentData && typeof agentData === 'object') {
+                        // Check if it has head_office or if it's directly the head_office data
+                        let headOffice = agentData.head_office || agentData;
+                        let otherLocations = agentData.other_locations || [];
+                        
+                        formattedAgents.push({
+                            [agentName]: {
+                                head_office: {
+                                    location: headOffice.location || headOffice.address || '',
+                                    address: headOffice.address || headOffice.location || '',
+                                    tel: headOffice.tel || headOffice.contactNumber || '',
+                                    email: headOffice.email || '',
+                                    web: headOffice.web || headOffice.website || '',
+                                    avatar: headOffice.avatar || headOffice.profilePicture || ''
+                                },
+                                other_locations: otherLocations
+                            }
+                        });
+                    }
+                }
+            });
+        });
+
+        // Return the formatted agents
         res.json(formattedAgents);
     } catch (error) {
         console.error('Error in availAgent:', error);
         res.status(500).json({ message: error.message });
     }
-}
+};
 
 // Get single agent by ID
 exports.getAgentById = async (req, res) => {
