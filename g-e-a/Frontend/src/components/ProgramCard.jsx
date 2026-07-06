@@ -21,6 +21,7 @@ import {
     ExpandMore as ExpandMoreIcon,
     ExpandLess as ExpandLessIcon,
 } from "@mui/icons-material";
+import { getImageUrl } from "../utils/imageUtils";
 
 function ProgramCard({ program, institutionData }) {
     const [isIntakesOpen, setIsIntakesOpen] = useState(false);
@@ -38,10 +39,7 @@ function ProgramCard({ program, institutionData }) {
     };
 
     // Avatar
-    const baseImageUrl = "http://localhost:3001/uploads/"; 
-    const avatarImage = institutionData?.profilePicture
-        ? `${baseImageUrl}${institutionData.profilePicture}`
-        : null;
+    const avatarImage = getImageUrl(institutionData?.profilePicture);
 
     return (
         <Card

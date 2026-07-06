@@ -1,6 +1,5 @@
 const express = require("express")
 const cors = require("cors")
-const path = require("path")
 const http = require("http")
 const socketIo = require("socket.io")
 const connectDB = require("./config/db")
@@ -77,10 +76,9 @@ io.on("connection", (socket) => {
 // Make io accessible to our routes
 app.set("io", io)
 
-// Serve static files from the "uploads" folder
-app.use("/uploads", express.static(path.join(__dirname, "uploads")))
+// Note: Static uploads directory no longer needed - files are stored in Cloudinary
 
-// Use uploadSingle for single file uploads
+// API endpoint for file uploads (using Cloudinary)
 app.post("/api/upload", uploadSingle, (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" })
@@ -88,6 +86,7 @@ app.post("/api/upload", uploadSingle, (req, res) => {
 
     res.status(200).json({
         message: "File uploaded successfully",
+        url: req.file.path, // Cloudinary URL
         filename: req.file.filename,
     })
 })

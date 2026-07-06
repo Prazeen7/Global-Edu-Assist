@@ -20,6 +20,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import './institutions.css';
 import Loading from "../../components/Loading";
+import { getImageUrl } from "../../utils/imageUtils";
 
 export default function InstitutionsPage() {
     const [institutions, setInstitutions] = useState([]);
@@ -210,7 +211,7 @@ export default function InstitutionsPage() {
                                     <CardContent sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
                                         <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
                                             <Avatar
-                                                src={`http://localhost:3001/uploads/${institution.profilePicture}`}
+                                                src={getImageUrl(institution.profilePicture)}
                                                 sx={{ width: 56, height: 56 }}
                                             />
                                             <Box sx={{ flex: 1 }}>

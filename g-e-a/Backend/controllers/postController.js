@@ -1,9 +1,7 @@
 const Post = require("../models/post")
 const Like = require("../models/like")
 const AgentModel = require ("../models/agents")
-
-const path = require("path")
-const fs = require("fs")
+const cloudinary = require("../config/cloudinary")
 // Import the multer configuration
 const { uploadSingle, handleUploadErrors } = require("../config/multerConfig")
 
@@ -33,7 +31,7 @@ exports.createPost = async (req, res) => {
                 let image = null
                 if (req.file) {
                     image = {
-                        url: `/uploads/${req.file.filename}`,
+                        url: req.file.path, // Cloudinary URL
                         filename: req.file.filename,
                         mimetype: req.file.mimetype,
                         size: req.file.size,
@@ -59,9 +57,7 @@ exports.createPost = async (req, res) => {
                     data: savedPost,
                 })
             } catch (error) {
-                if (req.file) {
-                    fs.unlinkSync(req.file.path)
-                }
+                // Cloudinary handles the file, no need to clean up locally
                 res.status(400).json({ error: error.message })
             }
         })
@@ -205,26 +201,24 @@ exports.updatePost = async (req, res) => {
 
                 // Handle image update 
                 if (req.file) {
-                    // Remove old image file if it exists
-                    if (post.image && post.image.filename) {
+                    // Remove old image from Cloudinary if it exists
+                    if (post.image && post.image.url) {
                         try {
-                            // Extract the file path from the URL
-                            const oldFilePath = post.image.url.startsWith("/")
-                                ? post.image.url.substring(1) 
-                                : post.image.url
-
-                            if (fs.existsSync(oldFilePath)) {
-                                fs.unlinkSync(oldFilePath)
-                            }
+                            // Extract public_id from Cloudinary URL
+                            const urlParts = post.image.url.split('/');
+                            const publicIdWithExtension = urlParts.slice(-2).join('/');
+                            const publicId = publicIdWithExtension.split('.')[0];
+                            
+                            await cloudinary.uploader.destroy(publicId);
+                            console.log(`Deleted old image from Cloudinary: ${publicId}`);
                         } catch (err) {
-                            console.error("Error removing old image:", err)
-                        
+                            console.error("Error removing old image from Cloudinary:", err);
                         }
                     }
 
-                    // Add new image with the correct path
+                    // Add new image with Cloudinary URL
                     updateData.image = {
-                        url: `/uploads/${req.file.filename}`,
+                        url: req.file.path,
                         filename: req.file.filename,
                         mimetype: req.file.mimetype,
                         size: req.file.size,
@@ -240,10 +234,7 @@ exports.updatePost = async (req, res) => {
                     data: updatedPost,
                 })
             } catch (error) {
-                // Clean up uploaded file if error occurs
-                if (req.file) {
-                    fs.unlinkSync(req.file.path)
-                }
+                // Cloudinary handles the file, no need to clean up locally
                 res.status(400).json({ error: error.message })
             }
         })
@@ -275,20 +266,18 @@ exports.deletePost = async (req, res) => {
             return res.status(403).json({ error: "Not authorized to delete this post" })
         }
 
-        // Delete image file if it exists
+        // Delete image from Cloudinary if it exists
         if (post.image && post.image.url) {
             try {
-                // Extract the file path from the URL
-                const filePath = post.image.url.startsWith("/")
-                    ? post.image.url.substring(1) 
-                    : post.image.url
-
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath)
-                }
-            } catch (err) {
-                console.error("Error removing image file:", err)
+                // Extract public_id from Cloudinary URL
+                const urlParts = post.image.url.split('/');
+                const publicIdWithExtension = urlParts.slice(-2).join('/');
+                const publicId = publicIdWithExtension.split('.')[0];
                 
+                await cloudinary.uploader.destroy(publicId);
+                console.log(`Deleted image from Cloudinary: ${publicId}`);
+            } catch (err) {
+                console.error("Error removing image from Cloudinary:", err);
             }
         }
 

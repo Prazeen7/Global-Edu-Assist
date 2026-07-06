@@ -1,4 +1,5 @@
 const InstitutionModel = require("../models/institutions")
+const cloudinary = require("../config/cloudinary")
 
 // Get all institutions with filtering
 const getAllInstitutions = async (req, res) => {
@@ -38,10 +39,10 @@ const addInstitution = async (req, res) => {
             })
         }
 
-        // Handle file paths
-        const profilePicture = req.files && req.files["profilePicture"] ? req.files["profilePicture"][0].filename : null
+        // Handle file paths - Cloudinary URLs
+        const profilePicture = req.files && req.files["profilePicture"] ? req.files["profilePicture"][0].path : null
         const bannerImages =
-            req.files && req.files["bannerImages"] ? req.files["bannerImages"].map((file) => file.filename) : []
+            req.files && req.files["bannerImages"] ? req.files["bannerImages"].map((file) => file.path) : []
 
         // Validate profile picture
         if (!profilePicture) {

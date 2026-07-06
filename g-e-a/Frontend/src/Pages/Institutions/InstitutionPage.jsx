@@ -33,6 +33,7 @@ import { styled } from "@mui/material/styles"
 import axios from "axios"
 import "./institutions.css"
 import Loading from "../../components/Loading"
+import { getImageUrl, getImageUrls } from "../../utils/imageUtils"
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   margin: "12px 0",
@@ -830,7 +831,7 @@ export default function InstitutionPage() {
         {/* Institution Header */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4 }}>
           <Avatar
-            src={`http://localhost:3001/uploads/${institution.profilePicture}`}
+            src={getImageUrl(institution.profilePicture)}
             alt="Institution Logo"
             sx={{
               width: 100,
@@ -883,7 +884,7 @@ export default function InstitutionPage() {
                 }}
               >
                 <img
-                  src={`http://localhost:3001/uploads/${image}`}
+                  src={getImageUrl(image)}
                   alt={`Campus ${index + 1}`}
                   style={{
                     width: "100%",

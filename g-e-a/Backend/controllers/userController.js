@@ -2,9 +2,8 @@ const UserModel = require("../models/user");
 const bcrypt = require("bcrypt");
 const otpGenerator = require("otp-generator");
 const { sendVerificationEmail } = require("../services/emailService");
-const fs = require("fs");
-const path = require("path");
 const jwt = require("jsonwebtoken");
+const cloudinary = require("../config/cloudinary");
 
 // Load environment variables
 require("dotenv").config();
@@ -277,9 +276,7 @@ const getProfile = async (req, res) => {
 
     let profilePictureUrl = null;
     if (user.profilePicture) {
-      profilePictureUrl = `${req.protocol}://${req.get("host")}/Uploads/${
-        user.profilePicture
-      }`;
+      profilePictureUrl = user.profilePicture;
     }
 
     res.status(200).json({
@@ -331,34 +328,30 @@ const updateProfile = async (req, res) => {
     user.contactNumber = contactNumber || user.contactNumber;
 
     if (req.file) {
-      // If there's an existing profile picture, delete it
+      // If there's an existing profile picture on Cloudinary, delete it
       if (user.profilePicture) {
         try {
-          const oldImagePath = path.join(
-            __dirname,
-            "../uploads",
-            user.profilePicture.split("/").pop()
-          );
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
-            console.log(`Deleted old profile picture: ${oldImagePath}`);
-          }
+          // Extract public_id from Cloudinary URL
+          const urlParts = user.profilePicture.split('/');
+          const publicIdWithExtension = urlParts.slice(-2).join('/'); // folder/filename.ext
+          const publicId = publicIdWithExtension.split('.')[0]; // Remove extension
+          
+          await cloudinary.uploader.destroy(publicId);
+          console.log(`Deleted old profile picture from Cloudinary: ${publicId}`);
         } catch (error) {
-          console.error("Error deleting old profile picture:", error);
-          // Continue with the update even if file deletion fails
+          console.error("Error deleting old profile picture from Cloudinary:", error);
+          // Continue with the update even if deletion fails
         }
       }
 
-      // Save the new profile picture path
-      user.profilePicture = req.file.filename;
-      console.log(`Saved new profile picture: ${req.file.filename}`);
+      // Save the new Cloudinary URL
+      user.profilePicture = req.file.path;
+      console.log(`Saved new profile picture: ${req.file.path}`);
     }
 
     await user.save();
 
-    const profilePictureUrl = user.profilePicture
-      ? `${req.protocol}://${req.get("host")}/uploads/${user.profilePicture}`
-      : null;
+    const profilePictureUrl = user.profilePicture || null;
 
     res.status(200).json({
       success: true,

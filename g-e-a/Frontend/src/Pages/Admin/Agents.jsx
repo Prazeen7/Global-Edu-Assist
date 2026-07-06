@@ -50,6 +50,7 @@ import {
     Check,
 } from "@mui/icons-material"
 import PageHeader from "../../components/Admin/PageHeader"
+import { getImageUrl } from "../../utils/imageUtils"
 
 function Agents() {
     const [agents, setAgents] = useState([])
@@ -452,7 +453,7 @@ function Agents() {
                                         <TableCell component="th" scope="row">
                                             <Box sx={{ display: "flex", alignItems: "center" }}>
                                                 <Avatar
-                                                    src={agent.profilePicture ? `http://localhost:3001${agent.profilePicture}` : ""}
+                                                    src={getImageUrl(agent.profilePicture)}
                                                     alt={agent.companyName}
                                                     sx={{ mr: 2, width: 32, height: 32 }}
                                                 >

@@ -1,35 +1,31 @@
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const cloudinary = require("./cloudinary");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-// Set upload directory and create if it doesn't exist
-const uploadDir = path.join(__dirname, "../uploads");
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Configure storage
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        const ext = path.extname(file.originalname);
-        cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+// Configure Cloudinary storage
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: "global-edu-assist", // Folder name in Cloudinary
+        allowed_formats: ["jpg", "jpeg", "png", "webp", "jfif"],
+        transformation: [{ width: 1500, height: 1500, crop: "limit" }], // Optional: resize images
     },
 });
 
-// File filter for allowed types
+// File filter for allowed types (more flexible)
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-    const allowedExtensions = [".jpg", ".jpeg", ".png"];
-    const ext = path.extname(file.originalname).toLowerCase();
-
-    if (allowedTypes.includes(file.mimetype) && allowedExtensions.includes(ext)) {
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+    const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".jfif"];
+    
+    // Get file extension from originalname
+    const fileExtension = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
+    
+    // Accept if either MIME type matches OR file extension matches
+    if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
         cb(null, true);
     } else {
-        cb(new Error("Invalid file type. Only JPEG/PNG/JPG allowed"), false);
+        console.log(`Rejected file: ${file.originalname}, MIME: ${file.mimetype}`);
+        cb(new Error(`Invalid file type. Only JPEG/PNG/WEBP images allowed. Got: ${file.mimetype}`), false);
     }
 };
 

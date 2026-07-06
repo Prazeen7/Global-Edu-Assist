@@ -1,41 +1,35 @@
-const AgentModel = require("../models/agents")
 const AvailAgent = require("../models/agent")
+const AgentModel = require("../models/agents")
 const multer = require("multer")
-const path = require("path")
-const fs = require("fs")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
-const emailService = require("../services/emailService") 
+const emailService = require("../services/emailService")
 const util = require("util")
+const cloudinary = require("../config/cloudinary")
+const { CloudinaryStorage } = require("multer-storage-cloudinary")
 
-// Set upload directory and create if it doesn't exist
-const uploadDir = "uploads"
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true })
-}
-
-// Configure storage
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir)
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9)
-        const ext = path.extname(file.originalname)
-        cb(null, file.fieldname + "-" + uniqueSuffix + ext)
+// Configure Cloudinary storage
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: "global-edu-assist/agents",
+        allowed_formats: ["jpg", "jpeg", "png", "webp", "jfif"],
+        transformation: [{ width: 1500, height: 1500, crop: "limit" }],
     },
 })
 
 // File filter for allowed types
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"]
-    const allowedExtensions = [".jpg", ".jpeg", ".png"]
-    const ext = path.extname(file.originalname).toLowerCase()
-
-    if (allowedTypes.includes(file.mimetype) && allowedExtensions.includes(ext)) {
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"]
+    const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".jfif"]
+    
+    const fileExtension = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'))
+    
+    if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
         cb(null, true)
     } else {
-        cb(new Error("Invalid file type. Only JPEG/PNG/JPG allowed"), false)
+        console.log(`Rejected file: ${file.originalname}, MIME: ${file.mimetype}`)
+        cb(new Error(`Invalid file type. Only JPEG/PNG/WEBP images allowed. Got: ${file.mimetype}`), false)
     }
 }
 
@@ -96,7 +90,7 @@ exports.createAgent = async (req, res) => {
                 if (req.files && req.files.profilePicture && req.files.profilePicture.length > 0) {
                     const file = req.files.profilePicture[0]
                     profilePicture = {
-                        url: `/uploads/${file.filename}`,
+                        url: file.path, // Cloudinary URL
                         filename: file.filename,
                         mimetype: file.mimetype,
                         size: file.size,
@@ -111,7 +105,7 @@ exports.createAgent = async (req, res) => {
                     if (req.files && req.files[docType] && req.files[docType].length > 0) {
                         const file = req.files[docType][0]
                         documents[docType] = {
-                            url: `/uploads/${file.filename}`,
+                            url: file.path, // Cloudinary URL
                             filename: file.filename,
                             mimetype: file.mimetype,
                             size: file.size,
@@ -155,14 +149,7 @@ exports.createAgent = async (req, res) => {
                     data: agentResponse,
                 })
             } catch (error) {
-                // Clean up uploaded files if error occurs
-                if (req.files) {
-                    Object.values(req.files).forEach((fileArray) => {
-                        fileArray.forEach((file) => {
-                            fs.unlinkSync(path.join("uploads", file.filename))
-                        })
-                    })
-                }
+                // Cloudinary handles the files, no need to clean up locally
                 res.status(400).json({ error: error.message })
             }
         })
@@ -192,10 +179,42 @@ exports.getAllAgents = async (req, res) => {
 
 exports.availAgent = async (req, res) => {
     try {
-        const agents = await AvailAgent.find()
-        res.json(agents)
+        // Get approved agents from the main AgentModel (agents with status 'approved')
+        const agents = await AgentModel.find({ status: 'approved' })
+            .select('companyName profilePicture email website contactNumber headOfficeAddress branches')
+            .lean();
+
+        // If no approved agents found, try the old AvailAgent model as fallback
+        if (agents.length === 0) {
+            const oldAgents = await AvailAgent.find();
+            return res.json(oldAgents);
+        }
+
+        // Transform to match expected format if needed
+        const formattedAgents = agents.map(agent => ({
+            _id: agent._id,
+            agent_name: agent.companyName,
+            head_office: {
+                location: agent.headOfficeAddress || '',
+                address: agent.headOfficeAddress || '',
+                tel: agent.contactNumber || '',
+                email: agent.email || '',
+                web: agent.website || '',
+                avatar: agent.profilePicture?.url || agent.profilePicture || ''
+            },
+            other_locations: agent.branches?.map(branch => ({
+                location: branch.location || '',
+                address: branch.address || '',
+                tel: branch.contactNumber || '',
+                email: branch.email || '',
+                web: branch.website || ''
+            })) || []
+        }));
+
+        res.json(formattedAgents);
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        console.error('Error in availAgent:', error);
+        res.status(500).json({ message: error.message });
     }
 }
 
@@ -223,13 +242,7 @@ exports.getAgentById = async (req, res) => {
         // Construct profile picture URL if it exists
         let profilePictureUrl = null
         if (agent.profilePicture && agent.profilePicture.url) {
-            // If the URL is already absolute, use it as is
-            if (agent.profilePicture.url.startsWith("http")) {
-                profilePictureUrl = agent.profilePicture.url
-            } else {
-                // Otherwise, construct the full URL
-                profilePictureUrl = `${req.protocol}://${req.get("host")}${agent.profilePicture.url}`
-            }
+            profilePictureUrl = agent.profilePicture.url
         }
 
         // Construct document URLs
@@ -237,10 +250,9 @@ exports.getAgentById = async (req, res) => {
         if (agent.documents) {
             Object.keys(agent.documents).forEach((docType) => {
                 if (agent.documents[docType] && agent.documents[docType].url) {
-                    const docUrl = agent.documents[docType].url
                     documents[docType] = {
                         ...agent.documents[docType],
-                        url: docUrl.startsWith("http") ? docUrl : `${req.protocol}://${req.get("host")}${docUrl}`,
+                        url: agent.documents[docType].url,
                     }
                 }
             })
@@ -336,34 +348,34 @@ exports.deleteAgent = async (req, res) => {
             return res.status(404).json({ error: "Agent not found" })
         }
 
-        // Clean up files
-        if (agent.profilePicture && agent.profilePicture.filename) {
+        // Clean up files from Cloudinary
+        if (agent.profilePicture && agent.profilePicture.url) {
             try {
-                const profilePath = path.join("uploads", agent.profilePicture.filename)
-                if (fs.existsSync(profilePath)) {
-                    fs.unlinkSync(profilePath)
-                }
+                const urlParts = agent.profilePicture.url.split('/')
+                const publicIdWithExtension = urlParts.slice(-2).join('/')
+                const publicId = publicIdWithExtension.split('.')[0]
+                await cloudinary.uploader.destroy(publicId)
+                console.log(`Deleted profile picture from Cloudinary: ${publicId}`)
             } catch (err) {
-                console.error("Error removing profile picture:", err)
-                // Continue even if file removal fails
+                console.error("Error removing profile picture from Cloudinary:", err)
             }
         }
 
-        // Clean up document files
+        // Clean up document files from Cloudinary
         if (agent.documents) {
-            Object.values(agent.documents).forEach((doc) => {
-                if (doc && doc.filename) {
+            for (const doc of Object.values(agent.documents)) {
+                if (doc && doc.url) {
                     try {
-                        const docPath = path.join("uploads", doc.filename)
-                        if (fs.existsSync(docPath)) {
-                            fs.unlinkSync(docPath)
-                        }
+                        const urlParts = doc.url.split('/')
+                        const publicIdWithExtension = urlParts.slice(-2).join('/')
+                        const publicId = publicIdWithExtension.split('.')[0]
+                        await cloudinary.uploader.destroy(publicId)
+                        console.log(`Deleted document from Cloudinary: ${publicId}`)
                     } catch (err) {
-                        console.error("Error removing document:", err)
-                        // Continue even if file removal fails
+                        console.error("Error removing document from Cloudinary:", err)
                     }
                 }
-            })
+            }
         }
 
         res.status(200).json({
@@ -612,22 +624,21 @@ exports.updateAgentProfile = async (req, res) => {
                     const file = req.files.profilePicture[0]
                     console.log("Processing profile picture:", file.filename)
 
-                    // Delete old profile picture if it exists
-                    if (agent.profilePicture && agent.profilePicture.filename) {
+                    // Delete old profile picture from Cloudinary if it exists
+                    if (agent.profilePicture && agent.profilePicture.url) {
                         try {
-                            const oldFilePath = path.join("uploads", agent.profilePicture.filename)
-                            if (fs.existsSync(oldFilePath)) {
-                                fs.unlinkSync(oldFilePath)
-                                console.log(`Deleted old profile picture: ${oldFilePath}`)
-                            }
+                            const urlParts = agent.profilePicture.url.split('/')
+                            const publicIdWithExtension = urlParts.slice(-2).join('/')
+                            const publicId = publicIdWithExtension.split('.')[0]
+                            await cloudinary.uploader.destroy(publicId)
+                            console.log(`Deleted old profile picture from Cloudinary: ${publicId}`)
                         } catch (err) {
-                            console.error("Error removing old profile picture:", err)
-                            // Continue even if old file removal fails
+                            console.error("Error removing old profile picture from Cloudinary:", err)
                         }
                     }
 
                     updateData.profilePicture = {
-                        url: `/uploads/${file.filename}`,
+                        url: file.path, // Cloudinary URL
                         filename: file.filename,
                         mimetype: file.mimetype,
                         size: file.size,
@@ -642,27 +653,26 @@ exports.updateAgentProfile = async (req, res) => {
                 const documentTypes = ["panVat", "companyRegistration", "icanRegistration", "ownerCitizenship"]
                 const documents = { ...agent.documents } || {}
 
-                documentTypes.forEach((docType) => {
+                for (const docType of documentTypes) {
                     if (req.files && req.files[docType] && req.files[docType].length > 0) {
                         const file = req.files[docType][0]
                         console.log(`Processing document ${docType}:`, file.filename)
 
-                        // Delete old document if it exists
-                        if (documents[docType] && documents[docType].filename) {
+                        // Delete old document from Cloudinary if it exists
+                        if (documents[docType] && documents[docType].url) {
                             try {
-                                const oldFilePath = path.join("uploads", documents[docType].filename)
-                                if (fs.existsSync(oldFilePath)) {
-                                    fs.unlinkSync(oldFilePath)
-                                    console.log(`Deleted old document ${docType}: ${oldFilePath}`)
-                                }
+                                const urlParts = documents[docType].url.split('/')
+                                const publicIdWithExtension = urlParts.slice(-2).join('/')
+                                const publicId = publicIdWithExtension.split('.')[0]
+                                await cloudinary.uploader.destroy(publicId)
+                                console.log(`Deleted old document ${docType} from Cloudinary: ${publicId}`)
                             } catch (err) {
-                                console.error(`Error removing old ${docType} document:`, err)
-                                // Continue even if old file removal fails
+                                console.error(`Error removing old ${docType} document from Cloudinary:`, err)
                             }
                         }
 
                         documents[docType] = {
-                            url: `/uploads/${file.filename}`,
+                            url: file.path, // Cloudinary URL
                             filename: file.filename,
                             mimetype: file.mimetype,
                             size: file.size,
@@ -671,7 +681,7 @@ exports.updateAgentProfile = async (req, res) => {
                         // Keep existing document
                         console.log(`Keeping existing document: ${docType}`)
                     }
-                })
+                }
 
                 updateData.documents = documents
 
@@ -696,13 +706,7 @@ exports.updateAgentProfile = async (req, res) => {
                 // Construct profile picture URL if it exists
                 let profilePictureUrl = null
                 if (updatedAgent.profilePicture && updatedAgent.profilePicture.url) {
-                    // If the URL is already absolute, use it as is
-                    if (updatedAgent.profilePicture.url.startsWith("http")) {
-                        profilePictureUrl = updatedAgent.profilePicture.url
-                    } else {
-                        // Otherwise, construct the full URL
-                        profilePictureUrl = `${req.protocol}://${req.get("host")}${updatedAgent.profilePicture.url}`
-                    }
+                    profilePictureUrl = updatedAgent.profilePicture.url
                 }
 
                 // Construct document URLs
@@ -710,10 +714,9 @@ exports.updateAgentProfile = async (req, res) => {
                 if (updatedAgent.documents) {
                     Object.keys(updatedAgent.documents).forEach((docType) => {
                         if (updatedAgent.documents[docType] && updatedAgent.documents[docType].url) {
-                            const docUrl = updatedAgent.documents[docType].url
                             documentUrls[docType] = {
                                 ...updatedAgent.documents[docType],
-                                url: docUrl.startsWith("http") ? docUrl : `${req.protocol}://${req.get("host")}${docUrl}`,
+                                url: updatedAgent.documents[docType].url,
                             }
                         }
                     })
@@ -733,19 +736,7 @@ exports.updateAgentProfile = async (req, res) => {
             } catch (error) {
                 console.error("Error in updateAgentProfile:", error)
 
-                // Clean up uploaded files if error occurs
-                if (req.files) {
-                    Object.values(req.files).forEach((fileArray) => {
-                        fileArray.forEach((file) => {
-                            try {
-                                fs.unlinkSync(path.join("uploads", file.filename))
-                                console.log(`Cleaned up file after error: ${file.filename}`)
-                            } catch (err) {
-                                console.error("Error removing file after error:", err)
-                            }
-                        })
-                    })
-                }
+                // Cloudinary handles the files, no need to clean up locally
 
                 res.status(400).json({
                     error: error.message,
@@ -792,6 +783,15 @@ exports.uploadProfilePicture = async (req, res) => {
                 if (fs.existsSync(oldFilePath)) {
                     fs.unlinkSync(oldFilePath)
                     console.log(`Deleted old profile picture: ${oldFilePath}`)
+                    try {
+                        const urlParts = agent.profilePicture.url.split('/')
+                        const publicIdWithExtension = urlParts.slice(-2).join('/')
+                        const publicId = publicIdWithExtension.split('.')[0]
+                        await cloudinary.uploader.destroy(publicId)
+                        console.log(`Deleted old profile picture from Cloudinary: ${publicId}`)
+                    } catch (err) {
+                        console.error("Error removing old profile picture from Cloudinary:", err)
+                    }
                 }
             } catch (err) {
                 console.error("Error removing old profile picture:", err)
@@ -801,7 +801,7 @@ exports.uploadProfilePicture = async (req, res) => {
 
         // Update profile picture
         const profilePicture = {
-            url: `/uploads/${req.file.filename}`,
+            url: req.file.path, // Cloudinary URL
             filename: req.file.filename,
             mimetype: req.file.mimetype,
             size: req.file.size,
@@ -823,14 +823,11 @@ exports.uploadProfilePicture = async (req, res) => {
             return res.status(500).json({ error: "Failed to update agent" })
         }
 
-        // Construct profile picture URL
-        const profilePictureUrl = `${req.protocol}://${req.get("host")}${profilePicture.url}`
-
         res.status(200).json({
             success: true,
             message: "Profile picture uploaded successfully",
             data: {
-                profilePicture: { ...profilePicture, url: profilePictureUrl },
+                profilePicture: profilePicture,
             },
         })
     } catch (error) {
@@ -875,23 +872,22 @@ exports.uploadDocument = async (req, res) => {
             return res.status(404).json({ error: "Agent not found" })
         }
 
-        // Delete old document if it exists
-        if (agent.documents && agent.documents[documentType] && agent.documents[documentType].filename) {
+        // Delete old document from Cloudinary if it exists
+        if (agent.documents && agent.documents[documentType] && agent.documents[documentType].url) {
             try {
-                const oldFilePath = path.join("uploads", agent.documents[documentType].filename)
-                if (fs.existsSync(oldFilePath)) {
-                    fs.unlinkSync(oldFilePath)
-                    console.log(`Deleted old document ${documentType}: ${oldFilePath}`)
-                }
+                const urlParts = agent.documents[documentType].url.split('/')
+                const publicIdWithExtension = urlParts.slice(-2).join('/')
+                const publicId = publicIdWithExtension.split('.')[0]
+                await cloudinary.uploader.destroy(publicId)
+                console.log(`Deleted old document ${documentType} from Cloudinary: ${publicId}`)
             } catch (err) {
-                console.error(`Error removing old ${documentType} document:`, err)
-                // Continue even if old file removal fails
+                console.error(`Error removing old ${documentType} document from Cloudinary:`, err)
             }
         }
 
         // Create document object
         const document = {
-            url: `/uploads/${req.file.filename}`,
+            url: req.file.path, // Cloudinary URL
             filename: req.file.filename,
             mimetype: req.file.mimetype,
             size: req.file.size,
@@ -917,15 +913,12 @@ exports.uploadDocument = async (req, res) => {
             return res.status(500).json({ error: "Failed to update agent" })
         }
 
-        // Construct document URL
-        const documentUrl = `${req.protocol}://${req.get("host")}${document.url}`
-
         res.status(200).json({
             success: true,
             message: `Document ${documentType} uploaded successfully`,
             data: {
                 documentType,
-                document: { ...document, url: documentUrl },
+                document: document,
             },
         })
     } catch (error) {
