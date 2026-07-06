@@ -150,7 +150,7 @@ export default function InstitutionPage() {
   useEffect(() => {
     if (!location.state) {
       axios
-        .get(`http://localhost:3001/api/institutions/${id}`)
+        .get(`https://global-edu-assist.onrender.com/api/institutions/${id}`)
         .then((response) => {
           setInstitution(response.data)
         })
@@ -167,7 +167,7 @@ export default function InstitutionPage() {
   // Fetch documents from the API
   useEffect(() => {
     axios
-      .get("http://localhost:3001/api/documents")
+      .get("https://global-edu-assist.onrender.com/api/documents")
       .then((response) => {
         const formattedData = response.data.map((category) => ({
           title: category.document,
@@ -187,7 +187,7 @@ export default function InstitutionPage() {
   // Fetch all agents from the API
   useEffect(() => {
     axios
-      .get("http://localhost:3001/api/availAgent")
+      .get("https://global-edu-assist.onrender.com/api/availAgent")
       .then((response) => {
         setAllAgents(response.data)
       })
@@ -1048,7 +1048,7 @@ export default function InstitutionPage() {
                         sx={{ textAlign: "center", flexGrow: 1, py: 2, display: "flex", flexDirection: "column" }}
                       >
                         <Avatar
-                          src={`http://localhost:3001${agent?.head_office?.avatar}`}
+                          src={`https://global-edu-assist.onrender.com${agent?.head_office?.avatar}`}
                           sx={{
                             width: 80,
                             height: 80,

@@ -36,8 +36,8 @@ import {
 } from "@mui/icons-material"
 
 // Base URL for API requests
-const API_BASE_URL = "http://localhost:3001"
-const SOCKET_URL = "http://localhost:3001"
+const API_BASE_URL = "https://global-edu-assist.onrender.com"
+const SOCKET_URL = "https://global-edu-assist.onrender.com"
 
 // Function to decode JWT token
 const parseJwt = (token) => {

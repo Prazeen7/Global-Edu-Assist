@@ -179,7 +179,7 @@ export default function Signup() {
     setIsLoading(true);
   
     axios
-      .post('http://localhost:3001/api/registerUser', data)
+      .post('https://global-edu-assist.onrender.com/api/registerUser', data)
       .then((result) => {
         setIsLoading(false);
         setAlertSeverity("success");

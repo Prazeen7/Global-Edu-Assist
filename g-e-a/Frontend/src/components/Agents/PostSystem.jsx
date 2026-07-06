@@ -76,7 +76,7 @@ const PostSystem = () => {
                 return
             }
 
-            const response = await fetch(`http://localhost:3001/api/agent/${agentId}`, {
+            const response = await fetch(`https://global-edu-assist.onrender.com/api/agent/${agentId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -114,7 +114,7 @@ const PostSystem = () => {
             console.log("Fetching posts with token:", token.substring(0, 10) + "...")
 
             // Fix: Use the correct endpoint for fetching agent's posts
-            const response = await fetch("http://localhost:3001/api/posts/my-posts", {
+            const response = await fetch("https://global-edu-assist.onrender.com/api/posts/my-posts", {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -192,7 +192,7 @@ const PostSystem = () => {
                 formData.append("image", image)
             }
 
-            const response = await fetch("http://localhost:3001/api/posts", {
+            const response = await fetch("https://global-edu-assist.onrender.com/api/posts", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -254,7 +254,7 @@ const PostSystem = () => {
             post.image?.url
                 ? post.image.url.startsWith("http")
                     ? post.image.url
-                    : `http://localhost:3001${post.image.url}`
+                    : `https://global-edu-assist.onrender.com${post.image.url}`
                 : null,
         )
     }
@@ -299,7 +299,7 @@ const PostSystem = () => {
                 formData.append("removeImage", "true")
             }
 
-            const response = await fetch(`http://localhost:3001/api/posts/${postId}`, {
+            const response = await fetch(`https://global-edu-assist.onrender.com/api/posts/${postId}`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -356,7 +356,7 @@ const PostSystem = () => {
                 return
             }
 
-            const response = await fetch(`http://localhost:3001/api/posts/${postToDelete._id}`, {
+            const response = await fetch(`https://global-edu-assist.onrender.com/api/posts/${postToDelete._id}`, {
                 method: "DELETE",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -849,7 +849,7 @@ const PostSystem = () => {
                                     <Box sx={{ width: "100%" }}>
                                         <img
                                             src={
-                                                post.image.url.startsWith("http") ? post.image.url : `http://localhost:3001${post.image.url}`
+                                                post.image.url.startsWith("http") ? post.image.url : `https://global-edu-assist.onrender.com${post.image.url}`
                                             }
                                             alt={post.title}
                                             style={{
@@ -861,10 +861,10 @@ const PostSystem = () => {
 
                                                 // Try multiple possible URL formats
                                                 const possibleUrls = [
-                                                    `http://localhost:3001${post.image.url}`,
-                                                    `http://localhost:3001/uploads/${post.image.filename}`,
-                                                    `http://localhost:3001/uploads/posts/${post.image.filename}`,
-                                                    `http://localhost:3001/uploads/image-${post.image.filename?.split("image-")[1] || ""}`,
+                                                    `https://global-edu-assist.onrender.com${post.image.url}`,
+                                                    `https://global-edu-assist.onrender.com/uploads/${post.image.filename}`,
+                                                    `https://global-edu-assist.onrender.com/uploads/posts/${post.image.filename}`,
+                                                    `https://global-edu-assist.onrender.com/uploads/image-${post.image.filename?.split("image-")[1] || ""}`,
                                                 ]
 
                                                 // Find the current URL in the possible URLs

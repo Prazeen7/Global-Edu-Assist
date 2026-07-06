@@ -27,11 +27,11 @@ export const getImageUrl = (imageData) => {
         // Legacy local path - prepend server URL
         if (imageData.startsWith('/uploads/') || !imageData.startsWith('/')) {
             const cleanPath = imageData.startsWith('/') ? imageData : `/uploads/${imageData}`;
-            return `http://localhost:3001${cleanPath}`;
+            return `https://global-edu-assist.onrender.com${cleanPath}`;
         }
 
         // Path without /uploads prefix
-        return `http://localhost:3001/uploads/${imageData}`;
+        return `https://global-edu-assist.onrender.com/uploads/${imageData}`;
     }
 
     return null;

@@ -84,7 +84,7 @@ export default function VerifyEmail() {
         setAlert({ show: false, message: '', severity: '' });
 
         try {
-            const response = await axios.post('http://localhost:3001/api/verify-otp', { email, otp });
+            const response = await axios.post('https://global-edu-assist.onrender.com/api/verify-otp', { email, otp });
 
             // Store the token and user data in localStorage
             localStorage.setItem('token', response.data.auth);
@@ -130,7 +130,7 @@ export default function VerifyEmail() {
         setAlert({ show: false, message: '', severity: '' });
 
         try {
-            await axios.post('http://localhost:3001/api/resend-otp', { email });
+            await axios.post('https://global-edu-assist.onrender.com/api/resend-otp', { email });
             setAlert({
                 show: true,
                 message: 'New OTP sent to your email!',

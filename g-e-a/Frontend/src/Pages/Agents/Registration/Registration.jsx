@@ -403,7 +403,7 @@ const AgentRegistration = () => {
                 }
             })
 
-            const response = await axios.post("http://localhost:3001/api/createAgent", formDataToSend, {
+            const response = await axios.post("https://global-edu-assist.onrender.com/api/createAgent", formDataToSend, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },

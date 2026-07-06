@@ -335,7 +335,7 @@ export default function AddInstitution({ onClose }) {
         formData.append("banks", JSON.stringify(banks.map(bank => bank.name)));
 
         try {
-            const response = await fetch("http://localhost:3001/api/institutions", {
+            const response = await fetch("https://global-edu-assist.onrender.com/api/institutions", {
                 method: "POST",
                 body: formData,
             });

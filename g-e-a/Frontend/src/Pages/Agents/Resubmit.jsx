@@ -133,7 +133,7 @@ const AgentResubmit = () => {
         const fetchAgentData = async () => {
             try {
                 setIsInitialLoading(true)
-                const response = await axios.get(`http://localhost:3001/api/agent/${id}`)
+                const response = await axios.get(`https://global-edu-assist.onrender.com/api/agent/${id}`)
 
                 if (!response.data?.success) {
                     throw new Error("Failed to load agent data")
@@ -165,7 +165,7 @@ const AgentResubmit = () => {
                     const previews = {}
                     Object.entries(agent.documents).forEach(([key, doc]) => {
                         if (doc && doc.url) {
-                            previews[key] = doc.url.startsWith("http") ? doc.url : `http://localhost:3001${doc.url}`
+                            previews[key] = doc.url.startsWith("http") ? doc.url : `https://global-edu-assist.onrender.com${doc.url}`
                         }
                     })
                     setDocumentPreviews(previews)
@@ -176,7 +176,7 @@ const AgentResubmit = () => {
                     setProfilePreview(
                         agent.profilePicture.url.startsWith("http")
                             ? agent.profilePicture.url
-                            : `http://localhost:3001${agent.profilePicture.url}`,
+                            : `https://global-edu-assist.onrender.com${agent.profilePicture.url}`,
                     )
                 }
 
@@ -305,7 +305,7 @@ const AgentResubmit = () => {
             profilePicture: null,
         })
         // Don't reset the preview if we're using the existing profile picture
-        if (!agentData?.profilePicture?.url || profilePreview !== `http://localhost:3001${agentData.profilePicture.url}`) {
+        if (!agentData?.profilePicture?.url || profilePreview !== `https://global-edu-assist.onrender.com${agentData.profilePicture.url}`) {
             setProfilePreview(null)
         }
     }
@@ -377,7 +377,7 @@ const AgentResubmit = () => {
         // Don't reset the preview if we're using the existing document
         if (
             !agentData?.documents?.[documentType]?.url ||
-            documentPreviews[documentType] !== `http://localhost:3001${agentData.documents[documentType].url}`
+            documentPreviews[documentType] !== `https://global-edu-assist.onrender.com${agentData.documents[documentType].url}`
         ) {
             setDocumentPreviews({
                 ...documentPreviews,
@@ -487,7 +487,7 @@ const AgentResubmit = () => {
             console.log("Submitting JSON data without files:", jsonData)
 
             // Use axios with your backend API
-            const response = await axios.put(`http://localhost:3001/api/agent/${id}/update-info`, jsonData, {
+            const response = await axios.put(`https://global-edu-assist.onrender.com/api/agent/${id}/update-info`, jsonData, {
                 headers: {
                     "Content-Type": "application/json",
                 },
@@ -548,7 +548,7 @@ const AgentResubmit = () => {
                 try {
                     const profileResponse = await axios({
                         method: "post",
-                        url: `http://localhost:3001/api/agent/${id}/upload-profile`,
+                        url: `https://global-edu-assist.onrender.com/api/agent/${id}/upload-profile`,
                         data: simpleFormData,
                         headers: {
                             "Content-Type": "multipart/form-data",
@@ -573,7 +573,7 @@ const AgentResubmit = () => {
                             console.log(`Uploading document ${docType}:`, file.name, file.size)
                             const docResponse = await axios({
                                 method: "post",
-                                url: `http://localhost:3001/api/agent/${id}/upload-document`,
+                                url: `https://global-edu-assist.onrender.com/api/agent/${id}/upload-document`,
                                 data: docFormData,
                                 headers: {
                                     "Content-Type": "multipart/form-data",

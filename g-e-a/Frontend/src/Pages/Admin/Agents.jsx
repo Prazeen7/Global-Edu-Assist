@@ -80,7 +80,7 @@ function Agents() {
     const fetchAgents = async () => {
         try {
             setIsLoading(true)
-            const response = await axios.get("http://localhost:3001/api/getAgent")
+            const response = await axios.get("https://global-edu-assist.onrender.com/api/getAgent")
 
             if (!response.data?.success || !Array.isArray(response.data.data)) {
                 throw new Error("Invalid data format received from server")
@@ -142,7 +142,7 @@ function Agents() {
         try {
             setAgentDetailsLoading(true)
             setAgentDetailsError(null)
-            const response = await axios.get(`http://localhost:3001/api/agent/${agentId}`)
+            const response = await axios.get(`https://global-edu-assist.onrender.com/api/agent/${agentId}`)
 
             if (!response.data?.data) {
                 throw new Error("Invalid data format received from server")
@@ -261,7 +261,7 @@ function Agents() {
             setStatusUpdateSuccess(false)
 
             // Fix: Update the API endpoint to include 'agent' in the path
-            const response = await axios.put(`http://localhost:3001/api/agent/${selectedAgent._id}/status`, {
+            const response = await axios.put(`https://global-edu-assist.onrender.com/api/agent/${selectedAgent._id}/status`, {
                 status: "approved",
             })
 
@@ -294,7 +294,7 @@ function Agents() {
             setStatusUpdateSuccess(false)
 
             // Fix: Update the API endpoint to include 'agent' in the path
-            const response = await axios.put(`http://localhost:3001/api/agent/${selectedAgent._id}/status`, {
+            const response = await axios.put(`https://global-edu-assist.onrender.com/api/agent/${selectedAgent._id}/status`, {
                 status: "rejected",
                 remarks: disapprovalRemark,
             })
@@ -591,7 +591,7 @@ function Agents() {
                                                 selectedAgent.profilePicture
                                                     ? selectedAgent.profilePicture.url.startsWith("http")
                                                         ? selectedAgent.profilePicture.url
-                                                        : `http://localhost:3001${selectedAgent.profilePicture.url}`
+                                                        : `https://global-edu-assist.onrender.com${selectedAgent.profilePicture.url}`
                                                     : ""
                                             }
                                             alt={selectedAgent.companyName}
@@ -755,7 +755,7 @@ function Agents() {
                                                             <CardMedia
                                                                 component="img"
                                                                 height="140"
-                                                                image={doc.url.startsWith("http") ? doc.url : `http://localhost:3001${doc.url}`}
+                                                                image={doc.url.startsWith("http") ? doc.url : `https://global-edu-assist.onrender.com${doc.url}`}
                                                                 alt={key}
                                                                 sx={{ objectFit: "contain", bgcolor: "rgba(0,0,0,0.04)" }}
                                                             />
@@ -770,7 +770,7 @@ function Agents() {
                                                                     variant="outlined"
                                                                     size="small"
                                                                     sx={{ mt: 1 }}
-                                                                    href={doc.url.startsWith("http") ? doc.url : `http://localhost:3001${doc.url}`}
+                                                                    href={doc.url.startsWith("http") ? doc.url : `https://global-edu-assist.onrender.com${doc.url}`}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                 >

@@ -31,7 +31,7 @@ function ForgotPassword({ open, handleClose }) {
         setLoading(true);
         
         try {
-            const response = await axios.post('http://localhost:3001/api/forgot-password', { email });
+            const response = await axios.post('https://global-edu-assist.onrender.com/api/forgot-password', { email });
             setAlertMessage(response.data.message);
             setAlertSeverity('success');
             setStep(2);
@@ -48,7 +48,7 @@ function ForgotPassword({ open, handleClose }) {
         setLoading(true);
         
         try {
-            const response = await axios.post('http://localhost:3001/api/verify-otp', { email, otp });
+            const response = await axios.post('https://global-edu-assist.onrender.com/api/verify-otp', { email, otp });
             setAlertMessage(response.data.message);
             setAlertSeverity('success');
             setStep(3);
@@ -78,7 +78,7 @@ function ForgotPassword({ open, handleClose }) {
         setLoading(true);
         
         try {
-            const response = await axios.post('http://localhost:3001/api/reset-password', { 
+            const response = await axios.post('https://global-edu-assist.onrender.com/api/reset-password', { 
                 email, 
                 newPassword 
             });

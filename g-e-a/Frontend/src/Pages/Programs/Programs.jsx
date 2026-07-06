@@ -207,7 +207,7 @@ export default function Programs() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const response = await axios.get("http://localhost:3001/api/institutions");
+            const response = await axios.get("https://global-edu-assist.onrender.com/api/institutions");
             const shuffledPrograms = shuffleArray(
                 response.data.flatMap((institution) =>
                     institution.programs.map((program) => ({

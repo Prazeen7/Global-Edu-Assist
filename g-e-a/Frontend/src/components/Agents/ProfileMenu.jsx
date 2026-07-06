@@ -42,7 +42,7 @@ import axios from "../../utils/axiosConfig"
 import { AuthContext } from "../../Context/context"
 
 // Base URL for API
-const API_BASE_URL = "http://localhost:3001"
+const API_BASE_URL = "https://global-edu-assist.onrender.com"
 
 const ProfileMenu = () => {
     const theme = useTheme()

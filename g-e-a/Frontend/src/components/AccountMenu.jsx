@@ -47,7 +47,7 @@ export default function AccountMenu() {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const response = await axios.get("http://localhost:3001/api/auth/profile", {
+        const response = await axios.get("https://global-edu-assist.onrender.com/api/auth/profile", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

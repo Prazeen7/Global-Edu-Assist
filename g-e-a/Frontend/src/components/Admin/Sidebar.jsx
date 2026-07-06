@@ -31,7 +31,7 @@ import axios from "axios"
 
 // Create a basic axios instance for this component
 const api = axios.create({
-    baseURL: process.env.NODE_ENV === "development" ? "http://localhost:3001/api" : "/api",
+    baseURL: process.env.NODE_ENV === "development" ? "https://global-edu-assist.onrender.com/api" : "/api",
 })
 
 // Add token to requests

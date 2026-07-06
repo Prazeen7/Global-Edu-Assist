@@ -43,7 +43,7 @@ function AdminInstitutions() {
 
     const fetchInstitutions = async () => {
         try {
-            const response = await axios.get("http://localhost:3001/api/institutions");
+            const response = await axios.get("https://global-edu-assist.onrender.com/api/institutions");
             const sortedData = response.data.sort((a, b) =>
                 a.institutionName.localeCompare(b.institutionName)
             );

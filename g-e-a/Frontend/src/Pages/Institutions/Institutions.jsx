@@ -48,7 +48,7 @@ export default function InstitutionsPage() {
     const fetchData = async (query, location) => {
         try {
             setLoading(true);
-            const response = await axios.get("http://localhost:3001/api/institutions", {
+            const response = await axios.get("https://global-edu-assist.onrender.com/api/institutions", {
                 params: {
                     search: query,
                     location: location === "all" ? undefined : location,

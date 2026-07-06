@@ -102,7 +102,7 @@ const getImageUrl = (image) => {
     if (!image) return ""
     if (typeof image === "object" && image.url) return image.url
     if (typeof image === "string") {
-        return image.startsWith("blob:") ? image : `http://localhost:3001/uploads/${image}`
+        return image.startsWith("blob:") ? image : `https://global-edu-assist.onrender.com/uploads/${image}`
     }
     return ""
 }
@@ -168,7 +168,7 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
 
     useEffect(() => {
         axios
-            .get("http://localhost:3001/api/documents")
+            .get("https://global-edu-assist.onrender.com/api/documents")
             .then((response) => {
                 const formattedData = response.data.map((category) => ({
                     title: category.document,
@@ -279,7 +279,7 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                 bannerImages: editedInstitution.bannerImages?.filter((_, idx) => !pendingDeletions.bannerImages.includes(idx)),
             }
 
-            const response = await axios.put(`http://localhost:3001/api/institutions/${institution._id}`, {
+            const response = await axios.put(`https://global-edu-assist.onrender.com/api/institutions/${institution._id}`, {
                 ...toSave,
                 deletions: pendingDeletions,
             })
@@ -541,7 +541,7 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
             formData.append("image", file)
 
             axios
-                .post("http://localhost:3001/api/upload", formData)
+                .post("https://global-edu-assist.onrender.com/api/upload", formData)
                 .then((response) => {
                     setEditedInstitution((prev) => ({
                         ...prev,
@@ -588,7 +588,7 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
             }))
 
             axios
-                .post("http://localhost:3001/api/upload", formData)
+                .post("https://global-edu-assist.onrender.com/api/upload", formData)
                 .then((response) => {
                     // Replace temp URL with actual filename
                     setEditedInstitution((prev) => ({
@@ -1419,7 +1419,7 @@ export default function InstitutionPage({ institution: initialInstitution, onClo
                 <Box sx={{ display: "flex", alignItems: "center", mb: 4, flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
                     <Box sx={{ position: "relative" }}>
                         <Avatar
-                            src={`http://localhost:3001/uploads/${editMode ? editedInstitution.profilePicture : institution.profilePicture}`}
+                            src={`https://global-edu-assist.onrender.com/uploads/${editMode ? editedInstitution.profilePicture : institution.profilePicture}`}
                             alt="Institution Logo"
                             sx={{
                                 width: 100,

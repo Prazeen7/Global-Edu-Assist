@@ -33,7 +33,7 @@ const server = http.createServer(app)
 // Initialize Socket.io
 const io = socketIo(server, {
     cors: {
-        origin: "http://localhost:5173",
+        origin: "https://global-edu-assist.vercel.app/",
         methods: ["GET", "POST"],
         credentials: true,
     },

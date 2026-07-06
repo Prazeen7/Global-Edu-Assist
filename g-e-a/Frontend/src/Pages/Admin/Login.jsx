@@ -113,7 +113,7 @@ export default function Login() {
         if (!validateInputs()) return;
 
         try {
-            const response = await axios.post('http://localhost:3001/api/admin-login', { email, password });
+            const response = await axios.post('https://global-edu-assist.onrender.com/api/admin-login', { email, password });
             const { message, auth, firstName, user } = response.data;
 
             if (message === 'Success') {

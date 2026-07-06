@@ -65,7 +65,7 @@ const AgentsPage = () => {
   const fetchAgentDetails = async (agentId) => {
     try {
       if (agentDetails[agentId]) return
-      const response = await fetch(`http://localhost:3001/api/agent/${agentId}`)
+      const response = await fetch(`https://global-edu-assist.onrender.com/api/agent/${agentId}`)
       if (!response.ok) {
         console.error(`Failed to fetch agent details: ${response.status}`)
         return
@@ -87,7 +87,7 @@ const AgentsPage = () => {
       if (!token || !LoggedIn) return
       for (const post of posts) {
         try {
-          const response = await fetch(`http://localhost:3001/api/posts/${post._id}/like-status`, {
+          const response = await fetch(`https://global-edu-assist.onrender.com/api/posts/${post._id}/like-status`, {
             headers: { Authorization: `Bearer ${token}` },
           })
           if (response.ok) {
@@ -131,7 +131,7 @@ const AgentsPage = () => {
       }
       setPosts(posts.map((post) => (post._id === postId ? { ...post, likes: (post.likes || 0) + 1 } : post)))
       setLikedPosts((prev) => ({ ...prev, [postId]: true }))
-      const response = await fetch(`http://localhost:3001/api/posts/${postId}/like`, {
+      const response = await fetch(`https://global-edu-assist.onrender.com/api/posts/${postId}/like`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -190,7 +190,7 @@ const AgentsPage = () => {
     const fetchAgents = async () => {
       try {
         setLoading(true)
-        const response = await fetch("http://localhost:3001/api/getAgent")
+        const response = await fetch("https://global-edu-assist.onrender.com/api/getAgent")
         if (!response.ok) {
           throw new Error(`Failed to fetch agents: ${response.status}`)
         }
@@ -213,7 +213,7 @@ const AgentsPage = () => {
     const fetchPosts = async () => {
       try {
         setLoadingPosts(true)
-        const response = await fetch("http://localhost:3001/api/posts")
+        const response = await fetch("https://global-edu-assist.onrender.com/api/posts")
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
           throw new Error(`Failed to fetch posts: ${response.status} - ${errorData.error || "Unknown error"}`)
@@ -304,7 +304,7 @@ const AgentsPage = () => {
     profilePicture && profilePicture.url
       ? profilePicture.url.startsWith("http")
         ? profilePicture.url
-        : `http://localhost:3001${profilePicture.url}`
+        : `https://global-edu-assist.onrender.com${profilePicture.url}`
       : null
   const formatDate = (dateString) =>
     new Date(dateString).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
@@ -663,15 +663,15 @@ const AgentsPage = () => {
                   {post.image && post.image.url && (
                     <Box sx={{ width: "100%" }}>
                       <img
-                        src={post.image.url.startsWith("http") ? post.image.url : `http://localhost:3001${post.image.url}`}
+                        src={post.image.url.startsWith("http") ? post.image.url : `https://global-edu-assist.onrender.com${post.image.url}`}
                         alt={post.title || "Post image"}
                         style={{ width: "100%", display: "block" }}
                         onError={(e) => {
                           const possibleUrls = [
-                            `http://localhost:3001${post.image.url}`,
-                            `http://localhost:3001/uploads/${post.image.filename}`,
-                            `http://localhost:3001/uploads/posts/${post.image.filename}`,
-                            `http://localhost:3001/uploads/image-${post.image.filename?.split("image-")[1] || ""}`,
+                            `https://global-edu-assist.onrender.com${post.image.url}`,
+                            `https://global-edu-assist.onrender.com/uploads/${post.image.filename}`,
+                            `https://global-edu-assist.onrender.com/uploads/posts/${post.image.filename}`,
+                            `https://global-edu-assist.onrender.com/uploads/image-${post.image.filename?.split("image-")[1] || ""}`,
                           ]
                           const currentUrlIndex = possibleUrls.findIndex((url) => url === e.target.src)
                           if (currentUrlIndex < possibleUrls.length - 1) {

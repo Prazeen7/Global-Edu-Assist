@@ -42,7 +42,7 @@ export default function Documents() {
   const [currentPage, setCurrentPage] = useState(1); 
 
   useEffect(() => {
-    axios.get('http://localhost:3001/api/documents')
+    axios.get('https://global-edu-assist.onrender.com/api/documents')
       .then((response) => {
         const formattedData = response.data.map((category) => ({
           title: category.document,
