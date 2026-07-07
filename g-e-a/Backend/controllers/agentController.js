@@ -22,9 +22,9 @@ const storage = new CloudinaryStorage({
 const fileFilter = (req, file, cb) => {
     const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"]
     const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".jfif"]
-    
+
     const fileExtension = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'))
-    
+
     if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
         cb(null, true)
     } else {
@@ -49,10 +49,10 @@ const upload = multer({
 ])
 
 // Create new agent with file uploads
-exports.createAgent = async (req, res) => {
+exports.createAgent = async(req, res) => {
     try {
         // Use the upload middleware to handle both profile picture and documents
-        upload(req, res, async (err) => {
+        upload(req, res, async(err) => {
             if (err) {
                 if (err instanceof multer.MulterError) {
                     let errorMessage = "File upload error"
@@ -118,7 +118,7 @@ exports.createAgent = async (req, res) => {
                     companyName,
                     owners: JSON.parse(owners || "[]"),
                     email,
-                    password: hashedPassword, 
+                    password: hashedPassword,
                     website,
                     contactNumber,
                     headOfficeAddress,
@@ -126,7 +126,7 @@ exports.createAgent = async (req, res) => {
                     documents,
                     profilePicture,
                     status: "pending",
-                    user: "agent", 
+                    user: "agent",
                 })
 
                 const savedAgent = await newAgent.save()
@@ -140,7 +140,7 @@ exports.createAgent = async (req, res) => {
                     await emailService.sendAgentPendingEmail(email, companyName)
                 } catch (emailError) {
                     console.error("Failed to send pending approval email:", emailError)
-                    // Continue even if email fails
+                        // Continue even if email fails
                 }
 
                 res.status(201).json({
@@ -159,12 +159,12 @@ exports.createAgent = async (req, res) => {
 }
 
 // Verify password function (for login)
-exports.verifyPassword = async (plainPassword, hashedPassword) => {
+exports.verifyPassword = async(plainPassword, hashedPassword) => {
     return await bcrypt.compare(plainPassword, hashedPassword)
 }
 
 // Get all agents
-exports.getAllAgents = async (req, res) => {
+exports.getAllAgents = async(req, res) => {
     try {
         const agents = await AgentModel.find().select("-otp -otpExpiry")
         res.status(200).json({
@@ -177,7 +177,7 @@ exports.getAllAgents = async (req, res) => {
     }
 }
 
-exports.availAgent = async (req, res) => {
+exports.availAgent = async(req, res) => {
     try {
         // 1. Get approved agents from the main AgentModel (registration/login model)
         const registeredAgents = await AgentModel.find({ status: 'approved' })
@@ -193,7 +193,7 @@ exports.availAgent = async (req, res) => {
         registeredAgents.forEach(agent => {
             if (agent.companyName) {
                 // Format branches to match other_locations structure
-                const otherLocations = agent.branches?.map(branch => ({
+                const otherLocations = agent.branches ? .map(branch => ({
                     location: branch.location || '',
                     address: branch.address || '',
                     tel: branch.contactNumber || '',
@@ -209,7 +209,7 @@ exports.availAgent = async (req, res) => {
                             tel: agent.contactNumber || '',
                             email: agent.email || '',
                             web: agent.website || '',
-                            avatar: agent.profilePicture?.url || agent.profilePicture || ''
+                            avatar: agent.profilePicture ? .url || agent.profilePicture || ''
                         },
                         other_locations: otherLocations
                     }
@@ -221,19 +221,19 @@ exports.availAgent = async (req, res) => {
         availAgents.forEach(agent => {
             // Get all keys except _id, __v, etc.
             const keys = Object.keys(agent).filter(key => !['_id', '__v', 'createdAt', 'updatedAt'].includes(key));
-            
+
             keys.forEach(agentName => {
                 // Check if agent already exists in formattedAgents
                 const alreadyExists = formattedAgents.some(a => a[agentName]);
-                
+
                 if (!alreadyExists) {
                     const agentData = agent[agentName];
-                    
+
                     if (agentData && typeof agentData === 'object') {
                         // Check if it has head_office or if it's directly the head_office data
                         let headOffice = agentData.head_office || agentData;
                         let otherLocations = agentData.other_locations || [];
-                        
+
                         formattedAgents.push({
                             [agentName]: {
                                 head_office: {
@@ -261,7 +261,7 @@ exports.availAgent = async (req, res) => {
 };
 
 // Get single agent by ID
-exports.getAgentById = async (req, res) => {
+exports.getAgentById = async(req, res) => {
     try {
         const { id } = req.params
 
@@ -312,7 +312,7 @@ exports.getAgentById = async (req, res) => {
                 headOfficeAddress: agent.headOfficeAddress,
                 owners: agent.owners,
                 branches: agent.branches,
-                profilePicture: profilePictureUrl ? { ...agent.profilePicture, url: profilePictureUrl } : null,
+                profilePicture: profilePictureUrl ? {...agent.profilePicture, url: profilePictureUrl } : null,
                 documents: documents,
                 status: agent.status,
                 remarks: agent.remarks,
@@ -331,7 +331,7 @@ exports.getAgentById = async (req, res) => {
 }
 
 // Update agent status (approve/reject)
-exports.updateAgentStatus = async (req, res) => {
+exports.updateAgentStatus = async(req, res) => {
     try {
         const { status, remarks } = req.body
 
@@ -369,7 +369,7 @@ exports.updateAgentStatus = async (req, res) => {
             }
         } catch (emailError) {
             console.error("Failed to send status update email:", emailError)
-            // Continue with the response even if email fails
+                // Continue with the response even if email fails
         }
 
         res.status(200).json({
@@ -383,7 +383,7 @@ exports.updateAgentStatus = async (req, res) => {
 }
 
 // Delete agent
-exports.deleteAgent = async (req, res) => {
+exports.deleteAgent = async(req, res) => {
     try {
         const agent = await AgentModel.findByIdAndDelete(req.params.id)
         if (!agent) {
@@ -433,7 +433,7 @@ exports.deleteAgent = async (req, res) => {
 const generateAgentToken = (agent) => {
     const payload = {
         id: agent._id,
-        userId: agent._id, 
+        userId: agent._id,
         email: agent.email,
         companyName: agent.companyName,
         role: "agent",
@@ -442,13 +442,12 @@ const generateAgentToken = (agent) => {
 
     return jwt.sign(
         payload,
-        process.env.JWT_SECRET_Agent,
-        { expiresIn: "7d" }, 
+        process.env.JWT_SECRET_AGENT, { expiresIn: "7d" },
     )
 }
 
 // Login agent - to handle different status responses and generate JWT token
-exports.loginAgent = async (req, res) => {
+exports.loginAgent = async(req, res) => {
     try {
         const { email, password } = req.body
 
@@ -505,7 +504,7 @@ exports.loginAgent = async (req, res) => {
 }
 
 // Update agent profile for resubmission
-exports.updateAgentInfo = async (req, res) => {
+exports.updateAgentInfo = async(req, res) => {
     try {
         const { id } = req.params
         const { companyName, website, contactNumber, headOfficeAddress, owners, branches } = req.body
@@ -530,7 +529,7 @@ exports.updateAgentInfo = async (req, res) => {
             website,
             contactNumber,
             headOfficeAddress,
-            status: "pending", 
+            status: "pending",
             remarks: undefined,
             updatedAt: new Date(),
         }
@@ -542,7 +541,7 @@ exports.updateAgentInfo = async (req, res) => {
             }
         } catch (e) {
             console.error("Error parsing owners:", e)
-            // If parsing fails, use the original owners from the agent
+                // If parsing fails, use the original owners from the agent
             updateData.owners = agent.owners || []
         }
 
@@ -552,7 +551,7 @@ exports.updateAgentInfo = async (req, res) => {
             }
         } catch (e) {
             console.error("Error parsing branches:", e)
-            // If parsing fails, use the original branches from the agent
+                // If parsing fails, use the original branches from the agent
             updateData.branches = agent.branches || []
         }
 
@@ -577,7 +576,7 @@ exports.updateAgentInfo = async (req, res) => {
     }
 }
 
-exports.updateAgentProfile = async (req, res) => {
+exports.updateAgentProfile = async(req, res) => {
     try {
         // Debug information
         console.log("Update agent profile request received:")
@@ -589,7 +588,7 @@ exports.updateAgentProfile = async (req, res) => {
         console.log("Request headers:", req.headers)
 
         // Use the upload middleware to handle both profile picture and documents
-        upload(req, res, async (err) => {
+        upload(req, res, async(err) => {
             if (err) {
                 console.error("Multer error:", err)
 
@@ -616,7 +615,7 @@ exports.updateAgentProfile = async (req, res) => {
                 console.log("Parsed request body:", req.body)
 
                 const { companyName, email, website, contactNumber, headOfficeAddress, owners, branches, keepExistingFiles } =
-                    req.body
+                req.body
 
                 // Find the agent to update
                 const agent = await AgentModel.findById(id)
@@ -633,8 +632,8 @@ exports.updateAgentProfile = async (req, res) => {
                     website,
                     contactNumber,
                     headOfficeAddress,
-                    status: "pending", 
-                    remarks: undefined, 
+                    status: "pending",
+                    remarks: undefined,
                     updatedAt: new Date(),
                 }
 
@@ -646,7 +645,7 @@ exports.updateAgentProfile = async (req, res) => {
                     }
                 } catch (e) {
                     console.error("Error parsing owners:", e)
-                    // If parsing fails, use the original owners from the agent
+                        // If parsing fails, use the original owners from the agent
                     updateData.owners = agent.owners || []
                 }
 
@@ -657,7 +656,7 @@ exports.updateAgentProfile = async (req, res) => {
                     }
                 } catch (e) {
                     console.error("Error parsing branches:", e)
-                    // If parsing fails, use the original branches from the agent
+                        // If parsing fails, use the original branches from the agent
                     updateData.branches = agent.branches || []
                 }
 
@@ -693,7 +692,7 @@ exports.updateAgentProfile = async (req, res) => {
 
                 // Handle document updates if provided
                 const documentTypes = ["panVat", "companyRegistration", "icanRegistration", "ownerCitizenship"]
-                const documents = { ...agent.documents } || {}
+                const documents = {...agent.documents } || {}
 
                 for (const docType of documentTypes) {
                     if (req.files && req.files[docType] && req.files[docType].length > 0) {
@@ -742,7 +741,7 @@ exports.updateAgentProfile = async (req, res) => {
                     console.log(`Resubmission notification sent to admin for agent: ${updatedAgent.companyName}`)
                 } catch (emailError) {
                     console.error("Failed to send resubmission notification:", emailError)
-                    // Continue even if email fails
+                        // Continue even if email fails
                 }
 
                 // Construct profile picture URL if it exists
@@ -771,7 +770,7 @@ exports.updateAgentProfile = async (req, res) => {
                     message: "Agent information resubmitted successfully",
                     data: {
                         ...updatedAgent.toObject(),
-                        profilePicture: profilePictureUrl ? { ...updatedAgent.profilePicture, url: profilePictureUrl } : null,
+                        profilePicture: profilePictureUrl ? {...updatedAgent.profilePicture, url: profilePictureUrl } : null,
                         documents: documentUrls,
                     },
                 })
@@ -798,7 +797,7 @@ exports.updateAgentProfile = async (req, res) => {
 }
 
 // Upload profile picture
-exports.uploadProfilePicture = async (req, res) => {
+exports.uploadProfilePicture = async(req, res) => {
     try {
         const { id } = req.params
         console.log(`Processing profile picture upload for agent ID: ${id}`)
@@ -837,7 +836,7 @@ exports.uploadProfilePicture = async (req, res) => {
                 }
             } catch (err) {
                 console.error("Error removing old profile picture:", err)
-                // Continue even if old file removal fails
+                    // Continue even if old file removal fails
             }
         }
 
@@ -851,13 +850,11 @@ exports.uploadProfilePicture = async (req, res) => {
 
         // Update the agent
         const updatedAgent = await AgentModel.findByIdAndUpdate(
-            id,
-            {
+            id, {
                 profilePicture,
-                status: "pending", 
+                status: "pending",
                 updatedAt: new Date(),
-            },
-            { new: true },
+            }, { new: true },
         ).select("-password -otp -otpExpiry")
 
         if (!updatedAgent) {
@@ -883,7 +880,7 @@ exports.uploadProfilePicture = async (req, res) => {
 }
 
 // Upload document
-exports.uploadDocument = async (req, res) => {
+exports.uploadDocument = async(req, res) => {
     try {
         const { id } = req.params
         const { documentType } = req.body
@@ -897,8 +894,7 @@ exports.uploadDocument = async (req, res) => {
         }
 
         // Check if document type is valid
-        if (
-            !documentType ||
+        if (!documentType ||
             !["panVat", "companyRegistration", "icanRegistration", "ownerCitizenship"].includes(documentType)
         ) {
             console.log("Invalid document type:", documentType)
@@ -936,18 +932,16 @@ exports.uploadDocument = async (req, res) => {
         }
 
         // Update the agent's documents
-        const documents = { ...(agent.documents || {}) }
+        const documents = {...(agent.documents || {}) }
         documents[documentType] = document
 
         // Update the agent
         const updatedAgent = await AgentModel.findByIdAndUpdate(
-            id,
-            {
+            id, {
                 documents,
                 status: "pending", // Reset status to pending
                 updatedAt: new Date(),
-            },
-            { new: true },
+            }, { new: true },
         ).select("-password -otp -otpExpiry")
 
         if (!updatedAgent) {

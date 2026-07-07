@@ -4,7 +4,7 @@ const Admin = require("../models/admin")
 const User = require("../models/user")
 
 const JWT_SECRET = process.env.JWT_SECRET
-const JWT_SECRET_Agent = process.env.JWT_SECRET_AGENT
+const JWT_SECRET_AGENT = process.env.JWT_SECRET_AGENT
 
 // Main middleware function that verifies tokens
 const verifyToken = async(req, res, next) => {
@@ -44,7 +44,7 @@ const verifyToken = async(req, res, next) => {
         } catch (userTokenError) {
             // If user token verification fails, try as agent token
             try {
-                const decoded = jwt.verify(token, JWT_SECRET_Agent)
+                const decoded = jwt.verify(token, JWT_SECRET_AGENT)
                 req.user = decoded
                 req.agent = decoded
                 req.userType = decoded.user || "agent"
