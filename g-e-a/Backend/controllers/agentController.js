@@ -193,7 +193,7 @@ exports.availAgent = async(req, res) => {
         registeredAgents.forEach(agent => {
             if (agent.companyName) {
                 // Format branches to match other_locations structure
-                const otherLocations = agent.branches ? .map(branch => ({
+                const otherLocations = agent.branches ?.map(branch => ({
                     location: branch.location || '',
                     address: branch.address || '',
                     tel: branch.contactNumber || '',
@@ -209,7 +209,7 @@ exports.availAgent = async(req, res) => {
                             tel: agent.contactNumber || '',
                             email: agent.email || '',
                             web: agent.website || '',
-                            avatar: agent.profilePicture ? .url || agent.profilePicture || ''
+                            avatar: agent.profilePicture ?.url || agent.profilePicture || ''
                         },
                         other_locations: otherLocations
                     }
