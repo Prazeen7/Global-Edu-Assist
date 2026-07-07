@@ -4,11 +4,13 @@ const Admin = require("../models/admin")
 const User = require("../models/user")
 
 const JWT_SECRET = process.env.JWT_SECRET
-const JWT_SECRET_Agent = process.env.JWT_SECRET_Agent
+const JWT_SECRET_Agent = process.env.JWT_SECRET_AGENT
 
 // Main middleware function that verifies tokens
-const verifyToken = async (req, res, next) => {
-    const token = req.headers.authorization?.split(" ")[1]
+const verifyToken = async(req, res, next) => {
+    const token = req.headers.authorization ?
+        req.headers.authorization.split(" ")[1] :
+        null;
 
     if (!token) {
         return res.status(401).json({ success: false, message: "No token provided" })
@@ -37,15 +39,15 @@ const verifyToken = async (req, res, next) => {
             }
 
             req.user = decoded
-            req.userType = decoded.user || "user" 
+            req.userType = decoded.user || "user"
             next()
         } catch (userTokenError) {
             // If user token verification fails, try as agent token
             try {
                 const decoded = jwt.verify(token, JWT_SECRET_Agent)
-                req.user = decoded 
-                req.agent = decoded 
-                req.userType = decoded.user || "agent" 
+                req.user = decoded
+                req.agent = decoded
+                req.userType = decoded.user || "agent"
                 next()
             } catch (agentTokenError) {
                 // Both verifications failed
@@ -71,7 +73,7 @@ verifyToken.isAgent = (req, res, next) => {
 }
 
 verifyToken.isUser = (req, res, next) => {
-    console.log("Checking if user is regular user. User type:", req.userType, "User ID:", req.user?.userId)
+    console.log("Checking if user is regular user. User type:", req.userType, "User ID:", req.user && req.user.userId)
 
     if (req.originalUrl.includes("/api/progress/")) {
         return next()
@@ -85,7 +87,7 @@ verifyToken.isUser = (req, res, next) => {
 }
 
 verifyToken.isAdmin = (req, res, next) => {
-    console.log("Checking if user is admin. User type:", req.userType, "Role:", req.user?.role)
+    console.log("Checking if user is admin. User type:", req.userType, "Role:", req.user && req.user.role)
     if (req.userType !== "admin") {
         return res.status(403).json({ message: "Admin access required" })
     }
@@ -93,7 +95,7 @@ verifyToken.isAdmin = (req, res, next) => {
 }
 
 verifyToken.isSuperAdmin = (req, res, next) => {
-    console.log("Checking if user is super admin. User type:", req.userType, "SuperAdmin:", req.user?.superAdmin)
+    console.log("Checking if user is super admin. User type:", req.userType, "SuperAdmin:", req.user && req.user.superAdmin)
     if (req.userType !== "admin" || !req.user.superAdmin) {
         return res.status(403).json({ message: "Super Admin access required" })
     }
