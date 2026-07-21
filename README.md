@@ -1,4 +1,4 @@
-# 🌍 Global Edu Assist
+# Global Edu Assist
 
 > A full-stack MERN web application that helps Nepali students make informed decisions about studying abroad through eligibility assessment, cost estimation, document guidance, application tracking, and communication with education consultants.
 
