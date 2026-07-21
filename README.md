@@ -190,7 +190,7 @@ Global-Edu-Assist
 ## Clone the repository
 
 ```bash
-git clone [https://github.com/your-username/Global-Edu-Assist.git](https://github.com/Prazeen7/Global-Edu-Assist.git)
+git clone https://github.com/Prazeen7/Global-Edu-Assist.git
 
 cd g-e-a
 ```
